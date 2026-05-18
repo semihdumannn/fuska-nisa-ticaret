@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "554686005938",
+    "project_id": "nisa-ticaret",
+    "storage_bucket": "nisa-ticaret.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554686005938:android:ae4e7b892b6324d365ffab",
+        "android_client_info": {
+          "package_name": "com.nisaticaret.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZfUPX5bzJB4eyriRWZEXn3Fp4winxMrQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554686005938:android:036cf0bec76bdd2565ffab",
+        "android_client_info": {
+          "package_name": "com.nisaticaret.fuska_nisa_ticaret"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZfUPX5bzJB4eyriRWZEXn3Fp4winxMrQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,192 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/analytics_model.dart';
+import '../../data/repositories/analytics_repository.dart';
+
+// ---------------------------------------------------------------------------
+// Rapor tipi enum
+// ---------------------------------------------------------------------------
+enum ReportType {
+  dailySales,
+  productPerformance,
+  fieldAgentPerformance,
+  customerAnalysis,
+}
+
+// ---------------------------------------------------------------------------
+// Secili rapor tipi
+// ---------------------------------------------------------------------------
+class _ReportTypeNotifier extends Notifier<ReportType> {
+  @override
+  ReportType build() => ReportType.dailySales;
+
+  void setType(ReportType type) => state = type;
+}
+
+final selectedReportTypeProvider =
+    NotifierProvider<_ReportTypeNotifier, ReportType>(_ReportTypeNotifier.new);
+
+// ---------------------------------------------------------------------------
+// Rapor tarih araligi
+// ---------------------------------------------------------------------------
+class _ReportDateRangeNotifier extends Notifier<DateTimeRange> {
+  @override
+  DateTimeRange build() {
+    final now = DateTime.now();
+    return DateTimeRange(
+      start: now.subtract(const Duration(days: 29)),
+      end: now,
+    );
+  }
+
+  void setRange(DateTimeRange range) => state = range;
+}
+
+final reportDateRangeProvider =
+    NotifierProvider<_ReportDateRangeNotifier, DateTimeRange>(
+        _ReportDateRangeNotifier.new);
+
+// ---------------------------------------------------------------------------
+// Repository provider
+// Mock'tan Firebase'e gecmek icin bu satirı degistir:
+//   return FirebaseAnalyticsRepository();
+// ---------------------------------------------------------------------------
+final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
+  return FirebaseAnalyticsRepository();
+});
+
+// ---------------------------------------------------------------------------
+// Tam rapor provider — tum veri kumelerini paralel ceker
+// Tarih araligı veya rapor tipi degisince otomatik yenilenir.
+// ---------------------------------------------------------------------------
+final analyticsReportProvider = FutureProvider<AnalyticsReport>((ref) async {
+  final repo = ref.watch(analyticsRepositoryProvider);
+  final dateRange = ref.watch(reportDateRangeProvider);
+  return repo.getFullReport(dateRange);
+});
+
+// ---------------------------------------------------------------------------
+// Firebase kullanim istatistikleri — Spark plan limiti takibi
+// ---------------------------------------------------------------------------
+final firebaseUsageProvider = FutureProvider<FirebaseUsageData>((ref) async {
+  return ref.watch(analyticsRepositoryProvider).getFirebaseUsage();
+});
+
+/// Firebase okuma limiti %80'in ustune cikti mi? (admin uyarisi icin)
+final isFirebaseReadNearLimitProvider = Provider<bool>((ref) {
+  return ref.watch(firebaseUsageProvider).when(
+        data: (usage) => usage.isReadNearLimit,
+        loading: () => false,
+        error: (_, __) => false,
+      );
+});
+
+// ---------------------------------------------------------------------------
+// Excel export loading state
+// ---------------------------------------------------------------------------
+class _BoolNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void toggle(bool value) => state = value;
+}
+
+final excelExportLoadingProvider =
+    NotifierProvider<_BoolNotifier, bool>(_BoolNotifier.new);
+
+// ---------------------------------------------------------------------------
+// PDF export loading state
+// ---------------------------------------------------------------------------
+class _PdfBoolNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void toggle(bool value) => state = value;
+}
+
+final pdfExportLoadingProvider =
+    NotifierProvider<_PdfBoolNotifier, bool>(_PdfBoolNotifier.new);
+
+// ---------------------------------------------------------------------------
+// Gunluk satis verileri — Firebase orders koleksiyonundan
+// ---------------------------------------------------------------------------
+final reportDailySalesProvider =
+    FutureProvider<List<AnalyticsDailySalesData>>((ref) {
+  final repo = ref.watch(analyticsRepositoryProvider);
+  final range = ref.watch(reportDateRangeProvider);
+  return repo.getDailySales(range);
+});
+
+// ---------------------------------------------------------------------------
+// En cok satan urunler — Firebase orders'tan aggregate
+// ---------------------------------------------------------------------------
+final reportTopProductsProvider =
+    FutureProvider<List<AnalyticsTopProductData>>((ref) {
+  ref.watch(reportDateRangeProvider);
+  return ref.watch(analyticsRepositoryProvider).getTopProducts(limit: 10);
+});
+
+// ---------------------------------------------------------------------------
+// Musteri buyumesi — Firebase users + orders koleksiyonundan
+// ---------------------------------------------------------------------------
+final reportCustomerGrowthProvider =
+    FutureProvider<List<CustomerGrowthData>>((ref) {
+  ref.watch(reportDateRangeProvider);
+  return ref.watch(analyticsRepositoryProvider).getCustomerGrowth(months: 6);
+});
+
+// ---------------------------------------------------------------------------
+// Saha personeli performansi — Firebase orders koleksiyonundan
+// ---------------------------------------------------------------------------
+final reportFieldAgentPerformanceProvider =
+    FutureProvider<List<FieldAgentPerformanceData>>((ref) {
+  final range = ref.watch(reportDateRangeProvider);
+  return ref.watch(analyticsRepositoryProvider).getRevenueByFieldAgent(range);
+});
+
+// ---------------------------------------------------------------------------
+// Kategori dagilimi — orders + products + categories koleksiyonlarindan
+// ---------------------------------------------------------------------------
+final reportCategoryDistributionProvider =
+    FutureProvider<List<CategoryDistributionData>>((ref) {
+  final range = ref.watch(reportDateRangeProvider);
+  return ref
+      .watch(analyticsRepositoryProvider)
+      .getCategoryDistribution(range);
+});
+
+// ---------------------------------------------------------------------------
+// Ozet istatistikler (reportDailySalesProvider'dan turetilir)
+// ---------------------------------------------------------------------------
+final reportSummaryProvider = Provider<_ReportSummary?>((ref) {
+  final salesAsync = ref.watch(reportDailySalesProvider);
+  return salesAsync.whenOrNull(
+    data: (sales) {
+      if (sales.isEmpty) return null;
+      final totalRevenue = sales.fold(0.0, (s, d) => s + d.revenue);
+      final totalOrders = sales.fold(0, (s, d) => s + d.orderCount);
+      final avgDaily = totalRevenue / sales.length;
+      final bestDay = sales.reduce((a, b) => a.revenue > b.revenue ? a : b);
+      return _ReportSummary(
+        totalRevenue: totalRevenue,
+        totalOrders: totalOrders,
+        averageDaily: avgDaily,
+        bestDay: bestDay,
+      );
+    },
+  );
+});
+
+class _ReportSummary {
+  final double totalRevenue;
+  final int totalOrders;
+  final double averageDaily;
+  final AnalyticsDailySalesData bestDay;
+
+  const _ReportSummary({
+    required this.totalRevenue,
+    required this.totalOrders,
+    required this.averageDaily,
+    required this.bestDay,
+  });
+}
