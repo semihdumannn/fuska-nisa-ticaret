@@ -25,7 +25,7 @@ ProductModel _makeProduct({
     id: id,
     name: name,
     description: 'Test aciklama',
-    categoryId: 'cat1',
+    categoryIds: ['cat1'],
     isActive: isActive,
     createdAt: now,
     updatedAt: now,

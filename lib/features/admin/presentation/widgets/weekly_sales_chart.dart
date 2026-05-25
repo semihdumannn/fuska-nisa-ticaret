@@ -14,7 +14,7 @@ class WeeklySalesChart extends StatelessWidget {
     if (data.isEmpty) return const _EmptyChartPlaceholder();
 
     final maxAmount = data.map((d) => d.amount).reduce((a, b) => a > b ? a : b);
-    final interval = (maxAmount / 4).ceilToDouble();
+    final interval = maxAmount == 0 ? 1.0 : (maxAmount / 4).ceilToDouble();
 
     return Container(
       padding: const EdgeInsets.all(20),

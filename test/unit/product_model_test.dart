@@ -24,7 +24,7 @@ ProductModel makeProduct({
     brandId: brandId,
     name: name,
     description: description,
-    categoryId: categoryId,
+    categoryIds: [categoryId],
     imageUrl: imageUrl,
     imageUrls: imageUrls,
     tags: tags,
@@ -135,12 +135,24 @@ void main() {
       expect(makeProduct().discountPercent, 0.0);
     });
 
-    test('inStock getter true doner (varyant yonetir)', () {
-      expect(makeProduct().inStock, true);
+    test('inStock getter: primaryStock > 0 iken true doner', () {
+      final p = ProductModel(
+        id: 'p1',
+        name: 'Test',
+        description: '',
+        primaryStock: 5,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      expect(p.inStock, true);
     });
 
-    test('unit getter adet doner', () {
-      expect(makeProduct().unit, 'adet');
+    test('inStock getter: stok alani yokken false doner', () {
+      expect(makeProduct().inStock, false);
+    });
+
+    test('unit getter koli doner (model varsayilani)', () {
+      expect(makeProduct().unit, 'koli');
     });
 
     test('stock getter 0 doner', () {
@@ -233,10 +245,11 @@ void main() {
       expect(json.containsKey('tags'), true);
       expect(json.containsKey('createdAt'), true);
       expect(json.containsKey('updatedAt'), true);
-      // Eski alanlar artik yok
-      expect(json.containsKey('price'), false);
-      expect(json.containsKey('salePrice'), false);
-      expect(json.containsKey('stock'), false);
+      // Denormalize fiyat alanlari — primaryPrice/primarySalePrice/primaryStock
+      // 'price', 'salePrice', 'stock' anahtarlari hala mevcut (geriye donuk uyumluluk)
+      expect(json.containsKey('price'), true);    // primaryPrice mapli
+      expect(json.containsKey('salePrice'), true); // primarySalePrice mapli
+      expect(json.containsKey('stock'), true);     // primaryStock mapli
       expect(json.containsKey('unit'), false);
     });
   });

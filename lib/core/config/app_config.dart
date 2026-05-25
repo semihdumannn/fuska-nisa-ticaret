@@ -58,6 +58,9 @@ class AppConfig {
       // Business
       'whatsapp_number': '+905551234567',
       'min_order_amount': 50.0,
+
+      // API Endpoints
+      'api_coupon_endpoint': '/coupons/validate',
     });
     
     // Fetch & activate
@@ -73,6 +76,7 @@ class AppConfig {
   // ============ API & Networking ============
   String get baseUrl => _remoteConfig.getString('api_baseUrl');
   int get apiTimeout => _remoteConfig.getInt('api_timeout');
+  String get couponEndpoint => _remoteConfig.getString('api_coupon_endpoint');
   
   // ============ Features ============
   bool get isWhatsappEnabled => _remoteConfig.getBool('features_whatsappEnabled');

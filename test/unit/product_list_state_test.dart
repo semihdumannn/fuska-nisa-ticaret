@@ -19,7 +19,7 @@ ProductModel _product({
     id: id,
     name: name,
     description: '',
-    categoryId: categoryId,
+    categoryIds: [categoryId],
     order: order,
     createdAt: now,
     updatedAt: now,

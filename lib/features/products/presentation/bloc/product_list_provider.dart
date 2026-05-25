@@ -53,9 +53,9 @@ class ProductListState {
     var result = all;
 
     if (categoryFilterIds != null && categoryFilterIds!.isNotEmpty) {
-      result = result.where((p) => categoryFilterIds!.contains(p.categoryId)).toList();
+      result = result.where((p) => p.categoryIds.any((id) => categoryFilterIds!.contains(id))).toList();
     } else if (selectedCategoryId != null) {
-      result = result.where((p) => p.categoryId == selectedCategoryId).toList();
+      result = result.where((p) => p.categoryIds.contains(selectedCategoryId)).toList();
     }
 
     if (searchQuery.isNotEmpty) {

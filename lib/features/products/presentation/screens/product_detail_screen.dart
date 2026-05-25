@@ -471,7 +471,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   Widget _buildRelatedSection(BuildContext context, ProductModel product) {
     final relatedAsync =
-        ref.watch(productsByCategoryProvider(product.categoryId));
+        ref.watch(productsByCategoryProvider(product.categoryIds.firstOrNull ?? ''));
 
     return relatedAsync.when(
       loading: () => _buildRelatedShimmer(),

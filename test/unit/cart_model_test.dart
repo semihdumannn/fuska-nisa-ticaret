@@ -12,7 +12,7 @@ ProductModel _makeProduct({
     id: id,
     name: 'Urun $id',
     description: 'Aciklama',
-    categoryId: 'cat1',
+    categoryIds: ['cat1'],
     createdAt: now,
     updatedAt: now,
   );

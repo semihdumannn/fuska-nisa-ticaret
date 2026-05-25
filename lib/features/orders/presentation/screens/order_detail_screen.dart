@@ -1074,7 +1074,7 @@ class _ReorderButton extends ConsumerWidget {
               id: item.productId,
               name: item.productName,
               description: '',
-              categoryId: '',
+              categoryIds: const [],
               imageUrl: item.imageUrl,
               createdAt: now,
               updatedAt: now,

@@ -159,14 +159,14 @@ final filteredProductsProvider = Provider<List<ProductModel>>((ref) {
     data: (products) {
       var result = products;
       if (categoryFilter != null && categoryFilter.isNotEmpty) {
-        result = result.where((p) => p.categoryId == categoryFilter).toList();
+        result = result.where((p) => p.categoryIds.contains(categoryFilter)).toList();
       }
       if (search.isNotEmpty) {
         result = result
             .where((p) =>
                 p.name.toLowerCase().contains(search) ||
                 p.description.toLowerCase().contains(search) ||
-                p.categoryId.toLowerCase().contains(search))
+                p.categoryIds.any((id) => id.toLowerCase().contains(search)))
             .toList();
       }
       return result;

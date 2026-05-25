@@ -104,7 +104,7 @@ class ProductRepository {
     return _firestore
         .collection(AppConstants.productsCollection)
         .where('isActive', isEqualTo: true)
-        .where('categoryId', isEqualTo: categoryId)
+        .where('categoryIds', arrayContains: categoryId)
         .orderBy('order')
         .snapshots()
         .map((snap) {
@@ -188,7 +188,7 @@ class ProductRepository {
     final snap = await _firestore
         .collection(AppConstants.productsCollection)
         .where('isActive', isEqualTo: true)
-        .where('categoryId', isEqualTo: categoryId)
+        .where('categoryIds', arrayContains: categoryId)
         .orderBy('order')
         .get();
     return snap.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();

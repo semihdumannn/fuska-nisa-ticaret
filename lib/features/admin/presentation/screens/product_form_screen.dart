@@ -73,7 +73,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   List<_VariantEntry> _variants = [];
 
-  String? _selectedCategoryId;
+  List<String> _selectedCategoryIds = [];
   bool _isActive = true;
   String? _imageUrl;
   bool _isSaving = false;
@@ -99,7 +99,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _nameCtrl.text = product.name;
     _descCtrl.text = product.description;
     setState(() {
-      _selectedCategoryId = product.categoryId;
+      try {
+        _selectedCategoryIds = List<String>.from(product.categoryIds);
+      } catch (_) {
+        _selectedCategoryIds = product.categoryId.isNotEmpty ? [product.categoryId] : [];
+      }
+      if (_selectedCategoryIds.isEmpty && product.categoryId.isNotEmpty) {
+        _selectedCategoryIds = [product.categoryId];
+      }
       _isActive = product.isActive;
       _imageUrl = product.imageUrl;
     });
@@ -147,8 +154,24 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   // Kaydet — tek atomik batch
   // -------------------------------------------------------------------------
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
+    if (_selectedCategoryIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'En az bir kategori secin.',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      setState(() => _isSaving = false);
+      return;
+    }
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _isSaving = false);
+      return;
+    }
 
     try {
       final fs = FirebaseFirestore.instance;
@@ -232,7 +255,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       final productData = <String, dynamic>{
         'name': _nameCtrl.text.trim(),
         'description': _descCtrl.text.trim(),
-        'categoryId': _selectedCategoryId!,
+        'categoryIds': _selectedCategoryIds,
+        'categoryId': _selectedCategoryIds.isNotEmpty ? _selectedCategoryIds.first : '',
         'imageUrl': _imageUrl,
         'imageUrls': _imageUrl != null ? [_imageUrl!] : <String>[],
         'isActive': _isActive,
@@ -382,13 +406,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 title: title,
                 nameCtrl: _nameCtrl,
                 descCtrl: _descCtrl,
-                selectedCategoryId: _selectedCategoryId,
+                selectedCategoryIds: _selectedCategoryIds,
                 isActive: _isActive,
                 imageUrl: _imageUrl,
                 isSaving: _isSaving,
                 variants: _variants,
-                onCategoryChanged: (v) =>
-                    setState(() => _selectedCategoryId = v),
+                onCategoryIdsChanged: (ids) =>
+                    setState(() => _selectedCategoryIds = ids),
                 onActiveChanged: (v) => setState(() => _isActive = v),
                 onImageUploaded: (url) => setState(() => _imageUrl = url),
                 onSave: _save,
@@ -425,12 +449,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         title: title,
         nameCtrl: _nameCtrl,
         descCtrl: _descCtrl,
-        selectedCategoryId: _selectedCategoryId,
+        selectedCategoryIds: _selectedCategoryIds,
         isActive: _isActive,
         imageUrl: _imageUrl,
         isSaving: _isSaving,
         variants: _variants,
-        onCategoryChanged: (v) => setState(() => _selectedCategoryId = v),
+        onCategoryIdsChanged: (ids) =>
+            setState(() => _selectedCategoryIds = ids),
         onActiveChanged: (v) => setState(() => _isActive = v),
         onImageUploaded: (url) => setState(() => _imageUrl = url),
         onSave: _save,
@@ -453,12 +478,12 @@ class _FormContent extends StatelessWidget {
     required this.title,
     required this.nameCtrl,
     required this.descCtrl,
-    required this.selectedCategoryId,
+    required this.selectedCategoryIds,
     required this.isActive,
     required this.imageUrl,
     required this.isSaving,
     required this.variants,
-    required this.onCategoryChanged,
+    required this.onCategoryIdsChanged,
     required this.onActiveChanged,
     required this.onImageUploaded,
     required this.onSave,
@@ -473,12 +498,12 @@ class _FormContent extends StatelessWidget {
   final String title;
   final TextEditingController nameCtrl;
   final TextEditingController descCtrl;
-  final String? selectedCategoryId;
+  final List<String> selectedCategoryIds;
   final bool isActive;
   final String? imageUrl;
   final bool isSaving;
   final List<_VariantEntry> variants;
-  final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<List<String>> onCategoryIdsChanged;
   final ValueChanged<bool> onActiveChanged;
   final ValueChanged<String> onImageUploaded;
   final VoidCallback onSave;
@@ -523,9 +548,9 @@ class _FormContent extends StatelessWidget {
                         child: _RightColumn(
                           nameCtrl: nameCtrl,
                           descCtrl: descCtrl,
-                          selectedCategoryId: selectedCategoryId,
+                          selectedCategoryIds: selectedCategoryIds,
                           variants: variants,
-                          onCategoryChanged: onCategoryChanged,
+                          onCategoryIdsChanged: onCategoryIdsChanged,
                           onAddVariant: onAddVariant,
                           onRemoveVariant: onRemoveVariant,
                           onVariantChanged: onVariantChanged,
@@ -549,9 +574,9 @@ class _FormContent extends StatelessWidget {
                       _RightColumn(
                         nameCtrl: nameCtrl,
                         descCtrl: descCtrl,
-                        selectedCategoryId: selectedCategoryId,
+                        selectedCategoryIds: selectedCategoryIds,
                         variants: variants,
-                        onCategoryChanged: onCategoryChanged,
+                        onCategoryIdsChanged: onCategoryIdsChanged,
                         onAddVariant: onAddVariant,
                         onRemoveVariant: onRemoveVariant,
                         onVariantChanged: onVariantChanged,
@@ -671,9 +696,9 @@ class _RightColumn extends ConsumerWidget {
   const _RightColumn({
     required this.nameCtrl,
     required this.descCtrl,
-    required this.selectedCategoryId,
+    required this.selectedCategoryIds,
     required this.variants,
-    required this.onCategoryChanged,
+    required this.onCategoryIdsChanged,
     required this.onAddVariant,
     required this.onRemoveVariant,
     required this.onVariantChanged,
@@ -681,9 +706,9 @@ class _RightColumn extends ConsumerWidget {
 
   final TextEditingController nameCtrl;
   final TextEditingController descCtrl;
-  final String? selectedCategoryId;
+  final List<String> selectedCategoryIds;
   final List<_VariantEntry> variants;
-  final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<List<String>> onCategoryIdsChanged;
   final VoidCallback onAddVariant;
   final void Function(int index) onRemoveVariant;
   final VoidCallback onVariantChanged;
@@ -724,41 +749,114 @@ class _RightColumn extends ConsumerWidget {
                   _inputDecoration(hint: 'Urun hakkinda kisa aciklama...'),
             ),
             const SizedBox(height: 16),
-            const _FormLabel(text: 'Kategori *'),
+            const _FormLabel(text: 'Kategoriler *'),
             const SizedBox(height: 6),
             categoriesAsync.when(
-              loading: () => const SizedBox(
-                height: 52,
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-              error: (e, _) => Text(
-                'Kategoriler yuklenemedi: $e',
-                style: const TextStyle(color: AppColors.error, fontSize: 12),
+              loading: () => const LinearProgressIndicator(),
+              error: (_, __) => const Text(
+                'Kategoriler yuklenemedi',
+                style: TextStyle(color: AppColors.error, fontSize: 13),
               ),
               data: (categories) {
                 final rootCats =
                     categories.where((c) => c.isRoot && c.isActive).toList();
-                final safeValue =
-                    rootCats.any((c) => c.id == selectedCategoryId)
-                        ? selectedCategoryId
-                        : null;
-                return DropdownButtonFormField<String>(
-                  initialValue: safeValue,
-                  style: _inputStyle,
-                  decoration: _inputDecoration(hint: 'Kategori secin'),
-                  items: rootCats
-                      .map((c) =>
-                          DropdownMenuItem(value: c.id, child: Text(c.name)))
-                      .toList(),
-                  onChanged: onCategoryChanged,
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Kategori secmelisiniz' : null,
+                if (rootCats.isEmpty) {
+                  return const Text(
+                    'Henuz kategori yok.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Secili kategoriler — silinebilir chip'ler
+                    if (selectedCategoryIds.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: selectedCategoryIds.map((id) {
+                          final cat =
+                              rootCats.where((c) => c.id == id).firstOrNull;
+                          return Chip(
+                            label: Text(
+                              cat?.name ?? id,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'Poppins',
+                                color: AppColors.textWhite,
+                              ),
+                            ),
+                            backgroundColor: AppColors.primary,
+                            deleteIconColor:
+                                AppColors.textWhite.withValues(alpha: 0.8),
+                            onDeleted: () {
+                              final updated =
+                                  List<String>.from(selectedCategoryIds)
+                                    ..remove(id);
+                              onCategoryIdsChanged(updated);
+                            },
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    // Secilmemis kategoriler — eklenebilir ActionChip'ler
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: rootCats
+                          .where((c) => !selectedCategoryIds.contains(c.id))
+                          .map(
+                            (cat) => ActionChip(
+                              label: Text(
+                                cat.name,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'Poppins',
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              avatar: const Icon(
+                                Icons.add,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              backgroundColor: AppColors.surface,
+                              side: const BorderSide(color: AppColors.border),
+                              onPressed: () {
+                                final updated =
+                                    List<String>.from(selectedCategoryIds)
+                                      ..add(cat.id);
+                                onCategoryIdsChanged(updated);
+                              },
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    // Validation hint
+                    if (selectedCategoryIds.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 6),
+                        child: Text(
+                          'En az bir kategori secin',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.error,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),

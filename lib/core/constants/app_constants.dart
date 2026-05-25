@@ -1,12 +1,18 @@
+import 'package:nisa_ticaret/core/config/app_config.dart';
+
 class AppConstants {
   // App Info
   static const String appName = 'Nisa Ticaret';
   static const String appSlogan = 'Su ve Meşrubat Dağıtımı';
   static const String serviceArea = 'Balıkesir';  // Hizmet bölgesi
-  // DIKKAT: Bu sabit dogrudan KULLANILMAMALI. WhatsApp numarasi icin
-  // AppConfig.instance.whatsappNumber kullanin (Firebase Remote Config'den gelir).
-  // Bu deger sadece referans olarak tutulmaktadir.
-  static const String whatsappNumber = '+905551234567'; // TODO: AppConfig.whatsappNumber kullan
+  // AppConfig.instance.whatsappNumber kullan — Firebase Remote Config'den gelir.
+  // ignore: deprecated_member_use_from_same_package
+  @Deprecated('AppConfig.instance.whatsappNumber kullan')
+  static const String whatsappNumberLegacy = '+905551234567';
+
+  /// WhatsApp numarasi Firebase Remote Config'den gelir.
+  /// Kullanim: AppConfig.instance.whatsappNumber
+  static String get whatsappNumber => _AppConfigProxy.whatsappNumber;
 
   // Firebase Collections
   static const String usersCollection = 'users';
@@ -195,4 +201,10 @@ enum OrderSource {
         return 'phone';
     }
   }
+}
+
+/// AppConstants icindeki get property'leri icin AppConfig'e koprü.
+/// Dogrudan AppConfig.instance kullanimini tercih edin.
+class _AppConfigProxy {
+  static String get whatsappNumber => AppConfig.instance.whatsappNumber;
 }

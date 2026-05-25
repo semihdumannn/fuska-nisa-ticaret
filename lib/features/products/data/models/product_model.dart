@@ -8,7 +8,7 @@ class ProductModel extends Equatable {
   final String brandId;
   final String name;
   final String description;
-  final String categoryId;
+  final List<String> categoryIds;
   final String? imageUrl;
   final List<String> imageUrls;
   final List<String> tags;
@@ -35,7 +35,7 @@ class ProductModel extends Equatable {
     this.brandId = '',
     required this.name,
     required this.description,
-    required this.categoryId,
+    this.categoryIds = const [],
     this.imageUrl,
     this.imageUrls = const [],
     this.tags = const [],
@@ -53,6 +53,11 @@ class ProductModel extends Equatable {
     this.koliStock,
     this.koliPackageQty,
   });
+
+  // ─── Geriye dönük uyumluluk ──────────────────────────────────────────────
+
+  /// Geriye dönük uyumluluk — categoryId'yi hala kullanan yerler için
+  String get categoryId => categoryIds.isNotEmpty ? categoryIds.first : '';
 
   // ─── Fiyat / stok getterları ─────────────────────────────────────────────
 
@@ -125,7 +130,7 @@ class ProductModel extends Equatable {
       brandId: data['brandId'] as String? ?? '',
       name: data['name'] as String? ?? '',
       description: data['description'] as String? ?? '',
-      categoryId: data['categoryId'] as String? ?? '',
+      categoryIds: _parseCategoryIds(data),
       imageUrl: data['imageUrl'] as String?,
       imageUrls: _parseStringList(data['imageUrls']),
       tags: _parseStringList(data['tags']),
@@ -153,7 +158,7 @@ class ProductModel extends Equatable {
       brandId: json['brandId'] as String? ?? '',
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      categoryId: json['categoryId'] as String? ?? '',
+      categoryIds: _parseCategoryIds(json),
       imageUrl: json['imageUrl'] as String?,
       imageUrls: _parseStringList(json['imageUrls']),
       tags: _parseStringList(json['tags']),
@@ -183,7 +188,8 @@ class ProductModel extends Equatable {
       'brandId': brandId,
       'name': name,
       'description': description,
-      'categoryId': categoryId,
+      'categoryIds': categoryIds,
+      'categoryId': categoryIds.isNotEmpty ? categoryIds.first : '',
       'imageUrl': imageUrl,
       'imageUrls': imageUrls,
       'tags': tags,
@@ -208,7 +214,8 @@ class ProductModel extends Equatable {
       'brandId': brandId,
       'name': name,
       'description': description,
-      'categoryId': categoryId,
+      'categoryIds': categoryIds,
+      'categoryId': categoryIds.isNotEmpty ? categoryIds.first : '',
       'imageUrl': imageUrl,
       'imageUrls': imageUrls,
       'tags': tags,
@@ -234,12 +241,24 @@ class ProductModel extends Equatable {
     return [];
   }
 
+  static List<String> _parseCategoryIds(Map<String, dynamic> data) {
+    // Yeni format: categoryIds array
+    final ids = data['categoryIds'];
+    if (ids is List && ids.isNotEmpty) {
+      return ids.whereType<String>().toList();
+    }
+    // Eski format: tek categoryId string
+    final single = data['categoryId'] as String?;
+    if (single != null && single.isNotEmpty) return [single];
+    return [];
+  }
+
   ProductModel copyWith({
     String? id,
     String? brandId,
     String? name,
     String? description,
-    String? categoryId,
+    List<String>? categoryIds,
     String? imageUrl,
     bool clearImageUrl = false,
     List<String>? imageUrls,
@@ -266,7 +285,7 @@ class ProductModel extends Equatable {
       brandId: brandId ?? this.brandId,
       name: name ?? this.name,
       description: description ?? this.description,
-      categoryId: categoryId ?? this.categoryId,
+      categoryIds: categoryIds ?? this.categoryIds,
       imageUrl: clearImageUrl ? null : (imageUrl ?? this.imageUrl),
       imageUrls: imageUrls ?? this.imageUrls,
       tags: tags ?? this.tags,
@@ -294,7 +313,7 @@ class ProductModel extends Equatable {
         id,
         brandId,
         name,
-        categoryId,
+        categoryIds,
         isActive,
         imageUrls,
         koliPrice ?? primaryPrice,
