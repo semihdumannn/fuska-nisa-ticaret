@@ -21,22 +21,36 @@ class CacheKeys {
   static const orders = 'orders_list';
   static String order(int id) => 'order_$id';
 
-  // Config
+  // Campaigns
+  static const campaigns = 'campaigns_list';
+
+  // Notifications
+  static const notifications = 'notifications_list';
+  static const notificationsUnreadCount = 'notifications_unread_count';
+
+  // Delivery
+  static const deliveryOrders = 'delivery_orders_list';
+
+  // Config (Remote API config)
   static const appConfig = 'app_config';
 
   // TTL - AppConfig'den dinamik, fallback sabit
-  static Duration get productsTtl =>
-      AppConfig.instance.productsCacheDuration;
+  static Duration get productsTtl => AppConfig.instance.productsCacheDuration;
 
   static Duration get categoriesTtl =>
       AppConfig.instance.categoriesCacheDuration;
 
-  static Duration get userProfileTtl =>
-      const Duration(hours: 1); // Remote Config'de yok, sabit
+  static Duration get brandsTtl => const Duration(hours: 24);
 
-  static Duration get configTtl =>
-      const Duration(hours: 12);
+  static Duration get userProfileTtl => const Duration(hours: 1);
 
-  static Duration get ordersTtl =>
-      AppConfig.instance.ordersCacheDuration;
+  static Duration get configTtl => const Duration(hours: 12);
+
+  static Duration get ordersTtl => AppConfig.instance.ordersCacheDuration;
+
+  static Duration get campaignsTtl => const Duration(hours: 6);
+
+  static Duration get notificationsTtl => const Duration(minutes: 5);
+
+  static Duration get deliveryOrdersTtl => const Duration(minutes: 2);
 }

@@ -43,7 +43,7 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
     String? companyName,
   }) async {
     try {
-      final response = await _dio.patch(
+      final response = await _dio.put(
         ApiEndpoints.profile,
         data: {
           if (name != null) 'name': name,
@@ -91,7 +91,7 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
   @override
   Future<ApiAddressModel> getAddressDetail(int id) async {
     try {
-      final response = await _dio.get('${ApiEndpoints.addresses}/$id');
+      final response = await _dio.get(ApiEndpoints.addressDetail(id));
       return ApiAddressModel.fromJson(
           response.data['data'] as Map<String, dynamic>);
     } on DioException catch (e) {
@@ -117,8 +117,8 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
   Future<ApiAddressModel> updateAddress(
       int id, Map<String, dynamic> data) async {
     try {
-      final response = await _dio.patch(
-        '${ApiEndpoints.addresses}/$id',
+      final response = await _dio.put(
+        ApiEndpoints.addressDetail(id),
         data: data,
       );
       return ApiAddressModel.fromJson(
@@ -131,7 +131,7 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
   @override
   Future<void> deleteAddress(int id) async {
     try {
-      await _dio.delete('${ApiEndpoints.addresses}/$id');
+      await _dio.delete(ApiEndpoints.addressDetail(id));
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
     }
@@ -140,7 +140,7 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
   @override
   Future<void> setDefaultAddress(int id) async {
     try {
-      await _dio.post('${ApiEndpoints.addresses}/$id/default');
+      await _dio.post(ApiEndpoints.addressSetDefault(id));
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
     }

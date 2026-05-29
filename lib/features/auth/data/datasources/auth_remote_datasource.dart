@@ -21,7 +21,7 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
     try {
       final response = await _dio.post(
         ApiEndpoints.firebaseLogin,
-        data: {'firebase_token': firebaseToken},
+        data: {'id_token': firebaseToken},
       );
       return LoginResponseModel.fromJson(
           response.data['data'] as Map<String, dynamic>);

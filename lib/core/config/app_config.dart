@@ -29,7 +29,7 @@ class AppConfig {
     // Varsayılan değerler - Firebase Config'te ayarlar bunları
     await _remoteConfig.setDefaults({
       // API
-      'api_baseUrl': 'https://api.nisaticaret.com',
+      'api_baseUrl': 'https://semihdumannn-nisa-ticaret-panel.hf.space/api',
       'api_timeout': 30,
       
       // Firebase

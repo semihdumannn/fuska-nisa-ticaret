@@ -15,6 +15,7 @@ abstract class IOrderRemoteDatasource {
   Future<ApiOrderModel> createOrder({
     required List<Map<String, dynamic>> items,
     required int addressId,
+    String? paymentMethod,
     String? notes,
     String? couponCode,
   });
@@ -25,13 +26,6 @@ abstract class IOrderRemoteDatasource {
     required int orderId,
     required String newStatus,
     String? note,
-  });
-
-  Future<List<ApiOrderModel>> getDeliveryRoute();
-
-  Future<ApiOrderModel> confirmDelivery({
-    required int orderId,
-    String? notes,
   });
 }
 
@@ -80,6 +74,7 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
   Future<ApiOrderModel> createOrder({
     required List<Map<String, dynamic>> items,
     required int addressId,
+    String? paymentMethod,
     String? notes,
     String? couponCode,
   }) async {
@@ -89,6 +84,7 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
         data: {
           'items': items,
           'address_id': addressId,
+          'payment_method': paymentMethod ?? 'cash',
           if (notes != null) 'notes': notes,
           if (couponCode != null) 'coupon_code': couponCode,
         },
@@ -104,7 +100,7 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
   Future<ApiOrderModel> cancelOrder(int orderId) async {
     try {
       final response =
-          await _dio.post('${ApiEndpoints.orderDetail(orderId)}/cancel');
+          await _dio.post(ApiEndpoints.orderCancel(orderId));
       return ApiOrderModel.fromJson(
           response.data['data'] as Map<String, dynamic>);
     } on DioException catch (e) {
@@ -119,45 +115,11 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
     String? note,
   }) async {
     try {
-      final response = await _dio.patch(
-        '${ApiEndpoints.orderDetail(orderId)}/status',
+      final response = await _dio.put(
+        ApiEndpoints.adminOrderStatus(orderId),
         data: {
           'status': newStatus,
           if (note != null) 'note': note,
-        },
-      );
-      return ApiOrderModel.fromJson(
-          response.data['data'] as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw ExceptionHandler.handleException(e);
-    }
-  }
-
-  @override
-  Future<List<ApiOrderModel>> getDeliveryRoute() async {
-    try {
-      final response =
-          await _dio.get('${ApiEndpoints.orders}/delivery-route');
-      final data = response.data['data'] as List;
-      return data
-          .map((json) =>
-              ApiOrderModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw ExceptionHandler.handleException(e);
-    }
-  }
-
-  @override
-  Future<ApiOrderModel> confirmDelivery({
-    required int orderId,
-    String? notes,
-  }) async {
-    try {
-      final response = await _dio.post(
-        '${ApiEndpoints.orderDetail(orderId)}/confirm-delivery',
-        data: {
-          if (notes != null) 'notes': notes,
         },
       );
       return ApiOrderModel.fromJson(

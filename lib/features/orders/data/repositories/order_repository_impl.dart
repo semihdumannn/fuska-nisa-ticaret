@@ -1,14 +1,21 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/exception_handler.dart';
 import '../../../../core/error/failures.dart';
+import '../../../delivery/data/datasources/delivery_remote_datasource.dart';
+import '../../../delivery/data/models/delivery_order_model.dart';
 import '../../domain/entities/order_entity.dart';
 import '../../domain/repositories/i_order_repository.dart';
 import '../datasources/order_remote_datasource.dart';
+import '../models/api_order_model.dart';
 
 class OrderRepositoryImpl implements IOrderRepository {
   final IOrderRemoteDatasource _remoteDatasource;
+  final IDeliveryRemoteDatasource _deliveryDatasource;
 
-  OrderRepositoryImpl(this._remoteDatasource);
+  OrderRepositoryImpl(
+    this._remoteDatasource,
+    this._deliveryDatasource,
+  );
 
   @override
   Future<Either<Failure, List<OrderEntity>>> getOrders({
@@ -89,8 +96,8 @@ class OrderRepositoryImpl implements IOrderRepository {
   @override
   Future<Either<Failure, List<OrderEntity>>> getDeliveryRoute() async {
     try {
-      final models = await _remoteDatasource.getDeliveryRoute();
-      return Right(models.map((m) => m.toEntity()).toList());
+      final models = await _deliveryDatasource.getDeliveryOrders();
+      return Right(models.map(_deliveryModelToOrderEntity).toList());
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
     }
@@ -102,13 +109,27 @@ class OrderRepositoryImpl implements IOrderRepository {
     String? notes,
   }) async {
     try {
-      final model = await _remoteDatasource.confirmDelivery(
-        orderId: orderId,
-        notes: notes,
-      );
-      return Right(model.toEntity());
+      final model = await _deliveryDatasource.deliverOrder(orderId);
+      return Right(_deliveryModelToOrderEntity(model));
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
     }
+  }
+
+  OrderEntity _deliveryModelToOrderEntity(DeliveryOrderModel model) {
+    return ApiOrderModel.fromJson({
+      'id': model.id,
+      'order_number': model.orderNumber,
+      'status': model.status,
+      'total': model.total,
+      'subtotal': model.total,
+      'items': [],
+      'address': {
+        'full_address': model.address.fullAddress,
+        'latitude': model.address.latitude,
+        'longitude': model.address.longitude,
+      },
+      'created_at': DateTime.now().toIso8601String(),
+    }).toEntity();
   }
 }

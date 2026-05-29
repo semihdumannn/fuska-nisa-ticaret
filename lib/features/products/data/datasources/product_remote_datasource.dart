@@ -157,7 +157,7 @@ class ProductRemoteDatasource implements IProductRemoteDatasource {
   Future<List<ApiProductModel>> searchProducts(String query) async {
     try {
       final response = await _dio.get(
-        ApiEndpoints.products,
+        ApiEndpoints.productsSearch,
         queryParameters: {'q': query, 'per_page': 50},
       );
 
