@@ -10,6 +10,12 @@ import GoogleMaps
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GMSServices.provideAPIKey("AIzaSyBSmQ9osA9sdGegLETN4iipZ_xhUCjfgx4")
+
+    #if DEBUG
+    // Test numaralarıyla APNs doğrulamasını devre dışı bırak
+    Auth.auth().settings?.isAppVerificationDisabledForTesting = true
+    #endif
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -19,7 +25,11 @@ import GoogleMaps
 
   override func application(_ application: UIApplication,
                              didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-    Auth.auth().setAPNSToken(deviceToken, type: .unknown)
+    #if DEBUG
+    Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
+    #else
+    Auth.auth().setAPNSToken(deviceToken, type: .prod)
+    #endif
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
 

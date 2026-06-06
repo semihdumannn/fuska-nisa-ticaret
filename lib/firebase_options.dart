@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDZfUPX5bzJB4eyriRWZEXn3Fp4winxMrQ',
-    appId: '1:554686005938:android:036cf0bec76bdd2565ffab',
+    appId: '1:554686005938:android:f82cebebcd2d76a765ffab',
     messagingSenderId: '554686005938',
     projectId: 'nisa-ticaret',
     storageBucket: 'nisa-ticaret.firebasestorage.app',
@@ -59,20 +59,20 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD8c69Q3l2ujYxG72s-gz13RG1mt6nrKuE',
-    appId: '1:554686005938:ios:5239321ffe21e41765ffab',
+    appId: '1:554686005938:ios:07913650bf9843e965ffab',
     messagingSenderId: '554686005938',
     projectId: 'nisa-ticaret',
     storageBucket: 'nisa-ticaret.firebasestorage.app',
-    iosBundleId: 'com.nisaticaret.fuskaNisaTicaret',
+    iosBundleId: 'com.nisaticaret.nisaTicaret',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyD8c69Q3l2ujYxG72s-gz13RG1mt6nrKuE',
-    appId: '1:554686005938:ios:5239321ffe21e41765ffab',
+    appId: '1:554686005938:ios:07913650bf9843e965ffab',
     messagingSenderId: '554686005938',
     projectId: 'nisa-ticaret',
     storageBucket: 'nisa-ticaret.firebasestorage.app',
-    iosBundleId: 'com.nisaticaret.fuskaNisaTicaret',
+    iosBundleId: 'com.nisaticaret.nisaTicaret',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

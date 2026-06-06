@@ -7,6 +7,9 @@
     <!-- İnternet (Firebase, Maps) -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Android 13+ (API 33+) zorunlu bildirim izni -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:label="fuska_nisa_ticaret"
         android:name="${applicationName}"

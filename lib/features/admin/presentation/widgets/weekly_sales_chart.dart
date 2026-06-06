@@ -63,7 +63,6 @@ class WeeklySalesChart extends StatelessWidget {
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => AppColors.secondary,
-                    tooltipRoundedRadius: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final item = data[group.x];
                       return BarTooltipItem(
@@ -247,7 +246,7 @@ class _EmptyChartPlaceholder extends StatelessWidget {
       ),
       child: const Center(
         child: Text(
-          'Veri bulunamadi',
+          'Veri bulunamadı',
           style: TextStyle(color: AppColors.textHint, fontFamily: 'Poppins'),
         ),
       ),

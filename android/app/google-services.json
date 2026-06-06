@@ -7,26 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:554686005938:android:ae4e7b892b6324d365ffab",
-        "android_client_info": {
-          "package_name": "com.nisaticaret.app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDZfUPX5bzJB4eyriRWZEXn3Fp4winxMrQ"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:554686005938:android:036cf0bec76bdd2565ffab",
+        "mobilesdk_app_id": "1:554686005938:android:f82cebebcd2d76a765ffab",
         "android_client_info": {
           "package_name": "com.nisaticaret.fuska_nisa_ticaret"
         }

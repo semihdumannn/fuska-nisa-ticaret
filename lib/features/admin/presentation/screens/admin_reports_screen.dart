@@ -114,7 +114,7 @@ class _ReportsContent extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Header: baslik + tarih secici + export butonlari
+// Header: başlık + tarih seçici + export butonları
 // ---------------------------------------------------------------------------
 class _ReportsHeader extends ConsumerWidget {
   const _ReportsHeader();
@@ -125,96 +125,97 @@ class _ReportsHeader extends ConsumerWidget {
     final excelLoading = ref.watch(excelExportLoadingProvider);
     final pdfLoading = ref.watch(pdfExportLoadingProvider);
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Baslik
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const Text(
+          'Raporlar',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 2),
+        const Text(
+          'Satis, urun ve müşteri analizleri',
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            fontFamily: 'Poppins',
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Aksiyon butonları — tam genişlik, wrap ile aşağıya geçer
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            Text(
-              'Raporlar',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
+            // Tarih Araligi Butonu
+            OutlinedButton.icon(
+              onPressed: () async {
+                final picked = await showDateRangePicker(
+                  context: context,
+                  firstDate: DateTime(2024),
+                  lastDate: DateTime.now(),
+                  initialDateRange: dateRange,
+                  builder: (ctx, child) => Theme(
+                    data: Theme.of(ctx).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.primary,
+                        secondary: AppColors.secondary,
+                      ),
+                    ),
+                    child: child!,
+                  ),
+                );
+                if (picked != null) {
+                  ref
+                      .read(reportDateRangeProvider.notifier)
+                      .setRange(picked);
+                }
+              },
+              icon: const Icon(Icons.date_range_outlined, size: 16),
+              label: Text(
+                '${_dateFmt.format(dateRange.start)} - '
+                '${_dateFmt.format(dateRange.end)}',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+                minimumSize: const Size(0, 40),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                side: const BorderSide(color: AppColors.border),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            Text(
-              'Satis, urun ve musteri analizleri',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
-              ),
+
+            // Excel export butonu
+            _ExportButton(
+              label: 'CSV Indir',
+              icon: Icons.table_chart_outlined,
+              color: const Color(0xFF217346),
+              isLoading: excelLoading,
+              onPressed: () => _onExcelExport(ref, context),
+            ),
+
+            // PDF / TXT export butonu
+            _ExportButton(
+              label: 'Rapor Indir',
+              icon: Icons.picture_as_pdf_outlined,
+              color: const Color(0xFFD32F2F),
+              isLoading: pdfLoading,
+              onPressed: () => _onPdfExport(ref, context),
             ),
           ],
-        ),
-
-        const Spacer(),
-
-        // Tarih Araligi Butonu
-        OutlinedButton.icon(
-          onPressed: () async {
-            final picked = await showDateRangePicker(
-              context: context,
-              firstDate: DateTime(2024),
-              lastDate: DateTime.now(),
-              initialDateRange: dateRange,
-              builder: (ctx, child) => Theme(
-                data: Theme.of(ctx).copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: AppColors.primary,
-                    secondary: AppColors.secondary,
-                  ),
-                ),
-                child: child!,
-              ),
-            );
-            if (picked != null) {
-              ref
-                  .read(reportDateRangeProvider.notifier)
-                  .setRange(picked);
-            }
-          },
-          icon: const Icon(Icons.date_range_outlined, size: 16),
-          label: Text(
-            '${_dateFmt.format(dateRange.start)} - '
-            '${_dateFmt.format(dateRange.end)}',
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.textPrimary,
-            minimumSize: const Size(0, 40),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-            side: const BorderSide(color: AppColors.border),
-            textStyle: const TextStyle(
-              fontSize: 12,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-
-        // Excel export butonu
-        _ExportButton(
-          label: 'CSV Indir',
-          icon: Icons.table_chart_outlined,
-          color: const Color(0xFF217346),
-          isLoading: excelLoading,
-          onPressed: () => _onExcelExport(ref, context),
-        ),
-
-        // PDF / TXT export butonu
-        _ExportButton(
-          label: 'Rapor Indir',
-          icon: Icons.picture_as_pdf_outlined,
-          color: const Color(0xFFD32F2F),
-          isLoading: pdfLoading,
-          onPressed: () => _onPdfExport(ref, context),
         ),
       ],
     );
@@ -241,7 +242,7 @@ class _ReportsHeader extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('CSV olusturma hatasi: $e'),
+            content: Text('CSV oluşturma hatası: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -342,7 +343,7 @@ class _ReportTypeTabs extends ConsumerWidget {
       (ReportType.dailySales, 'Gunluk Satis', Icons.show_chart),
       (ReportType.productPerformance, 'Urun Performansi', Icons.inventory_2_outlined),
       (ReportType.fieldAgentPerformance, 'Saha Performansi', Icons.person_pin_outlined),
-      (ReportType.customerAnalysis, 'Musteri Analizi', Icons.people_outline),
+      (ReportType.customerAnalysis, 'Müşteri Analizi', Icons.people_outline),
     ];
 
     return SingleChildScrollView(
@@ -718,7 +719,6 @@ class _SalesLineChart extends StatelessWidget {
                   enabled: true,
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipColor: (_) => AppColors.secondary,
-                    tooltipRoundedRadius: 8,
                     getTooltipItems: (spots) {
                       return spots.map((spot) {
                         final idx = spot.x.toInt();
@@ -1164,7 +1164,6 @@ class _ProductBarChart extends StatelessWidget {
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => AppColors.secondary,
-                    tooltipRoundedRadius: 8,
                     getTooltipItem:
                         (group, groupIndex, rod, rodIndex) {
                       final p = top8[group.x];
@@ -1528,7 +1527,7 @@ class _FieldAgentTab extends ConsumerWidget {
       data: (agents) {
         if (agents.isEmpty) {
           return const _EmptyCard(
-              message: 'Saha performans verisi bulunamadi.');
+              message: 'Saha performans verisi bulunamadı.');
         }
         final maxRevenue =
             agents.map((a) => a.totalRevenue).reduce((a, b) => a > b ? a : b);
@@ -1695,7 +1694,7 @@ class _AgentCard extends StatelessWidget {
               value: _currencyFmt.format(agent.totalRevenue)),
           const SizedBox(height: 6),
           _AgentStat(
-              label: 'Musteri Sayisi',
+              label: 'Müşteri Sayisi',
               value: '${agent.customersServed}'),
           const Spacer(),
           // Mini progress bar
@@ -1822,7 +1821,7 @@ class _AgentComparisonTable extends StatelessWidget {
                 Expanded(flex: 2, child: _TableHeader('Siparis')),
                 Expanded(flex: 3, child: _TableHeader('Gelir')),
                 Expanded(flex: 3, child: _TableHeader('Ort. Siparis')),
-                Expanded(flex: 2, child: _TableHeader('Musteri')),
+                Expanded(flex: 2, child: _TableHeader('Müşteri')),
               ],
             ),
           ),
@@ -1961,21 +1960,21 @@ class _CustomerSummaryCards extends StatelessWidget {
 
     final cards = [
       _SummaryCardData(
-        title: 'Toplam Musteri',
+        title: 'Toplam Müşteri',
         value: '${last.totalCustomers}',
         icon: Icons.people_outline,
         iconColor: AppColors.secondary,
         iconBgColor: AppColors.secondary.withValues(alpha: 0.12),
       ),
       _SummaryCardData(
-        title: 'Donem Yeni Musteri',
+        title: 'Donem Yeni Müşteri',
         value: '$totalNew',
         icon: Icons.person_add_outlined,
         iconColor: AppColors.success,
         iconBgColor: AppColors.success.withValues(alpha: 0.12),
       ),
       _SummaryCardData(
-        title: 'Aktif Musteri',
+        title: 'Aktif Müşteri',
         value: '${last.activeCustomers}',
         icon: Icons.how_to_reg_outlined,
         iconColor: AppColors.primary,
@@ -2007,7 +2006,7 @@ class _CustomerSummaryCards extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Musteri Buyume Grafigi — 2 cizgi (yeni + toplam)
+// Müşteri Buyume Grafigi — 2 cizgi (yeni + toplam)
 // ---------------------------------------------------------------------------
 class _CustomerGrowthChart extends StatelessWidget {
   final List<CustomerGrowthData> growth;
@@ -2055,7 +2054,7 @@ class _CustomerGrowthChart extends StatelessWidget {
                   color: AppColors.secondary, size: 20),
               const SizedBox(width: 8),
               const Text(
-                'Musteri Buyume Grafigi',
+                'Müşteri Buyume Grafigi',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -2064,10 +2063,10 @@ class _CustomerGrowthChart extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              _LegendDot(color: AppColors.primary, label: 'Yeni Musteri'),
+              _LegendDot(color: AppColors.primary, label: 'Yeni Müşteri'),
               const SizedBox(width: 12),
               _LegendDot(
-                  color: AppColors.accent, label: 'Aktif Musteri'),
+                  color: AppColors.accent, label: 'Aktif Müşteri'),
             ],
           ),
           const SizedBox(height: 24),
@@ -2143,7 +2142,6 @@ class _CustomerGrowthChart extends StatelessWidget {
                   enabled: true,
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipColor: (_) => AppColors.secondary,
-                    tooltipRoundedRadius: 8,
                     getTooltipItems: (spots) {
                       return spots.map((spot) {
                         final idx = spot.x.toInt();
@@ -2170,7 +2168,7 @@ class _CustomerGrowthChart extends StatelessWidget {
                   ),
                 ),
                 lineBarsData: [
-                  // Yeni musteri
+                  // Yeni müşteri
                   LineChartBarData(
                     spots: newSpots,
                     isCurved: true,
@@ -2189,7 +2187,7 @@ class _CustomerGrowthChart extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Aktif musteri
+                  // Aktif müşteri
                   LineChartBarData(
                     spots: activeSpots,
                     isCurved: true,
@@ -2219,7 +2217,7 @@ class _CustomerGrowthChart extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Musteri Buyume Tablosu
+// Müşteri Buyume Tablosu
 // ---------------------------------------------------------------------------
 class _CustomerGrowthTable extends StatelessWidget {
   final List<CustomerGrowthData> growth;
@@ -2250,7 +2248,7 @@ class _CustomerGrowthTable extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Text(
-              'Aylik Musteri Detayi',
+              'Aylik Müşteri Detayi',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -2458,7 +2456,7 @@ class _ErrorCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Veri yuklenemedi: $message',
+              'Veri yüklenemedi: $message',
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.error,

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
+import 'package:nisa_ticaret/features/orders/data/repositories/address_repository.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   final String phoneNumber;
@@ -34,6 +35,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     _controllers = List.generate(_otpLength, (_) => TextEditingController());
     _focusNodes = List.generate(_otpLength, (_) => FocusNode());
     _startTimer();
+    // iOS'ta klavye otomatik açılsın
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNodes.first.requestFocus();
+    });
   }
 
   @override
@@ -183,7 +188,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     // State listener
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next.step == AuthStep.done) {
-        context.go(AppRoutes.home);
+        // Sanctum token kaydedildi → adres provider'ı yenile
+        ref.invalidate(addressesProvider);
+        // Login'e yönlendiren ekrana geri dön veya postLoginRoute'a git
+        final returnRoute = ref.read(postLoginRouteProvider);
+        ref.read(postLoginRouteProvider.notifier).set(null);
+        context.go(returnRoute ?? AppRoutes.home);
       }
       if (next.step == AuthStep.creatingUser) {
         context.push(AppRoutes.register);

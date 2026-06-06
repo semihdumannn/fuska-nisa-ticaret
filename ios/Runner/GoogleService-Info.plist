@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.nisaticaret.fuskaNisaTicaret</string>
+	<string>com.nisaticaret.nisaTicaret</string>
 	<key>PROJECT_ID</key>
 	<string>nisa-ticaret</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:554686005938:ios:5239321ffe21e41765ffab</string>
+	<string>1:554686005938:ios:07913650bf9843e965ffab</string>
 </dict>
 </plist>
