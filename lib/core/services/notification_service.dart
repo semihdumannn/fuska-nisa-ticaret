@@ -1,76 +1,46 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/network/api_endpoints.dart';
 
-// ─── Background handler (top-level function zorunlu) ─────────────────────────
-// FCM kütüphanesi bu fonksiyonu ayrı bir Isolate'te çağırır.
-// @pragma annotasyonu: tree-shaking sırasında silinmemesi için zorunlu.
-// ─────────────────────────────────────────────────────────────────────────────
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Background Isolate'te Firebase zaten initialize edilmiş olmalı
-  // (main.dart'ta Firebase.initializeApp çağrılmış).
   debugPrint(
     '[FCM Background] title: ${message.notification?.title} | '
     'type: ${message.data['type']}',
   );
-  // Background bildirimleri sistem tepsisinde otomatik gösterilir.
-  // Ek işlem gerekirse burada yapılır (örn. local DB güncelleme).
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// NotificationService — FCM token yönetimi + foreground/background handler
-// ─────────────────────────────────────────────────────────────────────────────
-
 class NotificationService {
-  // Singleton
   static final NotificationService _instance = NotificationService._();
   factory NotificationService() => _instance;
   NotificationService._();
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // Flutter Local Notifications — foreground'da bildirim göstermek için
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // Foreground'da alınan son mesaj — navigasyon için (örn. splash sonrası)
+  Dio? _dio;
   RemoteMessage? _pendingMessage;
 
-  /// Uygulama açılırken bekleyen mesajı döner ve temizler.
+  void setDio(Dio dio) => _dio = dio;
+
   RemoteMessage? consumePendingMessage() {
     final msg = _pendingMessage;
     _pendingMessage = null;
     return msg;
   }
 
-  // ─── initialize ────────────────────────────────────────────────────────────
-
-  /// main.dart'ta Firebase.initializeApp'tan sonra çağrılmalı.
-  ///
-  /// Sıralama:
-  /// 1. Background handler kaydet (uygulama kapalıyken çalışır)
-  /// 2. Sistem izni iste (iOS + Android 13+)
-  /// 3. Local notifications kanalı oluştur
-  /// 4. FCM token al ve Firestore'a kaydet
-  /// 5. Token refresh listener başlat
-  /// 6. Foreground mesaj handler başlat
-  /// 7. Uygulama kapalıyken tıklanan bildirimi handle et
   Future<void> initialize() async {
-    // 1. Background handler — top-level fonksiyon olmalı
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    // 2. İzin iste
     final settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
-      provisional: false, // iOS: geçici izin değil, kalıcı sor
+      provisional: false,
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
@@ -78,32 +48,27 @@ class NotificationService {
       return;
     }
 
-    debugPrint(
-      '[FCM] Bildirim izni: ${settings.authorizationStatus.name}',
-    );
+    debugPrint('[FCM] Bildirim izni: ${settings.authorizationStatus.name}');
 
-    // 3. Android bildirim kanalı
     await _initLocalNotifications();
 
-    // 4. FCM token al ve kaydet
-    await _fetchAndSaveToken();
+    // Startup'ta token al ama backend'e henüz Dio yok — login'de kaydedilecek
+    final token = await _getToken();
+    debugPrint('[FCM] Token (FULL): $token');
 
-    // 5. Token yenilenince güncelle
+    // Token yenilenince backend'e kaydet
     _messaging.onTokenRefresh.listen((newToken) {
       debugPrint('[FCM] Token yenilendi.');
-      _saveTokenToFirestore(newToken);
+      _registerTokenWithBackend(newToken);
     });
 
-    // 6. Foreground mesaj handler
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-    // 7. Arkaplan'dan tıklanıp açılan bildirim
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       debugPrint('[FCM] onMessageOpenedApp: ${message.data}');
       _pendingMessage = message;
     });
 
-    // 8. Uygulama tamamen kapalıyken tıklanan bildirim
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       debugPrint('[FCM] getInitialMessage: ${initialMessage.data}');
@@ -113,33 +78,26 @@ class NotificationService {
     debugPrint('[FCM] NotificationService initialized.');
   }
 
-  // ─── Local Notifications setup ─────────────────────────────────────────────
-
   Future<void> _initLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/launcher_icon',
-    );
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/launcher_icon');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false, // Zaten FCM ile istendi
+      requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
 
     await _localNotifications.initialize(
       settings: const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
+          android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (response) {
-        // Kullanıcı local notification'a tıkladı — payload route içerir
         debugPrint('[LocalNotif] tıklandı: ${response.payload}');
       },
     );
 
-    // Android 8+ için bildirim kanalı
     const androidChannel = AndroidNotificationChannel(
-      'nisa_ticaret_channel',     // id
-      'Nisa Ticaret Bildirimleri', // name
+      'nisa_ticaret_channel',
+      'Nisa Ticaret Bildirimleri',
       description: 'Sipariş ve kampanya bildirimleri',
       importance: Importance.high,
       playSound: true,
@@ -151,58 +109,41 @@ class NotificationService {
         ?.createNotificationChannel(androidChannel);
   }
 
-  // ─── Token yönetimi ────────────────────────────────────────────────────────
-
-  /// FCM token'ı alır, SharedPreferences ve Firestore'a kaydeder.
-  Future<void> _fetchAndSaveToken() async {
-    try {
-      final token = await _messaging.getToken();
-      if (token == null) {
-        debugPrint('[FCM] Token alınamadı.');
-        return;
+  Future<String?> _getToken() async {
+    for (int i = 0; i < 3; i++) {
+      try {
+        final token = await _messaging.getToken();
+        if (token != null) return token;
+        debugPrint('[FCM] getToken() null döndü (deneme ${i + 1}/3)');
+      } catch (e) {
+        debugPrint('[FCM] getToken() HATA (deneme ${i + 1}/3): $e');
+        if (i < 2) await Future.delayed(Duration(seconds: 2 + i * 2));
       }
-      debugPrint('[FCM] Token alındı: ${token.substring(0, 20)}...');
-      await _saveTokenToFirestore(token);
-    } catch (e) {
-      // Token kritik değil; uygulama açılmaya devam etmeli
-      debugPrint('[FCM] Token fetch hatası: $e');
     }
+    debugPrint('[FCM] Token alınamadı (3 deneme).');
+    return null;
   }
 
-  /// FCM token'ı `users/{uid}` dokümanına kaydeder.
-  ///
-  /// Kullanıcı giriş yapmamışsa (misafir) sessizce geçer.
-  /// Token değişmemişse Firestore yazısı yine de yapılır — idempotent.
-  Future<void> _saveTokenToFirestore(String token) async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) {
-      // Misafir kullanıcı — token kaydedilemez
-      debugPrint('[FCM] Kullanıcı giriş yapmamış, token kaydedilmiyor.');
+  Future<void> _registerTokenWithBackend(String token) async {
+    if (_dio == null) {
+      debugPrint('[FCM] ❌ Dio null — token gönderilemedi. onUserSignedIn çağrıldı mı?');
       return;
     }
-
+    debugPrint('[FCM] → POST /v1/devices gönderiliyor...');
     try {
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .update({
-        'fcmToken': token,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      debugPrint('[FCM] Token Firestore\'a kaydedildi. uid: $uid');
+      final response = await _dio!.post(
+        ApiEndpoints.devices,
+        data: {
+          'token': token,
+          'platform': Platform.isIOS ? 'ios' : 'android',
+        },
+      );
+      debugPrint('[FCM] ✅ Token kaydedildi. Status: ${response.statusCode}');
     } catch (e) {
-      // Token kaydı kritik değil; sessizce logla
-      debugPrint('[FCM] Token Firestore kayıt hatası: $e');
+      debugPrint('[FCM] ❌ Token kayıt HATASI: $e');
     }
   }
 
-  // ─── Foreground handler ────────────────────────────────────────────────────
-
-  /// Uygulama açıkken gelen FCM mesajını local notification olarak gösterir.
-  ///
-  /// iOS'ta FCM foreground'da otomatik bildirim göstermez (varsayılan).
-  /// Android 13+ aynı kanalda gösterir ama üstten geçmez.
-  /// Bu nedenle flutter_local_notifications ile açıkça gösteriyoruz.
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint(
       '[FCM Foreground] title: ${message.notification?.title} | '
@@ -212,7 +153,6 @@ class NotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
-    // Foreground'da local notification göster
     _localNotifications.show(
       id: message.hashCode,
       title: notification.title,
@@ -236,79 +176,44 @@ class NotificationService {
     );
   }
 
-  // ─── Navigasyon yardımcısı ────────────────────────────────────────────────
-
-  /// FCM data payload'ından go_router route path'ini döner.
-  ///
-  /// Data payload formatı:
-  /// ```json
-  /// {
-  ///   "type": "order_status" | "new_order" | "promo",
-  ///   "orderId": "xxx",
-  ///   "route": "/orders/xxx"
-  /// }
-  /// ```
-  ///
-  /// Kullanım (splash veya app başlangıcında):
-  /// ```dart
-  /// final pending = notificationService.consumePendingMessage();
-  /// if (pending != null) {
-  ///   final route = notificationService.routeFromMessage(pending);
-  ///   if (route != null) context.go(route);
-  /// }
-  /// ```
   String? routeFromMessage(RemoteMessage message) {
     final data = message.data;
-
-    // Payload'da doğrudan route varsa kullan
-    if (data.containsKey('route')) {
-      return data['route'] as String?;
-    }
-
-    // Route yoksa type'a göre varsayılan route üret
+    if (data.containsKey('route')) return data['route'] as String?;
     final type = data['type'] as String?;
     final orderId = data['orderId'] as String?;
-
     switch (type) {
       case 'order_status':
       case 'new_order':
-        if (orderId != null) return '/orders/$orderId';
-        return '/orders';
+        return orderId != null ? '/orders/$orderId' : '/orders';
       case 'promo':
-        return '/'; // Ana sayfa
+        return '/';
       default:
         return null;
     }
   }
 
-  // ─── Kullanıcı girişi/çıkışı ──────────────────────────────────────────────
-
-  /// Kullanıcı giriş yaptıktan sonra çağrılır.
-  /// Token'ı Firestore'a kaydetmek için tetikler.
-  Future<void> onUserSignedIn() async {
-    await _fetchAndSaveToken();
+  /// Login sonrası çağrılır — Dio set edilir, token backend'e kaydedilir.
+  Future<void> onUserSignedIn({Dio? dio}) async {
+    if (dio != null) _dio = dio;
+    debugPrint('[FCM] onUserSignedIn çağrıldı. Dio: ${_dio != null ? "✅" : "❌ null"}');
+    final token = await _getToken();
+    debugPrint('[FCM] Token: ${token != null ? "${token.substring(0, 20)}..." : "❌ null"}');
+    if (token != null) await _registerTokenWithBackend(token);
   }
 
-  /// Kullanıcı çıkış yaptığında token'ı temizler.
-  /// Böylece çıkış yapan kullanıcıya bildirim gönderilmez.
+  /// Logout sonrası çağrılır — token backend'den silinir.
   Future<void> onUserSignedOut() async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return;
-
     try {
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .update({
-        'fcmToken': FieldValue.delete(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      debugPrint('[FCM] Token Firestore\'dan silindi. uid: $uid');
+      final token = await _messaging.getToken();
+      if (token != null && _dio != null) {
+        await _dio!.delete(ApiEndpoints.devices, data: {'token': token});
+        debugPrint('[FCM] Token backend\'den silindi.');
+      }
     } catch (e) {
-      debugPrint('[FCM] Token silme hatası: $e');
+      debugPrint('[FCM] Backend token silme hatası: $e');
     }
+    _dio = null;
   }
 }
 
-/// Singleton erişim noktası — main.dart ve auth akışında kullanılır.
 final notificationService = NotificationService();
