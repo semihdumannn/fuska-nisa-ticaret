@@ -42,12 +42,12 @@ final _apiCategoriesProvider =
 // Preset renk paleti (Fuska Design System)
 // ─────────────────────────────────────────────
 const _kPresetColors = [
-  Color(0xFF00A6AB), // Turkuaz
-  Color(0xFFE73A99), // Pembe (primary)
-  Color(0xFF13275A), // Lacivert (secondary)
-  Color(0xFFFF7043), // Turuncu
-  Color(0xFF43A047), // Yesil
-  Color(0xFF7B1FA2), // Mor
+  AppColors.accent, // Turkuaz
+  AppColors.primary, // Pembe (primary)
+  AppColors.secondary, // Lacivert (secondary)
+  AppColors.categoryOrange, // Turuncu
+  AppColors.success, // Yesil
+  AppColors.categoryPurple, // Mor
 ];
 
 const _kPresetColorHex = [
@@ -65,7 +65,7 @@ Color _hexToColor(String hex) {
   if (cleaned.length == 6) {
     return Color(int.parse('FF$cleaned', radix: 16));
   }
-  return const Color(0xFF000000);
+  return AppColors.black;
 }
 
 // ─────────────────────────────────────────────
@@ -80,7 +80,7 @@ class CategoryManagementScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: AppColors.adminBackground,
         body: Row(
           children: [
             const AdminSidebar(),
@@ -91,7 +91,7 @@ class CategoryManagementScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
         backgroundColor: AppColors.secondary,

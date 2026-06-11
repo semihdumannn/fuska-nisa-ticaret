@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 
 // ---------------------------------------------------------------------------
 // Gunluk satis verisi — analytics raporu icin (DateTimeRange bazli)
@@ -104,9 +105,9 @@ class FirebaseUsageData {
 
   /// Kullanim durumunu renk olarak dondur
   Color get readStatusColor {
-    if (readLimitPercent > 0.9) return const Color(0xFFF44336); // kirmizi
-    if (readLimitPercent > 0.7) return const Color(0xFFFF9800); // turuncu
-    return const Color(0xFF43A047); // yesil
+    if (readLimitPercent > 0.9) return AppColors.error; // kirmizi
+    if (readLimitPercent > 0.7) return AppColors.warning; // turuncu
+    return AppColors.success; // yesil
   }
 }
 

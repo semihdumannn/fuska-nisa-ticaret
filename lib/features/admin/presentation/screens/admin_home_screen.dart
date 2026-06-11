@@ -39,7 +39,7 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       body: Row(
         children: [
           AdminSidebar(),
@@ -61,7 +61,7 @@ class _MobileTabletLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
         backgroundColor: AppColors.secondary,
@@ -440,6 +440,9 @@ class _DashboardShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= _kDesktopBreakpoint;
+    final isTablet = width >= _kTabletBreakpoint && !isDesktop;
+    final crossAxisCount = isDesktop ? 4 : (isTablet ? 2 : 1);
+    final childAspectRatio = isDesktop ? 1.5 : (isTablet ? 1.1 : 1.6);
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(isDesktop ? 28 : 16),
@@ -451,12 +454,12 @@ class _DashboardShimmer extends StatelessWidget {
           _ShimmerBox(width: 140, height: 16),
           const SizedBox(height: 24),
           GridView.count(
-            crossAxisCount: isDesktop ? 4 : 2,
+            crossAxisCount: crossAxisCount,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: isDesktop ? 1.5 : 1.1,
+            childAspectRatio: childAspectRatio,
             children: List.generate(4, (_) => _ShimmerCard()),
           ),
           const SizedBox(height: 24),
@@ -525,9 +528,9 @@ class _ShimmerBoxState extends State<_ShimmerBox>
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value, 0),
               colors: const [
-                Color(0xFFEEEEEE),
-                Color(0xFFF5F5F5),
-                Color(0xFFEEEEEE),
+                AppColors.shimmerBase,
+                AppColors.shimmerHighlight,
+                AppColors.shimmerBase,
               ],
             ),
           ),

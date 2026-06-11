@@ -106,6 +106,8 @@ class ApiOrderItemModel {
   });
 
   factory ApiOrderItemModel.fromJson(Map<String, dynamic> json) {
+    final quantity = json['quantity'] as int;
+    final unitPrice = (json['unit_price'] as num).toDouble();
     return ApiOrderItemModel(
       id: json['id'] as int,
       productId: json['product_id'] as int,
@@ -113,9 +115,13 @@ class ApiOrderItemModel {
       productImageUrl: json['product_image_url'] as String?,
       variantId: json['variant_id'] as int?,
       variantName: json['variant_name'] as String?,
-      quantity: json['quantity'] as int,
-      unitPrice: (json['unit_price'] as num).toDouble(),
-      totalPrice: ((json['total'] ?? json['total_price']) as num? ?? 0).toDouble(),
+      quantity: quantity,
+      unitPrice: unitPrice,
+      // NOT: Backend bazen kalem `total`/`total_price` alanında siparişin
+      // GENEL toplamını gönderiyor (kalemin kendi toplamı yerine).
+      // Bu yüzden kalem toplamını her zaman unitPrice * quantity olarak
+      // hesaplıyoruz — bu değer matematiksel olarak her zaman doğrudur.
+      totalPrice: unitPrice * quantity,
     );
   }
 

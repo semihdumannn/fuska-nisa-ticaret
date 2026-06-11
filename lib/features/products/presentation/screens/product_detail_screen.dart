@@ -107,6 +107,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           return _buildContent(context, product, cartCount);
         },
       ),
+      bottomNavigationBar: productAsync.maybeWhen(
+        data: (product) =>
+            product == null ? null : _buildBottomBar(context, product),
+        orElse: () => null,
+      ),
     );
   }
 
@@ -186,11 +191,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final discountPercent =
         _selectedVariant?.discountPercent.toInt() ?? product.discountPercent.toInt();
     final originalPrice = _selectedVariant?.price ?? product.price;
-    final isProductInStock = _selectedVariant?.inStock ?? product.inStock;
-    final minQty = _selectedVariant?.minOrderQty ?? product.minOrderQty;
-    final maxQty = _selectedVariant != null
-        ? min(_selectedVariant!.maxOrderQty, _selectedVariant!.stock)
-        : product.maxOrderQty;
 
     return Transform.translate(
       offset: const Offset(0, -20),
@@ -345,57 +345,85 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               onToggle: () =>
                   setState(() => _descriptionExpanded = !_descriptionExpanded),
             ),
-
-            const SizedBox(height: 24),
-
-            // Miktar secici + Sepete ekle
-            Row(
-              children: [
-                _QtySelector(
-                  qty: _qty,
-                  onDecrement:
-                      isProductInStock ? () => _decrement(product) : null,
-                  onIncrement:
-                      (isProductInStock && _qty < maxQty)
-                          ? () => _increment(product)
-                          : null,
-                  canDecrement: _qty > minQty,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: AppColors.border,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onPressed: (isProductInStock &&
-                            (_selectedVariant != null || !hasVariants))
-                        ? () => _addToCart(product)
-                        : null,
-                    child: Text(
-                      !isProductInStock
-                          ? 'Stok Tukendi'
-                          : (hasVariants && _selectedVariant == null)
-                              ? 'Varyant Secin'
-                              : 'Sepete Ekle',
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // Alt sabit bar - Miktar secici + Sepete ekle
+  // ─────────────────────────────────────────────
+
+  Widget _buildBottomBar(BuildContext context, ProductModel product) {
+    final koliVariant = product.koliVariant;
+    final hasVariants = koliVariant != null;
+    final isProductInStock = _selectedVariant?.inStock ?? product.inStock;
+    final minQty = _selectedVariant?.minOrderQty ?? product.minOrderQty;
+    final maxQty = _selectedVariant != null
+        ? min(_selectedVariant!.maxOrderQty, _selectedVariant!.stock)
+        : product.maxOrderQty;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          child: Row(
+            children: [
+              _QtySelector(
+                qty: _qty,
+                onDecrement:
+                    isProductInStock ? () => _decrement(product) : null,
+                onIncrement: (isProductInStock && _qty < maxQty)
+                    ? () => _increment(product)
+                    : null,
+                canDecrement: _qty > minQty,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.border,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: (isProductInStock &&
+                          (_selectedVariant != null || !hasVariants))
+                      ? () => _addToCart(product)
+                      : null,
+                  icon: Icon(
+                    !isProductInStock
+                        ? Icons.block
+                        : Icons.shopping_cart_outlined,
+                    size: 20,
+                  ),
+                  label: Text(
+                    !isProductInStock
+                        ? 'Stok Tukendi'
+                        : (hasVariants && _selectedVariant == null)
+                            ? 'Varyant Secin'
+                            : 'Sepete Ekle',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

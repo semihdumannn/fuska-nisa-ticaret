@@ -1,22 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
-/// Bildirim tipi — Cloud Functions ve Flutter tarafında ortaktır.
-/// Cloud Functions'da string değerleri: 'order_status', 'new_order', 'promo', 'system'
+/// Bildirim tipi — backend (Laravel) ile ortaktır.
+/// Backend değerleri: 'order_update', 'promotion', 'system'
 enum NotificationType {
-  orderStatus,
-  newOrder,
-  promo,
+  orderUpdate,
+  promotion,
   system;
 
   String get value {
     switch (this) {
-      case NotificationType.orderStatus:
-        return 'order_status';
-      case NotificationType.newOrder:
-        return 'new_order';
-      case NotificationType.promo:
-        return 'promo';
+      case NotificationType.orderUpdate:
+        return 'order_update';
+      case NotificationType.promotion:
+        return 'promotion';
       case NotificationType.system:
         return 'system';
     }
@@ -24,23 +20,30 @@ enum NotificationType {
 
   static NotificationType fromString(String value) {
     switch (value) {
-      case 'order_status':
-        return NotificationType.orderStatus;
-      case 'new_order':
-        return NotificationType.newOrder;
-      case 'promo':
-        return NotificationType.promo;
+      case 'order_update':
+        return NotificationType.orderUpdate;
+      case 'promotion':
+        return NotificationType.promotion;
       default:
         return NotificationType.system;
     }
   }
 }
 
-/// Firestore şeması: `notifications/{userId}/items/{notificationId}`
+/// Backend API: GET /v1/notifications
 ///
-/// Cloud Functions admin SDK ile bu subcollection'a yazar.
-/// Flutter istemcisi okur ve okundu olarak işaretler.
-/// Yazma: Cloud Functions (admin SDK) veya Firestore rule'da admin rolü.
+/// Laravel `NotificationResource` JSON şeması:
+/// {
+///   "id": 1,
+///   "type": "order_update",
+///   "type_label": "Order Update",
+///   "title": "...",
+///   "body": "...",
+///   "data": {...},
+///   "is_read": false,
+///   "read_at": null,
+///   "created_at": "2026-06-10T12:00:00+00:00"
+/// }
 class NotificationModel extends Equatable {
   final String id;
   final NotificationType type;
@@ -49,7 +52,7 @@ class NotificationModel extends Equatable {
   final bool isRead;
   final DateTime createdAt;
 
-  /// FCM data payload'ından gelen ek veriler.
+  /// Bildirim data payload'ı.
   /// Zorunlu key: "route" (go_router path, örn. "/orders/abc123")
   /// İsteğe bağlı: "orderId"
   final Map<String, dynamic> data;
@@ -66,70 +69,29 @@ class NotificationModel extends Equatable {
 
   // ─── Factory constructors ─────────────────────────────────────────────────
 
-  /// Firestore dokümanından model oluştur.
-  factory NotificationModel.fromFirestore(DocumentSnapshot doc) {
-    final map = doc.data() as Map<String, dynamic>;
-    return NotificationModel(
-      id: doc.id,
-      type: NotificationType.fromString(map['type'] as String? ?? 'system'),
-      title: map['title'] as String? ?? '',
-      body: map['body'] as String? ?? '',
-      isRead: map['isRead'] as bool? ?? false,
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      data: Map<String, dynamic>.from(map['data'] as Map? ?? {}),
-    );
-  }
-
-  /// JSON'dan model — CacheService (Hive) için.
+  /// Backend API JSON'dan model oluştur.
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
-      id: json['id'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
       type: NotificationType.fromString(json['type'] as String? ?? 'system'),
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      isRead: json['isRead'] as bool? ?? false,
-      createdAt: json['createdAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int)
+      isRead: json['is_read'] as bool? ?? false,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
       data: Map<String, dynamic>.from(json['data'] as Map? ?? {}),
     );
   }
 
-  // ─── Serialization ────────────────────────────────────────────────────────
-
-  /// Firestore'a yazılacak map.
-  Map<String, dynamic> toFirestore() {
-    return {
-      'type': type.value,
-      'title': title,
-      'body': body,
-      'isRead': isRead,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'data': data,
-    };
-  }
-
-  /// CacheService için JSON map.
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type.value,
-      'title': title,
-      'body': body,
-      'isRead': isRead,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'data': data,
-    };
-  }
-
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  /// FCM data payload'ından go_router route path'i döner.
+  /// Bildirim data payload'ından go_router route path'i döner.
   /// Örnek: "/orders/abc123"
   String? get route => data['route'] as String?;
 
   /// Sipariş bildirimlerindeki orderId.
-  String? get orderId => data['orderId'] as String?;
+  String? get orderId => data['orderId']?.toString() ?? data['order_id']?.toString();
 
   NotificationModel copyWith({
     String? id,

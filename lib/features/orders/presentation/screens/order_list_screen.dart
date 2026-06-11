@@ -7,6 +7,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/core/utils/navigation_guard.dart';
+import 'package:nisa_ticaret/core/utils/order_status_helper.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
 import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
@@ -269,7 +270,7 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(order.status);
+    final statusColor = orderStatusColor(order.status);
     final previewItems = order.items.take(3).toList();
     final extraCount = order.items.length - previewItems.length;
 
@@ -447,7 +448,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(status);
+    final color = orderStatusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -457,14 +458,7 @@ class _StatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-            ),
-          ),
+          Icon(orderStatusIcon(status), size: 12, color: color),
           const SizedBox(width: 4),
           Text(
             status.displayName,
@@ -567,21 +561,4 @@ String _formatDate(DateTime dt) {
   final hour = dt.hour.toString().padLeft(2, '0');
   final minute = dt.minute.toString().padLeft(2, '0');
   return '$day.$month.$year $hour:$minute';
-}
-
-Color _statusColor(OrderStatus status) {
-  switch (status) {
-    case OrderStatus.pending:
-      return AppColors.statusPending;
-    case OrderStatus.confirmed:
-      return AppColors.statusConfirmed;
-    case OrderStatus.preparing:
-      return AppColors.statusPreparing;
-    case OrderStatus.onTheWay:
-      return AppColors.statusOnTheWay;
-    case OrderStatus.delivered:
-      return AppColors.statusDelivered;
-    case OrderStatus.cancelled:
-      return AppColors.statusCancelled;
-  }
 }

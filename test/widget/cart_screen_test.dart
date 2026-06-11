@@ -37,7 +37,7 @@ ProductModel _makeProduct({
     id: id,
     name: name,
     description: '19 lt',
-    categoryId: 'cat-su',
+    categoryIds: const ['cat-su'],
     createdAt: now,
     updatedAt: now,
   );

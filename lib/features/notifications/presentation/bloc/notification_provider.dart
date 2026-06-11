@@ -6,9 +6,10 @@ export '../../data/repositories/notification_repository.dart'
     show notificationRepositoryProvider;
 
 // ─── notificationsProvider ────────────────────────────────────────────────────
-// Kullanıcının bildirimlerini gerçek zamanlı dinler.
-// Firestore şeması: notifications/{userId}/items/{notifId}
-// Cache KULLANILMAZ — siparişler gibi gerçek zamanlı olması kritik (CLAUDE.md).
+// Kullanıcının bildirimlerini backend API'den (Sanctum token) getirir.
+// `userId` parametresi backend tarafında kullanılmaz (request.user() esas
+// alınır), ancak provider'ı kullanıcı bazlı invalidate edebilmek için tutulur.
+// Cache KULLANILMAZ — bildirimler sık değişebilir (CLAUDE.md).
 // ─────────────────────────────────────────────────────────────────────────────
 
 final notificationsProvider =
@@ -20,7 +21,7 @@ final notificationsProvider =
 
 // ─── unreadCountProvider ─────────────────────────────────────────────────────
 // Okunmamış bildirim sayısı — bottom nav badge için.
-// notificationsProvider'dan türetilir, ek Firestore okuması yapmaz.
+// notificationsProvider'dan türetilir, ek API çağrısı yapmaz.
 // ─────────────────────────────────────────────────────────────────────────────
 
 final unreadCountProvider = Provider.family<int, String>((ref, userId) {

@@ -1,54 +1,50 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/core_providers.dart';
+import '../datasources/notification_api_datasource.dart';
 import '../models/notification_model.dart';
 
 /// Bildirim repository sözleşmesi.
 /// Test ortamında mock implementasyon geçilebilir.
 abstract class NotificationRepository {
-  /// Kullanıcının bildirimlerini gerçek zamanlı dinle.
-  /// Firestore şeması: `notifications/{userId}/items/{notificationId}`
+  /// Kullanıcının bildirimlerini getir.
+  ///
+  /// Not: Backend artık tek kaynak (Sanctum bearer token ile kimlik
+  /// doğrulanmış kullanıcı). `userId` parametresi geriye dönük uyumluluk
+  /// için tutulur ancak API çağrısında kullanılmaz (`/v1/notifications`
+  /// her zaman `request.user()` bildirimlerini döner).
+  ///
+  /// `Stream` olarak döner ki mevcut `StreamProvider` tabanlı UI değişmeden
+  /// çalışsın; tek bir fetch sonucu emit edilir (gerçek zamanlı değil).
   Stream<List<NotificationModel>> watchNotifications(String userId);
 
   /// Tek bildirimi okundu olarak işaretle.
   Future<void> markAsRead(String userId, String notificationId);
 
-  /// Kullanıcının tüm okunmamış bildirimlerini okundu yap (batch write).
+  /// Kullanıcının tüm okunmamış bildirimlerini okundu yap.
   Future<void> markAllAsRead(String userId);
 }
 
-/// Firestore implementasyonu.
-class FirestoreNotificationRepository implements NotificationRepository {
-  final FirebaseFirestore _firestore;
+/// Backend (Laravel Sanctum) API implementasyonu.
+/// Endpoint'ler: `/v1/notifications/*`.
+class ApiNotificationRepository implements NotificationRepository {
+  final INotificationApiDatasource _datasource;
 
-  FirestoreNotificationRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
-
-  /// `notifications/{userId}/items` subcollection referansı.
-  CollectionReference<Map<String, dynamic>> _itemsRef(String userId) {
-    return _firestore
-        .collection('notifications')
-        .doc(userId)
-        .collection('items');
-  }
+  ApiNotificationRepository(this._datasource);
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Okuma — gerçek zamanlı stream (cache yok, CLAUDE.md kuralı)
+  // Okuma
   // ──────────────────────────────────────────────────────────────────────────
 
   @override
-  Stream<List<NotificationModel>> watchNotifications(String userId) {
-    if (userId.isEmpty) return const Stream.empty();
-
-    return _itemsRef(userId)
-        .orderBy('createdAt', descending: true)
-        .limit(100) // Son 100 bildirim — Spark plan Firestore okuma tasarrufu
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => NotificationModel.fromFirestore(doc))
-              .toList(),
-        );
+  Stream<List<NotificationModel>> watchNotifications(String userId) async* {
+    try {
+      final notifications = await _datasource.getNotifications();
+      yield notifications;
+    } catch (e) {
+      debugPrint('NotificationRepository.watchNotifications: $e');
+      rethrow;
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -58,7 +54,7 @@ class FirestoreNotificationRepository implements NotificationRepository {
   @override
   Future<void> markAsRead(String userId, String notificationId) async {
     try {
-      await _itemsRef(userId).doc(notificationId).update({'isRead': true});
+      await _datasource.markSingleRead(notificationId);
     } catch (e) {
       debugPrint('NotificationRepository.markAsRead: $e');
     }
@@ -67,22 +63,7 @@ class FirestoreNotificationRepository implements NotificationRepository {
   @override
   Future<void> markAllAsRead(String userId) async {
     try {
-      final unreadDocs = await _itemsRef(userId)
-          .where('isRead', isEqualTo: false)
-          .get();
-
-      if (unreadDocs.docs.isEmpty) return;
-
-      // Batch ile toplu güncelleme — tek Firestore işlemi
-      final batch = _firestore.batch();
-      for (final doc in unreadDocs.docs) {
-        batch.update(doc.reference, {'isRead': true});
-      }
-      await batch.commit();
-
-      debugPrint(
-        'NotificationRepository.markAllAsRead: ${unreadDocs.docs.length} bildirim okundu işaretlendi',
-      );
+      await _datasource.markRead(const []);
     } catch (e) {
       debugPrint('NotificationRepository.markAllAsRead: $e');
     }
@@ -91,7 +72,12 @@ class FirestoreNotificationRepository implements NotificationRepository {
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
+final notificationApiDatasourceProvider =
+    Provider<INotificationApiDatasource>((ref) {
+  return NotificationApiDatasource(ref.watch(apiClientProvider).dio);
+});
+
 final notificationRepositoryProvider =
     Provider<NotificationRepository>((ref) {
-  return FirestoreNotificationRepository();
+  return ApiNotificationRepository(ref.watch(notificationApiDatasourceProvider));
 });

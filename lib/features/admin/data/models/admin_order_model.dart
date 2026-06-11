@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 
 // ---------------------------------------------------------------------------
 // Admin tarafinda genisletilmis siparis durumu
@@ -25,13 +26,13 @@ enum AdminOrderStatus {
       };
 
   Color get color => switch (this) {
-        AdminOrderStatus.pending => const Color(0xFFFF9800),
-        AdminOrderStatus.confirmed => const Color(0xFF00A6AB),
-        AdminOrderStatus.preparing => const Color(0xFFE73A99),
-        AdminOrderStatus.onTheWay => const Color(0xFF13275A),
-        AdminOrderStatus.delivered => const Color(0xFF43A047),
-        AdminOrderStatus.cancelled => const Color(0xFFF44336),
-        AdminOrderStatus.refunded => const Color(0xFF9C27B0),
+        AdminOrderStatus.pending => AppColors.statusPending,
+        AdminOrderStatus.confirmed => AppColors.statusConfirmed,
+        AdminOrderStatus.preparing => AppColors.statusPreparing,
+        AdminOrderStatus.onTheWay => AppColors.statusOnTheWay,
+        AdminOrderStatus.delivered => AppColors.statusDelivered,
+        AdminOrderStatus.cancelled => AppColors.statusCancelled,
+        AdminOrderStatus.refunded => AppColors.statusRefunded,
       };
 
   IconData get icon => switch (this) {

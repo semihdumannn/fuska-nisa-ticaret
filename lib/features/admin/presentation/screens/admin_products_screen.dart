@@ -25,7 +25,7 @@ class AdminProductsScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF8F9FA),
+        backgroundColor: AppColors.adminBackground,
         body: Row(
           children: [
             AdminSidebar(),
@@ -36,7 +36,7 @@ class AdminProductsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
         backgroundColor: AppColors.secondary,
@@ -484,7 +484,7 @@ class _ProductsTable extends ConsumerWidget {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(
-              const Color(0xFFF8F9FA),
+              AppColors.adminBackground,
             ),
             headingTextStyle: const TextStyle(
               fontSize: 12,
@@ -1055,9 +1055,9 @@ class _ShimmerBoxState extends State<_ShimmerBox>
             begin: Alignment(_anim.value - 1, 0),
             end: Alignment(_anim.value, 0),
             colors: const [
-              Color(0xFFEEEEEE),
-              Color(0xFFF5F5F5),
-              Color(0xFFEEEEEE),
+              AppColors.shimmerBase,
+              AppColors.shimmerHighlight,
+              AppColors.shimmerBase,
             ],
           ),
         ),

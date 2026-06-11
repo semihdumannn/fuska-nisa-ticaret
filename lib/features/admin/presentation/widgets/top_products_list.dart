@@ -141,11 +141,11 @@ class _RankBadge extends StatelessWidget {
   Color get _bgColor {
     switch (rank) {
       case 1:
-        return const Color(0xFFFFD700).withValues(alpha: 0.15);
+        return AppColors.medalGold.withValues(alpha: 0.15);
       case 2:
-        return const Color(0xFFC0C0C0).withValues(alpha: 0.20);
+        return AppColors.medalSilver.withValues(alpha: 0.20);
       case 3:
-        return const Color(0xFFCD7F32).withValues(alpha: 0.15);
+        return AppColors.medalBronze.withValues(alpha: 0.15);
       default:
         return AppColors.border;
     }
@@ -154,11 +154,11 @@ class _RankBadge extends StatelessWidget {
   Color get _textColor {
     switch (rank) {
       case 1:
-        return const Color(0xFFB8860B);
+        return AppColors.medalGoldDark;
       case 2:
-        return const Color(0xFF808080);
+        return AppColors.medalSilverDark;
       case 3:
-        return const Color(0xFF8B4513);
+        return AppColors.medalBronzeDark;
       default:
         return AppColors.textSecondary;
     }

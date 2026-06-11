@@ -56,12 +56,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         return all.where((n) => !n.isRead).toList();
       case _NotificationFilter.orders:
         return all
-            .where((n) =>
-                n.type == NotificationType.orderStatus ||
-                n.type == NotificationType.newOrder)
+            .where((n) => n.type == NotificationType.orderUpdate)
             .toList();
       case _NotificationFilter.promos:
-        return all.where((n) => n.type == NotificationType.promo).toList();
+        return all.where((n) => n.type == NotificationType.promotion).toList();
     }
   }
 
@@ -142,6 +140,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Future<void> _markAllAsRead(String userId) async {
     final repo = ref.read(notificationRepositoryProvider);
     await repo.markAllAsRead(userId);
+    ref.invalidate(notificationsProvider(userId));
   }
 
   Widget _buildNotificationList(
@@ -209,7 +208,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // Okundu olarak isaretle
     final repo = ref.read(notificationRepositoryProvider);
     if (!notification.isRead) {
-      repo.markAsRead(userId, notification.id);
+      repo.markAsRead(userId, notification.id).then((_) {
+        ref.invalidate(notificationsProvider(userId));
+      });
     }
 
     // Route varsa navigate et
@@ -549,11 +550,9 @@ class _NotificationCard extends StatelessWidget {
 
   Color _typeColor(NotificationType type) {
     switch (type) {
-      case NotificationType.orderStatus:
+      case NotificationType.orderUpdate:
         return AppColors.secondary;
-      case NotificationType.newOrder:
-        return AppColors.primary;
-      case NotificationType.promo:
+      case NotificationType.promotion:
         return AppColors.accent;
       case NotificationType.system:
         return AppColors.textSecondary;
@@ -562,11 +561,9 @@ class _NotificationCard extends StatelessWidget {
 
   IconData _typeIcon(NotificationType type) {
     switch (type) {
-      case NotificationType.orderStatus:
+      case NotificationType.orderUpdate:
         return Icons.local_shipping_outlined;
-      case NotificationType.newOrder:
-        return Icons.shopping_bag_outlined;
-      case NotificationType.promo:
+      case NotificationType.promotion:
         return Icons.local_offer_outlined;
       case NotificationType.system:
         return Icons.info_outline;

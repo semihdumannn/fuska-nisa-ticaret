@@ -46,6 +46,7 @@ class MetricCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
@@ -66,40 +67,46 @@ class MetricCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 1),
-            Text(
-              subtitle!,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textHint,
-                fontFamily: 'Poppins',
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
               ),
-            ),
-          ],
-          if (bottomWidget != null) ...[
-            const SizedBox(height: 8),
-            bottomWidget!,
-          ],
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 1),
+                Text(
+                  subtitle!,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textHint,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
+              if (bottomWidget != null) ...[
+                const SizedBox(height: 8),
+                bottomWidget!,
+              ],
+            ],
+          ),
         ],
       ),
     );

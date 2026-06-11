@@ -43,6 +43,41 @@ class AppColors {
   // Border
   static const Color border = Color(0xFFE8EAED);       // Neutral light gray — matches design reference
   static const Color divider = Color(0xFFF0F0F0);
+
+  // Soft pink background (Fuska Design System — onboarding/marketing alanlar)
+  static const Color softPinkBackground = Color(0xFFFDF2F8);
+
+  // Admin panel — sayfa arka planı (gri ton)
+  static const Color adminBackground = Color(0xFFF8F9FA);
+
+  // Shimmer (yukleniyor) renkleri
+  static const Color shimmerBase = Color(0xFFEEEEEE);
+  static const Color shimmerHighlight = Color(0xFFF5F5F5);
+
+  // WhatsApp marka rengi
+  static const Color whatsapp = Color(0xFF25D366);
+
+  // Madalya renkleri (en cok satanlar / leaderboard)
+  static const Color medalGold = Color(0xFFFFD700);
+  static const Color medalGoldDark = Color(0xFFB8860B);
+  static const Color medalSilver = Color(0xFFC0C0C0);
+  static const Color medalSilverDark = Color(0xFF808080);
+  static const Color medalBronze = Color(0xFFCD7F32);
+  static const Color medalBronzeDark = Color(0xFF8B4513);
+
+  // Excel/PDF export renkleri (rapor butonlari)
+  static const Color excelGreen = Color(0xFF217346);
+  static const Color pdfRed = Color(0xFFD32F2F);
+
+  // Refunded order durumu (Fuska genisletilmis durum paleti)
+  static const Color statusRefunded = Color(0xFF9C27B0);
+
+  // Kategori renk paleti — ek tonlar (turuncu, mor)
+  static const Color categoryOrange = Color(0xFFFF7043);
+  static const Color categoryPurple = Color(0xFF7B1FA2);
+
+  // Genel amacli siyah (hex parse fallback vb.)
+  static const Color black = Color(0xFF000000);
 }
 
 class AppTheme {

@@ -24,7 +24,7 @@ class UserDetailScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: AppColors.adminBackground,
         body: Row(
           children: [
             const AdminSidebar(),
@@ -41,7 +41,7 @@ class UserDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       appBar: AppBar(
         backgroundColor: AppColors.secondary,
         iconTheme: const IconThemeData(color: AppColors.textWhite),
@@ -1079,9 +1079,9 @@ class _ShimmerBoxState extends State<_ShimmerBox>
             begin: Alignment(_animation.value - 1, 0),
             end: Alignment(_animation.value, 0),
             colors: const [
-              Color(0xFFEEEEEE),
-              Color(0xFFF5F5F5),
-              Color(0xFFEEEEEE),
+              AppColors.shimmerBase,
+              AppColors.shimmerHighlight,
+              AppColors.shimmerBase,
             ],
           ),
         ),

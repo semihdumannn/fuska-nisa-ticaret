@@ -68,7 +68,7 @@ class CartScreen extends ConsumerWidget {
       children: [
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             itemCount: cart.items.length,
             itemBuilder: (context, index) {
               return _CartItemCard(item: cart.items[index]);
@@ -206,6 +206,21 @@ class _CartItemCard extends ConsumerWidget {
 
   const _CartItemCard({required this.item});
 
+  /// Varyant adi, urun adiyla ayni/birebir tekrar ediyorsa ikinci kez
+  /// gosterilmez (UI'da anlamsiz tekrar olusmasin diye).
+  bool _showVariantLabel(CartItem item) {
+    final variant = item.variant;
+    if (variant == null || variant.name.trim().isEmpty) return false;
+
+    final variantName = variant.name.trim().toLowerCase();
+    final productName = item.product.name.trim().toLowerCase();
+
+    if (variantName == productName) return false;
+    if (productName.contains(variantName)) return false;
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(cartProvider.notifier);
@@ -250,7 +265,7 @@ class _CartItemCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                if (item.variant != null)
+                if (_showVariantLabel(item))
                   Text(
                     item.variant!.name,
                     maxLines: 1,
@@ -478,71 +493,79 @@ class _CartSummary extends ConsumerWidget {
     final hasDiscount = _hasProductDiscounts;
 
     return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Ara toplam
-          _SummaryRow(
-            label: 'Ara Toplam',
-            value: _formatPrice(cart.subtotal),
-          ),
-
-          // Indirim (varsa)
-          if (hasDiscount) ...[
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: 'Indirim',
-              value: '-${_formatPrice(discount)}',
-              valueColor: AppColors.success,
-            ),
-          ],
-
-          const Divider(color: AppColors.divider, height: 24),
-
-          // Toplam
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Toplam',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              // Ara toplam
+              _SummaryRow(
+                label: 'Ara Toplam',
+                value: _formatPrice(cart.subtotal),
               ),
-              Text(
-                _formatPrice(cart.total),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+
+              // Indirim (varsa)
+              if (hasDiscount) ...[
+                const SizedBox(height: 8),
+                _SummaryRow(
+                  label: 'Indirim',
+                  value: '-${_formatPrice(discount)}',
+                  valueColor: AppColors.success,
+                ),
+              ],
+
+              const Divider(color: AppColors.divider, height: 24),
+
+              // Toplam
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Toplam',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    _formatPrice(cart.total),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Siparis tamamla butonu
+              ElevatedButton(
+                onPressed: () => _onCheckout(ref, context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textWhite,
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Siparişi Tamamla',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Siparis tamamla butonu
-          ElevatedButton(
-            onPressed: () => _onCheckout(ref, context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.textWhite,
-              minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Siparişi Tamamla',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

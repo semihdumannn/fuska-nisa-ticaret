@@ -47,7 +47,7 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       body: Row(
         children: [
           AdminSidebar(),
@@ -64,7 +64,7 @@ class _MobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
         backgroundColor: AppColors.secondary,
@@ -202,7 +202,7 @@ class _ReportsHeader extends ConsumerWidget {
             _ExportButton(
               label: 'CSV Indir',
               icon: Icons.table_chart_outlined,
-              color: const Color(0xFF217346),
+              color: AppColors.excelGreen,
               isLoading: excelLoading,
               onPressed: () => _onExcelExport(ref, context),
             ),
@@ -211,7 +211,7 @@ class _ReportsHeader extends ConsumerWidget {
             _ExportButton(
               label: 'Rapor Indir',
               icon: Icons.picture_as_pdf_outlined,
-              color: const Color(0xFFD32F2F),
+              color: AppColors.pdfRed,
               isLoading: pdfLoading,
               onPressed: () => _onPdfExport(ref, context),
             ),
@@ -910,7 +910,7 @@ class _SalesDetailTable extends StatelessWidget {
           const SizedBox(height: 12),
           // Tablo basligi
           Container(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.adminBackground,
             padding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: const Row(
@@ -1345,7 +1345,7 @@ class _ProductTable extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Container(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.adminBackground,
             padding: const EdgeInsets.symmetric(
                 horizontal: 20, vertical: 10),
             child: const Row(
@@ -1590,9 +1590,9 @@ class _AgentCard extends StatelessWidget {
   });
 
   static const List<Color> _rankColors = [
-    Color(0xFFFFC107), // altin
-    Color(0xFFBDBDBD), // gumus
-    Color(0xFFCD7F32), // bronz
+    AppColors.warning, // altin
+    AppColors.textHint, // gumus
+    AppColors.medalBronze, // bronz
     AppColors.accent,
   ];
 
@@ -1812,7 +1812,7 @@ class _AgentComparisonTable extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Container(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.adminBackground,
             padding: const EdgeInsets.symmetric(
                 horizontal: 20, vertical: 10),
             child: const Row(
@@ -2259,7 +2259,7 @@ class _CustomerGrowthTable extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Container(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.adminBackground,
             padding: const EdgeInsets.symmetric(
                 horizontal: 20, vertical: 10),
             child: const Row(
@@ -2424,9 +2424,9 @@ class _ReportShimmerState extends State<_ReportShimmer>
             begin: Alignment(_anim.value - 1, 0),
             end: Alignment(_anim.value, 0),
             colors: const [
-              Color(0xFFEEEEEE),
-              Color(0xFFF5F5F5),
-              Color(0xFFEEEEEE),
+              AppColors.shimmerBase,
+              AppColors.shimmerHighlight,
+              AppColors.shimmerBase,
             ],
           ),
         ),

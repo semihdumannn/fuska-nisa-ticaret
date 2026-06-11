@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:nisa_ticaret/core/services/whatsapp_service.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
+import 'package:nisa_ticaret/core/utils/order_status_helper.dart';
 import 'package:nisa_ticaret/features/cart/presentation/bloc/cart_provider.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
 import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
@@ -225,7 +226,7 @@ class _LargeStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(status);
+    final color = orderStatusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
@@ -235,7 +236,7 @@ class _LargeStatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_statusIcon(status), color: color, size: 18),
+          Icon(orderStatusIcon(status), color: color, size: 18),
           const SizedBox(width: 8),
           Text(
             status.displayName,
@@ -910,40 +911,6 @@ String _formatDate(DateTime dt) {
   return '$day.$month.$year $hour:$minute';
 }
 
-Color _statusColor(OrderStatus status) {
-  switch (status) {
-    case OrderStatus.pending:
-      return AppColors.statusPending;
-    case OrderStatus.confirmed:
-      return AppColors.statusConfirmed;
-    case OrderStatus.preparing:
-      return AppColors.statusPreparing;
-    case OrderStatus.onTheWay:
-      return AppColors.statusOnTheWay;
-    case OrderStatus.delivered:
-      return AppColors.statusDelivered;
-    case OrderStatus.cancelled:
-      return AppColors.statusCancelled;
-  }
-}
-
-IconData _statusIcon(OrderStatus status) {
-  switch (status) {
-    case OrderStatus.pending:
-      return Icons.access_time_outlined;
-    case OrderStatus.confirmed:
-      return Icons.check_circle_outline;
-    case OrderStatus.preparing:
-      return Icons.inventory_2_outlined;
-    case OrderStatus.onTheWay:
-      return Icons.local_shipping_outlined;
-    case OrderStatus.delivered:
-      return Icons.done_all_rounded;
-    case OrderStatus.cancelled:
-      return Icons.cancel_outlined;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Tekrar Sipariş Ver
 // ---------------------------------------------------------------------------
@@ -1021,8 +988,8 @@ class _WhatsAppSupportButton extends StatelessWidget {
         label: const Text('WhatsApp ile Destek Al',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF25D366),
-          side: const BorderSide(color: Color(0xFF25D366)),
+          foregroundColor: AppColors.whatsapp,
+          side: const BorderSide(color: AppColors.whatsapp),
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),

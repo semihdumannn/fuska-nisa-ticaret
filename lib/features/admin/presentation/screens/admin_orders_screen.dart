@@ -41,7 +41,7 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       body: Row(
         children: [
           AdminSidebar(),
@@ -62,7 +62,7 @@ class _MobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.adminBackground,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
         backgroundColor: AppColors.secondary,
@@ -508,25 +508,24 @@ class _FiltersRowState extends ConsumerState<_FiltersRow> {
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(child: statusDropdown),
-            const SizedBox(width: 8),
-            Expanded(child: dateButton),
-            const SizedBox(width: 8),
-            Expanded(child: paymentDropdown),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              statusDropdown,
+              const SizedBox(width: 8),
+              dateButton,
+              const SizedBox(width: 8),
+              paymentDropdown,
+              if (clearButton != null) ...[
+                const SizedBox(width: 8),
+                clearButton,
+              ],
+            ],
+          ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(child: searchField),
-            if (clearButton != null) ...[
-              const SizedBox(width: 8),
-              clearButton,
-            ],
-          ],
-        ),
+        searchField,
       ],
     );
   }
@@ -769,7 +768,7 @@ class _OrdersTable extends ConsumerWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F9FA)),
+            headingRowColor: WidgetStateProperty.all(AppColors.adminBackground),
             headingTextStyle: const TextStyle(
               fontFamily: 'Poppins',
               fontSize: 12,
@@ -1400,9 +1399,9 @@ class _ShimmerBoxState extends State<_ShimmerBox>
             begin: Alignment(_animation.value - 1, 0),
             end: Alignment(_animation.value, 0),
             colors: const [
-              Color(0xFFEEEEEE),
-              Color(0xFFF5F5F5),
-              Color(0xFFEEEEEE),
+              AppColors.shimmerBase,
+              AppColors.shimmerHighlight,
+              AppColors.shimmerBase,
             ],
           ),
         ),

@@ -7,9 +7,9 @@ import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
 
 // ─────────────────────────────────────────────
 // Test yardimci: gecerli ProductModel olusturur
-// NOT: Fiyat/stok artik VariantModel'de. ProductCard sadece
-//      meta veri (isim, gorsel) ve navigasyon gosterir.
-//      Fiyat gosterimi artik 0.00 TL olarak gorunur (variant secilmeden).
+// NOT: Varsayilan olarak primaryPrice/primaryStock dolu gelir
+//      (stokta, fiyatli urun) — koli varyanti olmadan ProductCard
+//      bu denormalize alanlara fallback yapar.
 // ─────────────────────────────────────────────
 
 ProductModel _makeProduct({
@@ -17,14 +17,18 @@ ProductModel _makeProduct({
   String name = 'Test Urun',
   String categoryId = 'cat1',
   String? imageUrl,
+  double? primaryPrice = 45.0,
+  int? primaryStock = 50,
 }) {
   final now = DateTime(2026, 1, 1);
   return ProductModel(
     id: id,
     name: name,
     description: 'Aciklama',
-    categoryId: categoryId,
+    categoryIds: [categoryId],
     imageUrl: imageUrl,
+    primaryPrice: primaryPrice,
+    primaryStock: primaryStock,
     createdAt: now,
     updatedAt: now,
   );
@@ -58,18 +62,18 @@ void main() {
       expect(find.text('Damacana Su'), findsOneWidget);
     });
 
-    testWidgets('fiyat 0.00 TL gorunuyor (variant secilmeden)', (tester) async {
-      // ProductModel.effectivePrice = 0.0 (varyant yokken fallback)
+    testWidgets('fiyat primaryPrice degerinden gorunuyor (variant secilmeden)', (tester) async {
+      // ProductModel.effectivePrice -> primaryPrice fallback (45.0)
       final product = _makeProduct();
       await tester.pumpWidget(_wrapCard(product));
 
-      expect(find.text('₺0.00'), findsOneWidget);
+      expect(find.text('₺45.00'), findsOneWidget);
     });
   });
 
   group('ProductCard — indirim badge', () {
     testWidgets('ProductModel.hasDiscount=false oldugu icin badge hic gorunmez', (tester) async {
-      // Yeni mimaride hasDiscount=false (varyant kontrol eder)
+      // salePrice verilmediginden hasDiscount=false
       final product = _makeProduct();
       await tester.pumpWidget(_wrapCard(product));
       await tester.pump();
@@ -80,7 +84,7 @@ void main() {
 
   group('ProductCard — stok durumu', () {
     testWidgets('ProductModel.inStock=true oldugu icin Stok Yok overlay yok', (tester) async {
-      // Yeni mimaride inStock=true (varyant kontrol eder)
+      // primaryStock > 0 -> inStock=true
       final product = _makeProduct();
       await tester.pumpWidget(_wrapCard(product));
       await tester.pump();
@@ -95,6 +99,15 @@ void main() {
       await tester.pump();
 
       expect(find.byIcon(Icons.add), findsOneWidget);
+    });
+
+    testWidgets('stok yok (primaryStock=0) iken Stok Yok overlay gorunuyor ve ekle butonu yok', (tester) async {
+      final product = _makeProduct(primaryStock: 0);
+      await tester.pumpWidget(_wrapCard(product, showAddButton: true));
+      await tester.pump();
+
+      expect(find.text('Stok Yok'), findsOneWidget);
+      expect(find.byIcon(Icons.add), findsNothing);
     });
   });
 

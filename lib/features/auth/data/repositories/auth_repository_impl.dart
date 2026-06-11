@@ -70,6 +70,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       await _remoteDatasource.logout();
       await _localDatasource.clearToken();
       await _localDatasource.clearUser();
+      await _localDatasource.clearTotpCredentials();
       return const Right(null);
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
