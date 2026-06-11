@@ -85,7 +85,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
     try {
       final model = await _remoteDatasource
           .addAddress(ApiAddressModel.entityToJson(address));
-      await _cacheManager.invalidate(CacheKeys.addresses);
+      await _cacheManager.invalidateByPrefix(CacheKeys.addresses);
       return Right(model.toEntity());
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
@@ -100,7 +100,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
         address.id!,
         ApiAddressModel.entityToJson(address),
       );
-      await _cacheManager.invalidate(CacheKeys.addresses);
+      await _cacheManager.invalidateByPrefix(CacheKeys.addresses);
       return Right(model.toEntity());
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
@@ -111,7 +111,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<Either<Failure, void>> deleteAddress(int id) async {
     try {
       await _remoteDatasource.deleteAddress(id);
-      await _cacheManager.invalidate(CacheKeys.addresses);
+      await _cacheManager.invalidateByPrefix(CacheKeys.addresses);
       return const Right(null);
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
@@ -122,7 +122,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<Either<Failure, void>> setDefaultAddress(int id) async {
     try {
       await _remoteDatasource.setDefaultAddress(id);
-      await _cacheManager.invalidate(CacheKeys.addresses);
+      await _cacheManager.invalidateByPrefix(CacheKeys.addresses);
       return const Right(null);
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
@@ -133,7 +133,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<Either<Failure, void>> clearProfileCache() async {
     try {
       await _cacheManager.invalidate(CacheKeys.userProfile);
-      await _cacheManager.invalidate(CacheKeys.addresses);
+      await _cacheManager.invalidateByPrefix(CacheKeys.addresses);
       return const Right(null);
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));

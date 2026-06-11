@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:nisa_ticaret/features/products/data/models/category_model.dart';
 
 class CategoryEntity extends Equatable {
   final String id;
@@ -34,6 +35,20 @@ class CategoryEntity extends Equatable {
   bool get hasChildren => children.isNotEmpty;
 
   bool get isRoot => parentId == null || parentId!.isEmpty;
+
+  CategoryModel toCategoryModel() => CategoryModel(
+        id: id,
+        name: name,
+        slug: slug,
+        iconName: iconName,
+        iconAsset: iconAsset,
+        color: color,
+        sortOrder: sortOrder,
+        isActive: isActive,
+        parentId: parentId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
   @override
   List<Object?> get props => [id, name, slug, parentId, isActive, sortOrder];

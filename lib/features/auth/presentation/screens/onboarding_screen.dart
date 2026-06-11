@@ -18,19 +18,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const List<_OnboardingSlide> _slides = [
     _OnboardingSlide(
-      icon: Icons.water_drop,
-      title: "Nisa Ticaret'e Hoş Geldiniz",
-      subtitle: 'Su ve meşrubatı kapınıza kadar getiriyoruz.',
+      icon: Icons.water_drop_rounded,
+      title: 'Fuska Kalitesi Kapınızda',
+      subtitle: 'Doğal kaynak suyu ve meşrubatlarımızı aynı gün teslimat ile sipariş edin.',
     ),
     _OnboardingSlide(
-      icon: Icons.shopping_cart_checkout,
-      title: 'Kolayca Sipariş Verin',
-      subtitle: 'Ürünlere göz atın, sepete ekleyin, anında teslimat alın.',
+      icon: Icons.shopping_bag_outlined,
+      title: 'Saniyeler İçinde Sipariş',
+      subtitle: 'Ürünlere göz atın, sepete ekleyin. Teslimat durumunu anlık olarak takip edin.',
     ),
     _OnboardingSlide(
-      icon: Icons.check_circle_outline,
-      title: 'Hemen Başlayın',
-      subtitle: 'Telefon numaranızla saniyeler içinde üye olun.',
+      icon: Icons.phone_iphone_rounded,
+      title: 'Üyelik? 30 Saniye!',
+      subtitle: 'Sadece telefon numaranızla üye olun. Şifre yok, uzun form yok.',
     ),
   ];
 

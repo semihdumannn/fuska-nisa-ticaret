@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/services/cache_service.dart';
 import 'package:nisa_ticaret/features/products/data/models/brand_model.dart';
+import 'package:nisa_ticaret/features/products/data/providers/product_data_providers.dart';
 import 'package:nisa_ticaret/features/products/data/repositories/category_repository.dart'
     show RepositoryException;
 
@@ -96,8 +97,13 @@ final brandRepositoryProvider = Provider<BrandRepository>((ref) {
   return BrandRepository();
 });
 
-final brandsProvider = FutureProvider<List<BrandModel>>((ref) {
-  return ref.watch(brandRepositoryProvider).getBrands();
+final brandsProvider = FutureProvider<List<BrandModel>>((ref) async {
+  final repo = ref.watch(apiProductRepositoryProvider);
+  final result = await repo.getBrands();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (entities) => entities.map((e) => e.toBrandModel()).toList(),
+  );
 });
 
 final brandsStreamProvider = StreamProvider<List<BrandModel>>((ref) {

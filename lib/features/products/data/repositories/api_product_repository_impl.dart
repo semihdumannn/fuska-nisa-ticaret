@@ -31,7 +31,9 @@ class ApiProductRepositoryImpl implements IProductRepository {
     double? minPrice,
     double? maxPrice,
   }) async {
-    // Cache sadece ilk sayfa, filtre yoksa
+    // ── Sayfa-1, filtre yok cache ─────────────────────────────────────────
+    // perPage cache key'e dahil edilir — farklı sayfa boyutları birbirinin
+    // cache'ini kirletmemesi için (50 vs 100 aynı key'i paylaşmamalı).
     final isFirstPageNoFilter = page == 1 &&
         categoryId == null &&
         brandId == null &&
@@ -40,9 +42,11 @@ class ApiProductRepositoryImpl implements IProductRepository {
         minPrice == null &&
         maxPrice == null;
 
+    final pageCacheKey = '${CacheKeys.products}_$perPage';
+
     if (isFirstPageNoFilter) {
       final cached =
-          _cacheManager.getCachedData<List<dynamic>>(CacheKeys.products);
+          _cacheManager.getCachedData<List<dynamic>>(pageCacheKey);
       if (cached != null) {
         try {
           final entities = cached
@@ -51,8 +55,34 @@ class ApiProductRepositoryImpl implements IProductRepository {
               .toList();
           return Right(entities);
         } catch (_) {
-          // Cache bozuksa sil ve network'ten al
-          await _cacheManager.invalidate(CacheKeys.products);
+          await _cacheManager.invalidate(pageCacheKey);
+        }
+      }
+    }
+
+    // ── Kategori filtresi cache ───────────────────────────────────────────
+    // API yanıt süresi 5-6s olduğundan her kategori tıklamasında
+    // cache'den servis etmek kritik önem taşır.
+    final isCategoryFirstPage = page == 1 &&
+        categoryId != null &&
+        brandId == null &&
+        searchQuery == null &&
+        sortBy == null;
+
+    String? catCacheKey;
+    if (isCategoryFirstPage) {
+      catCacheKey = '${CacheKeys.products}_cat_${categoryId}_$perPage';
+      final cached =
+          _cacheManager.getCachedData<List<dynamic>>(catCacheKey);
+      if (cached != null) {
+        try {
+          final entities = cached
+              .map((item) =>
+                  _productEntityFromMap(item as Map<dynamic, dynamic>))
+              .toList();
+          return Right(entities);
+        } catch (_) {
+          await _cacheManager.invalidate(catCacheKey);
         }
       }
     }
@@ -70,12 +100,20 @@ class ApiProductRepositoryImpl implements IProductRepository {
       );
 
       final entities = models.map((m) => m.toEntity()).toList();
+      final serialized = models.map((m) => m.toMap()).toList();
 
-      // Sadece ilk sayfa, filtre yoksa cache'le
       if (isFirstPageNoFilter) {
         await _cacheManager.cacheData(
-          CacheKeys.products,
-          models.map((m) => m.toMap()).toList(),
+          pageCacheKey,
+          serialized,
+          ttl: CacheKeys.productsTtl,
+        );
+      }
+
+      if (catCacheKey != null) {
+        await _cacheManager.cacheData(
+          catCacheKey,
+          serialized,
           ttl: CacheKeys.productsTtl,
         );
       }
@@ -175,9 +213,30 @@ class ApiProductRepositoryImpl implements IProductRepository {
 
   @override
   Future<Either<Failure, List<ProductEntity>>> getFeaturedProducts() async {
+    final cached =
+        _cacheManager.getCachedData<List<dynamic>>(CacheKeys.featuredProducts);
+    if (cached != null) {
+      try {
+        final entities = cached
+            .map((item) => _productEntityFromMap(item as Map<dynamic, dynamic>))
+            .toList();
+        return Right(entities);
+      } catch (_) {
+        await _cacheManager.invalidate(CacheKeys.featuredProducts);
+      }
+    }
+
     try {
       final models = await _remoteDatasource.getFeaturedProducts();
-      return Right(models.map((m) => m.toEntity()).toList());
+      final entities = models.map((m) => m.toEntity()).toList();
+
+      await _cacheManager.cacheData(
+        CacheKeys.featuredProducts,
+        models.map((m) => m.toMap()).toList(),
+        ttl: CacheKeys.productsTtl,
+      );
+
+      return Right(entities);
     } catch (e) {
       return Left(ExceptionHandler.handleException(e));
     }
@@ -209,6 +268,15 @@ class ApiProductRepositoryImpl implements IProductRepository {
           ? (map['sale_price'] as num).toDouble()
           : null,
       primaryStock: map['stock_quantity'] as int?,
+      koliVariantId: map['koli_variant_id']?.toString(),
+      koliPrice: map['koli_price'] != null
+          ? (map['koli_price'] as num).toDouble()
+          : null,
+      koliSalePrice: map['koli_sale_price'] != null
+          ? (map['koli_sale_price'] as num).toDouble()
+          : null,
+      koliStock: map['koli_stock'] as int?,
+      koliPackageQty: map['koli_package_qty'] as int?,
       tags: map['tags'] != null
           ? List<String>.from(map['tags'] as List)
           : [],

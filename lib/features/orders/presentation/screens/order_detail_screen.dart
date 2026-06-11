@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/services/whatsapp_service.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
-import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
 import 'package:nisa_ticaret/features/cart/presentation/bloc/cart_provider.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
+import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
+import 'package:nisa_ticaret/features/orders/presentation/providers/api_orders_provider.dart';
 import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
 
 class OrderDetailScreen extends ConsumerWidget {
@@ -40,26 +38,20 @@ class OrderDetailScreen extends ConsumerWidget {
           orderAsync.when(
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
-            data: (order) {
-              if (order == null) return const SizedBox.shrink();
-              return IconButton(
-                icon: const Icon(Icons.support_agent_outlined),
-                tooltip: 'WhatsApp Destek',
-                onPressed: () => whatsappService.supportForOrder(
-                  orderNo: order.orderNo.isNotEmpty ? order.orderNo : order.id,
-                ),
-              );
-            },
+            data: (order) => IconButton(
+              icon: const Icon(Icons.support_agent_outlined),
+              tooltip: 'WhatsApp Destek',
+              onPressed: () => whatsappService.supportForOrder(
+                orderNo: order.orderNumber,
+              ),
+            ),
           ),
         ],
       ),
       body: orderAsync.when(
         loading: () => _buildShimmer(),
         error: (e, _) => _buildError(context),
-        data: (order) {
-          if (order == null) return _buildNotFound(context);
-          return _buildContent(context, order);
-        },
+        data: (order) => _buildContent(context, order),
       ),
     );
   }
@@ -68,11 +60,9 @@ class OrderDetailScreen extends ConsumerWidget {
   // Main content
   // -------------------------------------------------------------------------
 
-  Widget _buildContent(BuildContext context, OrderModel order) {
-    final canCancel = order.status == OrderStatus.pending ||
-        order.status == OrderStatus.confirmed;
-    final canReorder = order.status == OrderStatus.delivered ||
-        order.status == OrderStatus.cancelled;
+  Widget _buildContent(BuildContext context, OrderEntity order) {
+    final canCancel = order.canBeCancelled;
+    final canReorder = order.status.isFinal;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 32),
@@ -87,7 +77,7 @@ class OrderDetailScreen extends ConsumerWidget {
           _PaymentSection(order: order),
           if (canReorder) _ReorderButton(order: order),
           if (canCancel) _CancelOrderButton(order: order),
-          _WhatsAppSupportButton(orderNo: order.orderNo),
+          _WhatsAppSupportButton(orderNo: order.orderNumber),
         ],
       ),
     );
@@ -171,47 +161,6 @@ class OrderDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotFound(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.receipt_long_outlined,
-              size: 64,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sipariş bulunamadı',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Bu sipariş silinmiş veya erişim izniniz olmayabilir.',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(0, 52),
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-              ),
-              child: const Text('Geri Dön'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +168,7 @@ class OrderDetailScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _StatusHeader extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _StatusHeader({required this.order});
 
   @override
@@ -232,7 +181,7 @@ class _StatusHeader extends StatelessWidget {
           _LargeStatusBadge(status: order.status),
           const SizedBox(height: 16),
           Text(
-            '#${order.orderNo}',
+            '#${order.orderNumber}',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -249,10 +198,10 @@ class _StatusHeader extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (order.estimatedDelivery != null) ...[
+          if (order.deliveredAt != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Tahmini: ${_formatDate(order.estimatedDelivery!)}',
+              'Teslim: ${_formatDate(order.deliveredAt!)}',
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.accent,
@@ -307,7 +256,7 @@ class _LargeStatusBadge extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _TimelineSection extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _TimelineSection({required this.order});
 
   static const List<OrderStatus> _mainFlow = [
@@ -318,19 +267,19 @@ class _TimelineSection extends StatelessWidget {
     OrderStatus.delivered,
   ];
 
-  DateTime? _timestampFor(OrderModel order, OrderStatus status) {
-    try {
-      return order.statusHistory
-          .lastWhere((h) => h.status == status)
-          .timestamp;
-    } catch (_) {
-      return null;
-    }
+  /// API'de statusHistory yok; `createdAt` ve `deliveredAt` bilinen tarihleri.
+  DateTime? _timestampFor(OrderEntity order, OrderStatus status) {
+    if (status == OrderStatus.pending) return order.createdAt;
+    if (status == OrderStatus.delivered) return order.deliveredAt;
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final isCancelled = order.status == OrderStatus.cancelled;
+    final currentIndex = isCancelled
+        ? -1
+        : _mainFlow.indexWhere((s) => s == order.status);
 
     return _SectionCard(
       title: 'Sipariş Durumu',
@@ -341,24 +290,26 @@ class _TimelineSection extends StatelessWidget {
             final status = _mainFlow[index];
             final isLast = index == _mainFlow.length - 1;
             final timestamp = _timestampFor(order, status);
-            final inHistory = timestamp != null;
 
             // Durumu belirle: done / active / upcoming
             final String stepState;
-            if (inHistory) {
-              stepState = order.status == status ? 'active' : 'done';
+            if (isCancelled) {
+              stepState = 'upcoming';
+            } else if (index < currentIndex) {
+              stepState = 'done';
+            } else if (index == currentIndex) {
+              stepState = 'active';
             } else {
-              stepState = isCancelled ? 'upcoming' : (order.status == status ? 'active' : 'upcoming');
+              stepState = 'upcoming';
             }
 
-            // next adımın done olup olmadığını bul (connector rengi için)
             final bool nextIsDone = !isLast &&
-                _timestampFor(order, _mainFlow[index + 1]) != null;
+                !isCancelled &&
+                (index + 1) < currentIndex;
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Sol kolon: dot + connector
                 SizedBox(
                   width: 40,
                   child: Column(
@@ -369,7 +320,6 @@ class _TimelineSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Sağ kolon: label + tarih
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(
@@ -401,17 +351,6 @@ class _TimelineSection extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (stepState == 'active' &&
-                            order.estimatedDelivery != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'Tahmini: ${_formatDate(order.estimatedDelivery!)}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -434,35 +373,16 @@ class _TimelineSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
+                const Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'İptal Edildi',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.error,
-                          ),
-                        ),
-                        Builder(builder: (context) {
-                          final ts = _timestampFor(order, OrderStatus.cancelled);
-                          if (ts == null) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              _formatDate(ts),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      'İptal Edildi',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.error,
+                      ),
                     ),
                   ),
                 ),
@@ -587,7 +507,7 @@ class _ConnectorLine extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CancelOrderButton extends ConsumerStatefulWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _CancelOrderButton({required this.order});
 
   @override
@@ -630,20 +550,29 @@ class _CancelOrderButtonState extends ConsumerState<_CancelOrderButton> {
 
     setState(() => _isLoading = true);
     try {
-      final uid = ref.read(authStateProvider).value?.uid ?? 'customer';
-      await ref.read(orderRepositoryProvider).updateOrderStatus(
-            orderId: widget.order.id,
-            newStatus: OrderStatus.cancelled,
-            updatedBy: uid,
-          );
+      final success = await ref
+          .read(apiOrdersNotifierProvider.notifier)
+          .cancelOrder(widget.order.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sipariş iptal edildi.'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        if (success) {
+          ref.invalidate(orderStreamProvider(widget.order.id.toString()));
+          ref.invalidate(userOrdersProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sipariş iptal edildi.'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sipariş iptal edilemedi. Tekrar deneyin.'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (_) {
       if (mounted) {
@@ -697,11 +626,12 @@ class _CancelOrderButtonState extends ConsumerState<_CancelOrderButton> {
 // ---------------------------------------------------------------------------
 
 class _ProductsSection extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _ProductsSection({required this.order});
 
   @override
   Widget build(BuildContext context) {
+    final discount = order.discount ?? 0.0;
     return _SectionCard(
       title: 'Ürünler (${order.totalItems} adet)',
       child: Column(
@@ -714,7 +644,7 @@ class _ProductsSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      item.productName,
+                      item.displayName,
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.textPrimary,
@@ -723,7 +653,7 @@ class _ProductsSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${item.qty} x ₺${item.unitPrice.toStringAsFixed(2)}',
+                    '${item.quantity} x ₺${item.unitPrice.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -747,11 +677,11 @@ class _ProductsSection extends StatelessWidget {
             label: 'Ara Toplam',
             value: '₺${order.subtotal.toStringAsFixed(2)}',
           ),
-          if (order.discount > 0) ...[
+          if (discount > 0) ...[
             const SizedBox(height: 4),
             _SummaryRow(
               label: 'İndirim',
-              value: '-₺${order.discount.toStringAsFixed(2)}',
+              value: '-₺${discount.toStringAsFixed(2)}',
               valueColor: AppColors.success,
             ),
           ],
@@ -781,13 +711,13 @@ class _ProductsSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _AddressSection extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _AddressSection({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final addr = order.deliveryAddress;
-    final hasCoords = addr.lat != null && addr.lng != null;
+    final addr = order.address;
+    final district = addr.district ?? '';
     return _SectionCard(
       title: 'Teslimat Adresi',
       child: Column(
@@ -802,12 +732,12 @@ class _AddressSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(addr.fullAddress,
+                    Text(addr.address,
                         style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
-                    if (addr.district.isNotEmpty || addr.city.isNotEmpty) ...[
+                    if (district.isNotEmpty || addr.city.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        [addr.district, addr.city].where((s) => s.isNotEmpty).join(', '),
+                        [district, addr.city].where((s) => s.isNotEmpty).join(', '),
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
@@ -815,43 +745,6 @@ class _AddressSection extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          if (addr.notes != null && addr.notes!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.info_outline, color: AppColors.textHint, size: 14),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(addr.notes!,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () async {
-              final Uri uri;
-              if (hasCoords) {
-                uri = Uri.parse(
-                    'https://www.google.com/maps/search/?api=1&query=${addr.lat},${addr.lng}');
-              } else {
-                final q = Uri.encodeComponent(addr.fullAddress);
-                uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$q');
-              }
-              if (await canLaunchUrl(uri)) await launchUrl(uri);
-            },
-            icon: const Icon(Icons.map_outlined, size: 16),
-            label: const Text('Haritada Gör', style: TextStyle(fontSize: 13)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.accent,
-              side: const BorderSide(color: AppColors.accent),
-              minimumSize: const Size(double.infinity, 40),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-            ),
           ),
         ],
       ),
@@ -864,21 +757,23 @@ class _AddressSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PaymentSection extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _PaymentSection({required this.order});
 
   @override
   Widget build(BuildContext context) {
+    final hasCoupon = order.couponCode != null && order.couponCode!.isNotEmpty;
+    final hasNotes = order.notes != null && order.notes!.isNotEmpty;
+    if (!hasCoupon && !hasNotes) return const SizedBox.shrink();
     return _SectionCard(
-      title: 'Ödeme & Diğer',
+      title: 'Diğer',
       child: Column(
         children: [
-          _InfoRow(
-            label: 'Ödeme Yöntemi',
-            value: order.paymentMethod.displayName,
-          ),
-          if (order.notes != null && order.notes!.isNotEmpty) ...[
-            const SizedBox(height: 8),
+          if (hasCoupon) ...[
+            _InfoRow(label: 'Kupon Kodu', value: order.couponCode!),
+          ],
+          if (hasCoupon && hasNotes) const SizedBox(height: 8),
+          if (hasNotes) ...[
             _InfoRow(label: 'Sipariş Notu', value: order.notes!),
           ],
         ],
@@ -1054,10 +949,9 @@ IconData _statusIcon(OrderStatus status) {
 // ---------------------------------------------------------------------------
 
 class _ReorderButton extends ConsumerWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _ReorderButton({required this.order});
 
-  @override
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
@@ -1069,17 +963,17 @@ class _ReorderButton extends ConsumerWidget {
 
           // Sepeti temizle, önceki ürünleri silme — sadece ekle
           for (final item in order.items) {
-            // OrderItem verilerinden minimal ProductModel yap
+            // OrderItemEntity verilerinden minimal ProductModel yap
             final product = ProductModel(
-              id: item.productId,
+              id: item.productId.toString(),
               name: item.productName,
               description: '',
               categoryIds: const [],
-              imageUrl: item.imageUrl,
+              imageUrl: item.productImageUrl,
               createdAt: now,
               updatedAt: now,
             );
-            cartNotifier.addItem(product, quantity: item.qty);
+            cartNotifier.addItem(product, quantity: item.quantity);
           }
 
           ScaffoldMessenger.of(context).showSnackBar(

@@ -9,7 +9,6 @@ import 'package:nisa_ticaret/core/services/whatsapp_service.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
-
 // ---------------------------------------------------------------------------
 // _packageInfoProvider — uygulama versiyonunu bir kez cekip cache'ler
 // ---------------------------------------------------------------------------
@@ -51,7 +50,7 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: AppColors.background,
         body: Center(
           child: Text(
-            'Bir hata olustu.',
+            'Bir hata oluştu.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
@@ -155,7 +154,7 @@ class _ProfileContent extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
           _HeaderCard(user: user),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           if (menuItems.isNotEmpty) ...[
             _MenuSection(items: menuItems),
             const SizedBox(height: 24),
@@ -188,6 +187,11 @@ class _ProfileContent extends ConsumerWidget {
       BuildContext context, String appVersion) {
     return [
       _MenuItem(
+        icon: Icons.edit_outlined,
+        title: 'Bilgilerimi Düzenle',
+        onTap: () => context.push(AppRoutes.profileEdit),
+      ),
+      _MenuItem(
         icon: Icons.location_on_outlined,
         title: 'Adreslerim',
         onTap: () => context.push(AppRoutes.addressSelection),
@@ -212,9 +216,49 @@ class _ProfileContent extends ConsumerWidget {
       _MenuItem(
         icon: Icons.info_outline,
         title: 'Uygulama Hakkında (v$appVersion)',
-        onTap: () {},
+        onTap: () => _showAboutDialog(context, appVersion),
       ),
     ];
+  }
+
+  void _showAboutDialog(BuildContext context, String version) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset('assets/images/app_icon.png', width: 40, height: 40, fit: BoxFit.contain),
+            ),
+            const SizedBox(width: 12),
+            const Text('Nisa Ticaret', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _AboutRow(label: 'Sürüm', value: version),
+            _AboutRow(label: 'Geliştirici', value: 'Fuska A.Ş.'),
+            _AboutRow(label: 'İletişim', value: 'info@fuska.com.tr'),
+            const SizedBox(height: 8),
+            const Text(
+              'Fuska Nisa Ticaret uygulaması; su ve meşrubat siparişleri için geliştirilmiştir.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Poppins', height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
   }
 
   List<_MenuItem> _adminMenuItems(
@@ -224,11 +268,6 @@ class _ProfileContent extends ConsumerWidget {
         icon: Icons.dashboard_outlined,
         title: 'Yönetim Paneli',
         onTap: () => context.go(AppRoutes.adminHome),
-      ),
-      _MenuItem(
-        icon: Icons.inventory_2_outlined,
-        title: 'Ürün Yönetimi',
-        onTap: () => context.push(AppRoutes.productManagement),
       ),
       _MenuItem(
         icon: Icons.receipt_long_outlined,
@@ -253,7 +292,7 @@ class _ProfileContent extends ConsumerWidget {
       _MenuItem(
         icon: Icons.info_outline,
         title: 'Uygulama Hakkında (v$appVersion)',
-        onTap: () {},
+        onTap: () => _showAboutDialog(context, appVersion),
       ),
     ];
   }
@@ -279,7 +318,7 @@ class _ProfileContent extends ConsumerWidget {
       _MenuItem(
         icon: Icons.info_outline,
         title: 'Uygulama Hakkında (v$appVersion)',
-        onTap: () {},
+        onTap: () => _showAboutDialog(context, appVersion),
       ),
     ];
   }
@@ -305,7 +344,7 @@ class _ProfileContent extends ConsumerWidget {
       _MenuItem(
         icon: Icons.info_outline,
         title: 'Uygulama Hakkında (v$appVersion)',
-        onTap: () {},
+        onTap: () => _showAboutDialog(context, appVersion),
       ),
     ];
   }
@@ -504,6 +543,48 @@ class _MenuSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // _MenuTile — tekil menü kalemi
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// _AboutRow — Hakkında dialog'u için etiket/değer satırı
+// ---------------------------------------------------------------------------
+class _AboutRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _AboutRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MenuTile extends StatelessWidget {
   final _MenuItem item;
   const _MenuTile({required this.item});
@@ -551,8 +632,8 @@ class _SignOutButton extends ConsumerWidget {
       child: OutlinedButton.icon(
         onPressed: () => _confirmSignOut(context, ref),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.error,
-          side: const BorderSide(color: AppColors.error, width: 1.5),
+          foregroundColor: AppColors.secondary,
+          side: const BorderSide(color: AppColors.secondary, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -571,40 +652,106 @@ class _SignOutButton extends ConsumerWidget {
   Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Çıkış Yap',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: const Text(
-          'Çıkış yapmak istediğinizden emin misiniz?',
-          style: TextStyle(fontFamily: 'Poppins'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Vazgeç'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.textWhite,
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // İkon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.secondary,
+                  size: 28,
+                ),
               ),
-            ),
-            child: const Text('Çıkış Yap'),
+              const SizedBox(height: 16),
+              // Başlık
+              const Text(
+                'Çıkış Yap',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Açıklama
+              const Text(
+                'Çıkış yapmak istediğinizden emin misiniz?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Butonlar
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Vazgeç',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Çıkış Yap',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 

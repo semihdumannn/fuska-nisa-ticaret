@@ -5,7 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 
 /// Admin giris noktasi. /admin route'u buraya gelir ve
 /// tam admin dashboard'a (/admin/dashboard) yonlendirir.
-/// Eger dogrudan bir gecis ekrani istenirse bu widget'a icerik eklenebilir.
+/// Eğer doğrudan bir geçiş ekranı istenirse bu widget'a içerik eklenebilir.
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -10,139 +9,18 @@ import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
-import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
-import 'package:nisa_ticaret/features/products/data/repositories/product_repository.dart';
+import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
+import 'package:nisa_ticaret/features/orders/presentation/providers/api_orders_provider.dart';
 
 // ---------------------------------------------------------------------------
-// Ana ekran — ConsumerStatefulWidget (form state + lifecycle gerekiyor)
+// Ana ekran
 // ---------------------------------------------------------------------------
-class FieldAgentHomeScreen extends ConsumerStatefulWidget {
+class FieldAgentHomeScreen extends ConsumerWidget {
   const FieldAgentHomeScreen({super.key});
 
   @override
-  ConsumerState<FieldAgentHomeScreen> createState() =>
-      _FieldAgentHomeScreenState();
-}
-
-class _FieldAgentHomeScreenState extends ConsumerState<FieldAgentHomeScreen> {
-  // Form controllers
-  final _customerNameController = TextEditingController();
-  final _customerPhoneController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-
-  // Hızlı sipariş form state
-  ProductModel? _selectedProduct;
-  int _qty = 1;
-  bool _isCreatingOrder = false;
-
-  @override
-  void dispose() {
-    _customerNameController.dispose();
-    _customerPhoneController.dispose();
-    super.dispose();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Sipariş oluştur
-  // ---------------------------------------------------------------------------
-  Future<void> _createOrder(UserModel user) async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedProduct == null) {
-      _showSnackBar('Lütfen bir ürün seçin.', isError: true);
-      return;
-    }
-
-    setState(() => _isCreatingOrder = true);
-
-    try {
-      final now = DateTime.now();
-      final unitPrice = _selectedProduct!.effectivePrice;
-      final totalPrice = unitPrice * _qty;
-
-      // customerId: saha terminali misafir siparişi — createdBy agent uid,
-      // customerId müşteri için ayrı uid olmalı; misafir siparişinde agent uid kullanılır.
-      final customerName = _customerNameController.text.trim();
-      final customerPhone = _customerPhoneController.text.trim();
-      final order = OrderModel(
-        id: '',
-        orderNo: '',
-        customerId: 'guest_${user.uid}', // misafir — müşteri uid'i yok
-        customerName: customerName,
-        customerPhone: customerPhone,
-        source: OrderSource.fieldAgent,
-        createdBy: user.uid,
-        status: OrderStatus.pending,
-        statusHistory: [
-          StatusHistory(
-            status: OrderStatus.pending,
-            timestamp: now,
-            by: user.uid,
-          ),
-        ],
-        items: [
-          OrderItem(
-            productId: _selectedProduct!.id,
-            productName: _selectedProduct!.name,
-            qty: _qty,
-            unitPrice: unitPrice,
-            totalPrice: totalPrice,
-          ),
-        ],
-        deliveryAddress: const DeliveryAddress(
-          fullAddress: 'Saha terminali',
-          district: '-',
-          city: '-',
-        ),
-        paymentMethod: PaymentMethod.cash,
-        subtotal: totalPrice,
-        discount: 0,
-        total: totalPrice,
-        createdAt: now,
-        updatedAt: now,
-      );
-
-      final orderNo =
-          await ref.read(orderRepositoryProvider).createOrder(order);
-
-      if (!mounted) return;
-
-      _clearForm();
-      _showSnackBar('Sipariş oluşturuldu: #$orderNo');
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar('Sipariş oluşturulamadı. Tekrar deneyin.', isError: true);
-    } finally {
-      if (mounted) setState(() => _isCreatingOrder = false);
-    }
-  }
-
-  void _clearForm() {
-    _customerNameController.clear();
-    _customerPhoneController.clear();
-    setState(() {
-      _selectedProduct = null;
-      _qty = 1;
-    });
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(authStateProvider);
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
@@ -156,37 +34,10 @@ class _FieldAgentHomeScreenState extends ConsumerState<FieldAgentHomeScreen> {
             if (user == null) {
               return const Center(child: Text('Oturum bulunamadı.'));
             }
+            void onLogout() => ref.read(authNotifierProvider.notifier).signOut();
             return isTablet
-                ? _TabletLayout(
-                    user: user,
-                    formKey: _formKey,
-                    customerNameController: _customerNameController,
-                    customerPhoneController: _customerPhoneController,
-                    selectedProduct: _selectedProduct,
-                    qty: _qty,
-                    isCreatingOrder: _isCreatingOrder,
-                    onProductChanged: (p) =>
-                        setState(() => _selectedProduct = p),
-                    onQtyChanged: (q) => setState(() => _qty = q),
-                    onCreateOrder: () => _createOrder(user),
-                    onLogout: () =>
-                        ref.read(authNotifierProvider.notifier).signOut(),
-                  )
-                : _PhoneLayout(
-                    user: user,
-                    formKey: _formKey,
-                    customerNameController: _customerNameController,
-                    customerPhoneController: _customerPhoneController,
-                    selectedProduct: _selectedProduct,
-                    qty: _qty,
-                    isCreatingOrder: _isCreatingOrder,
-                    onProductChanged: (p) =>
-                        setState(() => _selectedProduct = p),
-                    onQtyChanged: (q) => setState(() => _qty = q),
-                    onCreateOrder: () => _createOrder(user),
-                    onLogout: () =>
-                        ref.read(authNotifierProvider.notifier).signOut(),
-                  );
+                ? _TabletLayout(user: user, onLogout: onLogout)
+                : _PhoneLayout(user: user, onLogout: onLogout);
           },
         ),
       ),
@@ -199,30 +50,9 @@ class _FieldAgentHomeScreenState extends ConsumerState<FieldAgentHomeScreen> {
 // ---------------------------------------------------------------------------
 class _PhoneLayout extends StatelessWidget {
   final UserModel user;
-  final GlobalKey<FormState> formKey;
-  final TextEditingController customerNameController;
-  final TextEditingController customerPhoneController;
-  final ProductModel? selectedProduct;
-  final int qty;
-  final bool isCreatingOrder;
-  final ValueChanged<ProductModel?> onProductChanged;
-  final ValueChanged<int> onQtyChanged;
-  final VoidCallback onCreateOrder;
   final VoidCallback onLogout;
 
-  const _PhoneLayout({
-    required this.user,
-    required this.formKey,
-    required this.customerNameController,
-    required this.customerPhoneController,
-    required this.selectedProduct,
-    required this.qty,
-    required this.isCreatingOrder,
-    required this.onProductChanged,
-    required this.onQtyChanged,
-    required this.onCreateOrder,
-    required this.onLogout,
-  });
+  const _PhoneLayout({required this.user, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -235,17 +65,7 @@ class _PhoneLayout extends StatelessWidget {
           const SizedBox(height: 16),
           _StatsGrid(),
           const SizedBox(height: 20),
-          _QuickOrderForm(
-            formKey: formKey,
-            customerNameController: customerNameController,
-            customerPhoneController: customerPhoneController,
-            selectedProduct: selectedProduct,
-            qty: qty,
-            isCreatingOrder: isCreatingOrder,
-            onProductChanged: onProductChanged,
-            onQtyChanged: onQtyChanged,
-            onCreateOrder: onCreateOrder,
-          ),
+          _TerminalActionButtons(),
           const SizedBox(height: 20),
           _TodayOrdersSection(),
           const SizedBox(height: 24),
@@ -260,37 +80,16 @@ class _PhoneLayout extends StatelessWidget {
 // ---------------------------------------------------------------------------
 class _TabletLayout extends StatelessWidget {
   final UserModel user;
-  final GlobalKey<FormState> formKey;
-  final TextEditingController customerNameController;
-  final TextEditingController customerPhoneController;
-  final ProductModel? selectedProduct;
-  final int qty;
-  final bool isCreatingOrder;
-  final ValueChanged<ProductModel?> onProductChanged;
-  final ValueChanged<int> onQtyChanged;
-  final VoidCallback onCreateOrder;
   final VoidCallback onLogout;
 
-  const _TabletLayout({
-    required this.user,
-    required this.formKey,
-    required this.customerNameController,
-    required this.customerPhoneController,
-    required this.selectedProduct,
-    required this.qty,
-    required this.isCreatingOrder,
-    required this.onProductChanged,
-    required this.onQtyChanged,
-    required this.onCreateOrder,
-    required this.onLogout,
-  });
+  const _TabletLayout({required this.user, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Sol kolon: header + stats + form
+        // Sol kolon: header + stats + action buttons
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 12, 24),
@@ -301,17 +100,7 @@ class _TabletLayout extends StatelessWidget {
                 const SizedBox(height: 16),
                 _StatsGrid(columns: 4),
                 const SizedBox(height: 20),
-                _QuickOrderForm(
-                  formKey: formKey,
-                  customerNameController: customerNameController,
-                  customerPhoneController: customerPhoneController,
-                  selectedProduct: selectedProduct,
-                  qty: qty,
-                  isCreatingOrder: isCreatingOrder,
-                  onProductChanged: onProductChanged,
-                  onQtyChanged: onQtyChanged,
-                  onCreateOrder: onCreateOrder,
-                ),
+                _TerminalActionButtons(),
               ],
             ),
           ),
@@ -433,7 +222,7 @@ class _HeaderCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    onPressed: () => context.go(AppRoutes.productList),
+                    onPressed: () => context.go(AppRoutes.home),
                     icon: const Icon(Icons.storefront_outlined,
                         color: AppColors.accent, size: 22),
                     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -626,333 +415,110 @@ class _StatCard extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Hızlı sipariş formu
+// Terminal aksiyon butonları — müşteri araması ve hızlı sipariş
 // ---------------------------------------------------------------------------
-class _QuickOrderForm extends ConsumerWidget {
-  final GlobalKey<FormState> formKey;
-  final TextEditingController customerNameController;
-  final TextEditingController customerPhoneController;
-  final ProductModel? selectedProduct;
-  final int qty;
-  final bool isCreatingOrder;
-  final ValueChanged<ProductModel?> onProductChanged;
-  final ValueChanged<int> onQtyChanged;
-  final VoidCallback onCreateOrder;
-
-  const _QuickOrderForm({
-    required this.formKey,
-    required this.customerNameController,
-    required this.customerPhoneController,
-    required this.selectedProduct,
-    required this.qty,
-    required this.isCreatingOrder,
-    required this.onProductChanged,
-    required this.onQtyChanged,
-    required this.onCreateOrder,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(allProductsProvider);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Başlık
-            const Text(
-              'Hızlı Sipariş',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Müşteri adı
-            TextFormField(
-              controller: customerNameController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Ad Soyad',
-                hintText: 'Müşteri adı girin',
-                prefixIcon: Icon(Icons.person_outline, size: 20),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Müşteri adı zorunlu' : null,
-            ),
-            const SizedBox(height: 12),
-
-            // Telefon (opsiyonel)
-            TextFormField(
-              controller: customerPhoneController,
-              textInputAction: TextInputAction.next,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Telefon (opsiyonel)',
-                hintText: '05xx xxx xx xx',
-                prefixIcon: Icon(Icons.phone_outlined, size: 20),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Ürün seçimi
-            productsAsync.when(
-              loading: () => _ProductDropdownShimmer(),
-              error: (_, __) => const _ProductDropdownError(),
-              data: (products) {
-                final inStockProducts =
-                    products.where((p) => p.inStock).toList();
-                return FormField<ProductModel>(
-                  initialValue: selectedProduct,
-                  validator: (v) => v == null ? 'Ürün seçiniz' : null,
-                  builder: (field) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: 'Ürün Seç',
-                            prefixIcon: const Icon(
-                              Icons.inventory_outlined,
-                              size: 20,
-                            ),
-                            errorText: field.errorText,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                                  const BorderSide(color: AppColors.border),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppColors.primary, width: 2),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                                  const BorderSide(color: AppColors.error),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppColors.error, width: 2),
-                            ),
-                          ),
-                          child: DropdownButton<ProductModel>(
-                            value: selectedProduct,
-                            isExpanded: true,
-                            underline: const SizedBox.shrink(),
-                            hint: const Text(
-                              'Ürün seçin',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textHint,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                            items: inStockProducts
-                                .map(
-                                  (p) => DropdownMenuItem<ProductModel>(
-                                    value: p,
-                                    child: Text(
-                                      '${p.name} — ${p.effectivePrice.toStringAsFixed(2)}₺',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (p) {
-                              onProductChanged(p);
-                              field.didChange(p);
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 14),
-
-            // Miktar
-            _QtySelector(qty: qty, onChanged: onQtyChanged),
-            const SizedBox(height: 16),
-
-            // Sipariş oluştur butonu
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: isCreatingOrder ? null : onCreateOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.5),
-                  foregroundColor: AppColors.textWhite,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: isCreatingOrder
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Sipariş Oluştur',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Ürün dropdown shimmer
-class _ProductDropdownShimmer extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: AppColors.border,
-      highlightColor: AppColors.surface,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.border,
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-}
-
-// Ürün dropdown hata
-class _ProductDropdownError extends StatelessWidget {
-  const _ProductDropdownError();
+class _TerminalActionButtons extends StatelessWidget {
+  const _TerminalActionButtons();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.error),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Text(
-        'Ürünler yüklenemedi',
-        style: TextStyle(color: AppColors.error, fontSize: 13),
-      ),
-    );
-  }
-}
-
-// Miktar seçici
-class _QtySelector extends StatelessWidget {
-  final int qty;
-  final ValueChanged<int> onChanged;
-
-  const _QtySelector({required this.qty, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Miktar',
+          'Hızlı İşlemler',
           style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
             fontFamily: 'Poppins',
           ),
         ),
-        const Spacer(),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.secondary, width: 1.5),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              _QtyButton(
-                icon: Icons.remove,
-                onTap: qty > 1 ? () => onChanged(qty - 1) : null,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  '$qty',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.secondary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-              _QtyButton(
-                icon: Icons.add,
-                onTap: qty < 99 ? () => onChanged(qty + 1) : null,
-              ),
-            ],
-          ),
+        const SizedBox(height: 12),
+        _ActionButton(
+          icon: Icons.search_rounded,
+          title: 'Müşteri Ara & Sipariş',
+          subtitle: 'Kayıtlı müşteriyi bul ve sipariş oluştur',
+          color: AppColors.primary,
+          onTap: () => context.push(AppRoutes.customerSearch),
+        ),
+        const SizedBox(height: 10),
+        _ActionButton(
+          icon: Icons.flash_on_rounded,
+          title: 'Hızlı Sipariş',
+          subtitle: 'Yeni veya misafir müşteri için sipariş gir',
+          color: AppColors.accent,
+          onTap: () => context.push(AppRoutes.quickOrder),
         ),
       ],
     );
   }
 }
 
-class _QtyButton extends StatelessWidget {
+class _ActionButton extends StatelessWidget {
   final IconData icon;
-  final VoidCallback? onTap;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
 
-  const _QtyButton({required this.icon, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 48,
-      height: 48,
+    return Material(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Center(
-          child: Icon(
-            icon,
-            size: 18,
-            color: onTap != null ? AppColors.secondary : AppColors.textHint,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
+            ],
           ),
         ),
       ),
@@ -1124,7 +690,7 @@ class _TodayOrdersEmpty extends StatelessWidget {
 // Sipariş kartı
 // ---------------------------------------------------------------------------
 class _OrderCard extends ConsumerWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _OrderCard({required this.order});
 
   Color _statusColor(OrderStatus status) {
@@ -1152,11 +718,7 @@ class _OrderCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _statusColor(order.status);
 
-    return GestureDetector(
-      onTap: () => context.push(
-        AppRoutes.orderDetail.replaceFirst(':id', order.id),
-      ),
-      child: Container(
+    return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.cardBg,
@@ -1190,7 +752,7 @@ class _OrderCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '#${order.orderNo}',
+                        '#${order.orderNumber}',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1199,7 +761,7 @@ class _OrderCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        order.customerName,
+                        order.address.fullName,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -1262,7 +824,7 @@ class _OrderCard extends ConsumerWidget {
                 // Detay Gör
                 OutlinedButton(
                   onPressed: () => context.push(
-                    AppRoutes.orderDetail.replaceFirst(':id', order.id),
+                    AppRoutes.orderDetail.replaceFirst(':id', order.id.toString()),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.secondary,
@@ -1307,30 +869,40 @@ class _OrderCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Future<void> _confirmOrder(BuildContext context, WidgetRef ref) async {
-    final user = ref.read(authStateProvider).value;
-    if (user == null) return;
-
     try {
-      await ref.read(orderRepositoryProvider).updateOrderStatus(
+      final success = await ref
+          .read(apiOrdersNotifierProvider.notifier)
+          .updateStatus(
             orderId: order.id,
             newStatus: OrderStatus.confirmed,
-            updatedBy: user.uid,
           );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Sipariş onaylandı.'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        if (success) {
+          ref.invalidate(activeOrdersProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Sipariş onaylandı.'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('İşlem başarısız. Tekrar deneyin.'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
       }
     } catch (_) {
       if (context.mounted) {

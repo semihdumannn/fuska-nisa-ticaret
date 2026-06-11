@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../products/data/models/product_model.dart';
-import '../../cart/presentation/bloc/cart_provider.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/navigation_guard.dart';
+import '../../cart/presentation/bloc/cart_provider.dart';
+import '../../products/data/models/product_model.dart';
 
 class ProductCard extends ConsumerWidget {
   final ProductModel product;
@@ -36,19 +37,24 @@ class ProductCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () =>
-          context.push(AppRoutes.productDetail.replaceFirst(':id', product.id)),
+          context.safePush(AppRoutes.productDetail.replaceFirst(':id', product.id)),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
+            // Image — grid hücresinin kalan yüksekliğini doldurur
             Expanded(
-              flex: 3,
               child: Stack(
                 children: [
                   ClipRRect(
@@ -87,22 +93,46 @@ class ProductCard extends ConsumerWidget {
                             ),
                     ),
                   ),
-                  // Discount badge
-                  if (showDiscount)
+                  // Featured badge — sol üst
+                  if (product.isFeatured)
                     Positioned(
                       top: 8,
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'YENİ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Discount badge — sağ üst
+                  if (showDiscount)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.error,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '%${discountPct.toInt()} İndirim',
+                          '%${discountPct.toInt()}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -136,77 +166,66 @@ class ProductCard extends ConsumerWidget {
               ),
             ),
 
-            // Info
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+            // Info — sabit yükseklik, taşmaz
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (showDiscount)
-                              Text(
-                                '₺${originalPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textHint,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (showDiscount)
                             Text(
-                              displayPrice > 0
-                                  ? '₺${displayPrice.toStringAsFixed(2)}'
-                                  : 'Fiyat yok',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: displayPrice > 0
-                                    ? AppColors.primary
-                                    : AppColors.textHint,
+                              '₺${originalPrice.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textHint,
+                                decoration: TextDecoration.lineThrough,
                               ),
                             ),
-                            if (koliVariant != null &&
-                                (koliVariant.packageQty ?? 0) > 0)
-                              Text(
-                                '1 Koli = ${koliVariant.packageQty} Adet',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.textSecondary,
-                                ),
+                          Text(
+                            displayPrice > 0
+                                ? '₺${displayPrice.toStringAsFixed(2)}'
+                                : 'Fiyat yok',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: displayPrice > 0
+                                  ? AppColors.primary
+                                  : AppColors.textHint,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (showAddButton && isInStock)
+                        qty == 0
+                            ? _AddButton(
+                                product: product,
+                                koliVariantId: koliVariant?.id,
+                              )
+                            : _QtyControl(
+                                product: product,
+                                qty: qty,
+                                koliVariantId: koliVariant?.id,
                               ),
-                          ],
-                        ),
-                        if (showAddButton && isInStock)
-                          qty == 0
-                              ? _AddButton(
-                                  product: product,
-                                  koliVariantId: koliVariant?.id,
-                                )
-                              : _QtyControl(
-                                  product: product,
-                                  qty: qty,
-                                  koliVariantId: koliVariant?.id,
-                                ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

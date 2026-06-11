@@ -2,29 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
-import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
+import 'package:nisa_ticaret/features/delivery/data/providers/delivery_data_providers.dart';
+import 'package:nisa_ticaret/features/delivery/domain/entities/delivery_route_entity.dart';
 
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------
 
-/// Teslimatciya atanmis aktif siparisler (on_the_way veya assignedTo eslesimi)
-final deliveryOrdersProvider = StreamProvider<List<OrderModel>>((ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value([]);
-  return ref
-      .watch(orderRepositoryProvider)
-      .watchActiveOrders()
-      .map((orders) => orders
-          .where((o) =>
-              o.assignedTo == user.uid ||
-              o.status == OrderStatus.onTheWay)
-          .toList());
+/// Teslimatçıya atanmış aktif siparişler (API üzerinden)
+final deliveryOrdersProvider =
+    FutureProvider<List<DeliveryRouteEntity>>((ref) async {
+  final repo = ref.watch(deliveryRepositoryProvider);
+  final result = await repo.getDeliveryRoute();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (orders) => orders,
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -43,18 +39,16 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   // -----------------------------------------------------------------------
   // Harici Maps aç
   // -----------------------------------------------------------------------
-  Future<void> _openInMaps(DeliveryAddress address) async {
-    final lat = address.lat;
-    final lng = address.lng;
+  Future<void> _openInMaps(DeliveryRouteEntity order) async {
+    final lat = order.latitude;
+    final lng = order.longitude;
     final Uri uri;
     if (lat != null && lng != null) {
       uri = Uri.parse(
           'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     } else {
-      final q = Uri.encodeComponent(
-          '${address.fullAddress}, ${address.district}, ${address.city}');
-      uri =
-          Uri.parse('https://www.google.com/maps/search/?api=1&query=$q');
+      final q = Uri.encodeComponent(order.address);
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$q');
     }
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -62,9 +56,9 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   }
 
   // -----------------------------------------------------------------------
-  // Teslim et — onay dialog + Firestore güncelleme
+  // Teslim et — onay dialog + API güncelleme
   // -----------------------------------------------------------------------
-  Future<void> _deliverOrder(OrderModel order) async {
+  Future<void> _deliverOrder(DeliveryRouteEntity order) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -72,7 +66,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
             borderRadius: BorderRadius.circular(16)),
         title: const Text('Teslim Edildi mi?'),
         content: Text(
-          '#${order.orderNo} numaralı sipariş teslim edildi olarak işaretlensin mi?',
+          '#${order.orderNumber} numaralı sipariş teslim edildi olarak işaretlensin mi?',
         ),
         actions: [
           TextButton(
@@ -93,19 +87,13 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
 
     if (confirm != true) return;
 
-    final user = ref.read(authStateProvider).value;
-    if (user == null) return;
-
     try {
-      await ref.read(orderRepositoryProvider).updateOrderStatus(
-            orderId: order.id,
-            newStatus: OrderStatus.delivered,
-            updatedBy: user.uid,
-          );
+      await ref.read(deliveryRepositoryProvider).confirmDelivery(order.id);
       if (!mounted) return;
+      ref.invalidate(deliveryOrdersProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('#${order.orderNo} teslim edildi.'),
+          content: Text('#${order.orderNumber} teslim edildi.'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -129,9 +117,8 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   // -----------------------------------------------------------------------
   // Mesafe hesapla (koordinatsız durum için infinity döner)
   // -----------------------------------------------------------------------
-  double _calcDistance(OrderModel order) {
-    if (order.deliveryAddress.lat == null ||
-        order.deliveryAddress.lng == null) {
+  double _calcDistance(DeliveryRouteEntity order) {
+    if (order.latitude == null || order.longitude == null) {
       return double.infinity;
     }
     // Konum bilgisi olmadan sıralama için koordinat varlığına göre sıralanır
@@ -141,17 +128,15 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   // -----------------------------------------------------------------------
   // Google Maps navigation başlat
   // -----------------------------------------------------------------------
-  Future<void> _launchNavigation(DeliveryAddress address) async {
-    final lat = address.lat;
-    final lng = address.lng;
+  Future<void> _launchNavigation(DeliveryRouteEntity order) async {
+    final lat = order.latitude;
+    final lng = order.longitude;
 
     Uri uri;
     if (lat != null && lng != null) {
       uri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
     } else {
-      final encoded = Uri.encodeComponent(
-        '${address.fullAddress}, ${address.district}, ${address.city}',
-      );
+      final encoded = Uri.encodeComponent(order.address);
       uri = Uri.parse('google.navigation:q=$encoded&mode=d');
     }
 
@@ -164,7 +149,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
         ? Uri.parse(
             'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving')
         : Uri.parse(
-            'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent('${address.fullAddress}, ${address.city}')}');
+            'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(order.address)}');
 
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
@@ -211,7 +196,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
             icon: const Icon(Icons.storefront_outlined,
                 color: AppColors.secondary),
             tooltip: 'Müşteri Görünümü',
-            onPressed: () => context.go(AppRoutes.productList),
+            onPressed: () => context.go(AppRoutes.home),
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined,
@@ -232,7 +217,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   // -----------------------------------------------------------------------
   Widget _buildTabletLayout(
     BuildContext context,
-    AsyncValue<List<OrderModel>> ordersAsync,
+    AsyncValue<List<DeliveryRouteEntity>> ordersAsync,
   ) {
     return Row(
       children: [
@@ -265,7 +250,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   // -----------------------------------------------------------------------
   Widget _buildPhoneLayout(
     BuildContext context,
-    AsyncValue<List<OrderModel>> ordersAsync,
+    AsyncValue<List<DeliveryRouteEntity>> ordersAsync,
   ) {
     return Column(
       children: [
@@ -289,7 +274,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
 // ---------------------------------------------------------------------------
 
 class _RouteStatsBar extends StatelessWidget {
-  final AsyncValue<List<OrderModel>> ordersAsync;
+  final AsyncValue<List<DeliveryRouteEntity>> ordersAsync;
   final bool vertical;
 
   const _RouteStatsBar({
@@ -301,13 +286,8 @@ class _RouteStatsBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final orders = ordersAsync.value ?? [];
     final total = orders.length;
-    final remaining = orders
-        .where((o) =>
-            o.status != OrderStatus.delivered &&
-            o.status != OrderStatus.cancelled)
-        .length;
-    final delivered =
-        orders.where((o) => o.status == OrderStatus.delivered).length;
+    final remaining = orders.where((o) => !o.isDelivered).length;
+    final delivered = orders.where((o) => o.isDelivered).length;
     final estimatedMinutes = remaining * 15;
     final estimatedLabel = estimatedMinutes >= 60
         ? '${(estimatedMinutes / 60).floor()} sa ${estimatedMinutes % 60} dk'
@@ -444,11 +424,11 @@ class _StatCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _TodayOrdersSection extends StatelessWidget {
-  final AsyncValue<List<OrderModel>> ordersAsync;
-  final double Function(OrderModel) calcDistance;
-  final Future<void> Function(DeliveryAddress) onOpenMaps;
-  final Future<void> Function(OrderModel) onDeliver;
-  final Future<void> Function(DeliveryAddress) onNavigate;
+  final AsyncValue<List<DeliveryRouteEntity>> ordersAsync;
+  final double Function(DeliveryRouteEntity) calcDistance;
+  final Future<void> Function(DeliveryRouteEntity) onOpenMaps;
+  final Future<void> Function(DeliveryRouteEntity) onDeliver;
+  final Future<void> Function(DeliveryRouteEntity) onNavigate;
 
   const _TodayOrdersSection({
     required this.ordersAsync,
@@ -496,9 +476,9 @@ class _TodayOrdersSection extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, i) => _DeliveryOrderCard(
                   order: orders[i],
-                  onOpenMaps: () => onOpenMaps(orders[i].deliveryAddress),
+                  onOpenMaps: () => onOpenMaps(orders[i]),
                   onDeliver: () => onDeliver(orders[i]),
-                  onNavigate: () => onNavigate(orders[i].deliveryAddress),
+                  onNavigate: () => onNavigate(orders[i]),
                 ),
               );
             },
@@ -589,7 +569,7 @@ class _TodayOrdersSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DeliveryOrderCard extends StatelessWidget {
-  final OrderModel order;
+  final DeliveryRouteEntity order;
   final VoidCallback onOpenMaps;
   final VoidCallback onDeliver;
   final VoidCallback onNavigate;
@@ -603,9 +583,6 @@ class _DeliveryOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final addr = order.deliveryAddress;
-    final canDeliver = order.status == OrderStatus.onTheWay;
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBg,
@@ -624,7 +601,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '#${order.orderNo}',
+                    '#${order.orderNumber}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -636,7 +613,7 @@ class _DeliveryOrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // Musteri adi + telefon
+            // Müşteri adi + telefon
             Row(
               children: [
                 const Icon(Icons.person_outline,
@@ -658,7 +635,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                     size: 15, color: AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
-                  order.customerPhone,
+                  order.phone,
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -676,7 +653,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    '${addr.fullAddress}, ${addr.district}, ${addr.city}',
+                    order.address,
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -688,7 +665,7 @@ class _DeliveryOrderCard extends StatelessWidget {
               ],
             ),
             // Notlar (varsa)
-            if (addr.notes != null && addr.notes!.isNotEmpty) ...[
+            if (order.notes != null && order.notes!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -697,7 +674,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      addr.notes!,
+                      order.notes!,
                       style: const TextStyle(
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
@@ -736,8 +713,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 // Navigate — Google Maps navigation baslat
                 OutlinedButton.icon(
-                  onPressed: order.deliveryAddress.lat != null ||
-                          order.deliveryAddress.fullAddress.isNotEmpty
+                  onPressed: order.hasCoordinates || order.address.isNotEmpty
                       ? onNavigate
                       : null,
                   icon: const Icon(Icons.navigation_outlined, size: 16),
@@ -758,10 +734,10 @@ class _DeliveryOrderCard extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: canDeliver
+                      backgroundColor: order.canDeliver
                           ? AppColors.success
                           : AppColors.border,
-                      foregroundColor: canDeliver
+                      foregroundColor: order.canDeliver
                           ? AppColors.textWhite
                           : AppColors.textSecondary,
                       minimumSize: const Size(0, 44),
@@ -770,7 +746,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: canDeliver ? onDeliver : null,
+                    onPressed: order.canDeliver ? onDeliver : null,
                     icon: const Icon(Icons.check, size: 16),
                     label: const Text(
                       'Teslim Et',
@@ -792,13 +768,14 @@ class _DeliveryOrderCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _StatusBadge extends StatelessWidget {
-  final OrderStatus status;
+  final String status;
 
   const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
     final color = _badgeColor(status);
+    final label = _badgeLabel(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -807,7 +784,7 @@ class _StatusBadge extends StatelessWidget {
         border: Border.all(color: color.withAlpha(80)),
       ),
       child: Text(
-        status.displayName,
+        label,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -817,20 +794,37 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 
-  Color _badgeColor(OrderStatus status) {
+  Color _badgeColor(String status) {
     switch (status) {
-      case OrderStatus.onTheWay:
+      case 'on_the_way':
         return AppColors.statusOnTheWay;
-      case OrderStatus.delivered:
+      case 'delivered':
         return AppColors.statusDelivered;
-      case OrderStatus.preparing:
+      case 'preparing':
         return AppColors.statusPreparing;
-      case OrderStatus.confirmed:
+      case 'confirmed':
         return AppColors.statusConfirmed;
-      case OrderStatus.cancelled:
+      case 'cancelled':
         return AppColors.statusCancelled;
       default:
         return AppColors.statusPending;
+    }
+  }
+
+  String _badgeLabel(String status) {
+    switch (status) {
+      case 'on_the_way':
+        return 'Yolda';
+      case 'delivered':
+        return 'Teslim Edildi';
+      case 'preparing':
+        return 'Hazırlanıyor';
+      case 'confirmed':
+        return 'Onaylandı';
+      case 'cancelled':
+        return 'İptal Edildi';
+      default:
+        return 'Beklemede';
     }
   }
 }
@@ -923,4 +917,3 @@ class _ShimmerBoxState extends State<_ShimmerBox>
     );
   }
 }
-

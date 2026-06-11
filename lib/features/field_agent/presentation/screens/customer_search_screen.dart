@@ -1,49 +1,125 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // FutureProvider, StateProvider, ConsumerWidget
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/network/api_endpoints.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
+import 'package:nisa_ticaret/features/admin/data/models/admin_user_model.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
-import 'package:nisa_ticaret/features/field_agent/data/repositories/customer_repository.dart';
+import 'package:nisa_ticaret/core/constants/app_constants.dart';
 
 // ---------------------------------------------------------------------------
-// Providers
+// Helpers
 // ---------------------------------------------------------------------------
 
+/// AdminUserModel → UserModel dönüşümü (UID olarak API id kullanılır)
+extension AdminUserToUser on AdminUserModel {
+  UserModel toUserModel() => UserModel(
+        uid: id,
+        name: name,
+        phone: phone,
+        email: email,
+        role: role,
+        isActive: !isBlocked,
+        createdAt: createdAt,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Providers — API tabanlı, Firestore yok
+// ---------------------------------------------------------------------------
+
+/// Arama: isim veya telefon numarasına göre API üzerinden müşteri ara
 final customerSearchProvider =
     FutureProvider.family<List<UserModel>, String>((ref, query) async {
   if (query.isEmpty) return [];
-  return ref.watch(customerRepositoryProvider).searchByName(query);
+
+  final dio = ref.watch(apiClientProvider).dio;
+  final response = await dio.get(
+    ApiEndpoints.adminUsers,
+    queryParameters: {
+      'search': query,
+      'role': 'customer',
+      'per_page': 20,
+      'page': 1,
+    },
+  );
+
+  final body = response.data as Map<String, dynamic>;
+  final data = body['data'] as List? ?? [];
+  return data
+      .map((j) => AdminUserModel.fromJson(j as Map<String, dynamic>).toUserModel())
+      .toList();
 });
 
-class _RecentCustomerIdsNotifier extends Notifier<List<String>> {
-  @override
-  List<String> build() => [];
+// ---------------------------------------------------------------------------
+// Son müşteriler — SharedPreferences'ta JSON olarak saklanır
+// ---------------------------------------------------------------------------
 
-  void update(List<String> ids) => state = ids;
+class _RecentCustomersNotifier extends Notifier<List<UserModel>> {
+  static const _key = 'recent_customers_json';
+
+  @override
+  List<UserModel> build() {
+    _load();
+    return [];
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = prefs.getStringList(_key) ?? [];
+    final customers = jsonList
+        .map((s) {
+          try {
+            final m = jsonDecode(s) as Map<String, dynamic>;
+            return UserModel(
+              uid: m['uid'] as String,
+              name: m['name'] as String,
+              phone: m['phone'] as String? ?? '',
+              role: UserRole.fromString(m['role'] as String? ?? 'customer'),
+              isActive: m['isActive'] as bool? ?? true,
+              createdAt: DateTime.tryParse(m['createdAt'] as String? ?? '') ??
+                  DateTime.now(),
+            );
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<UserModel>()
+        .toList();
+    state = customers;
+  }
+
+  Future<void> addRecent(UserModel user) async {
+    final updated = [user, ...state.where((u) => u.uid != user.uid)];
+    if (updated.length > 8) updated.removeLast();
+    state = updated;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _key,
+      updated.map((u) => jsonEncode({
+            'uid': u.uid,
+            'name': u.name,
+            'phone': u.phone,
+            'role': u.role.value,
+            'isActive': u.isActive,
+            'createdAt': u.createdAt.toIso8601String(),
+          })).toList(),
+    );
+  }
 }
 
-final recentCustomerIdsProvider =
-    NotifierProvider<_RecentCustomerIdsNotifier, List<String>>(
-  _RecentCustomerIdsNotifier.new,
+final recentCustomersProvider =
+    NotifierProvider<_RecentCustomersNotifier, List<UserModel>>(
+  _RecentCustomersNotifier.new,
 );
-
-final _recentCustomersProvider =
-    FutureProvider.family<List<UserModel>, List<String>>((ref, ids) async {
-  if (ids.isEmpty) return [];
-  // whereIn ile tek sorguda çek (N+1 yerine 1 Firestore okuma)
-  final snap = await FirebaseFirestore.instance
-      .collection(AppConstants.usersCollection)
-      .where(FieldPath.documentId, whereIn: ids)
-      .get();
-  return snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
-});
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -62,34 +138,10 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
   Timer? _debounce;
   String _query = '';
 
-  @override
-  void initState() {
-    super.initState();
-    _loadRecentIds();
-  }
-
-  Future<void> _loadRecentIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList('recent_customers') ?? [];
-    ref.read(recentCustomerIdsProvider.notifier).update(list);
-  }
-
-  Future<void> _addToRecent(String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList('recent_customers') ?? [];
-    list.remove(uid);
-    list.insert(0, uid);
-    if (list.length > 5) list.removeLast();
-    await prefs.setStringList('recent_customers', list);
-    ref.read(recentCustomerIdsProvider.notifier).update(List.from(list));
-  }
-
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() => _query = value.trim());
-      }
+      if (mounted) setState(() => _query = value.trim());
     });
   }
 
@@ -98,113 +150,12 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
     setState(() => _query = '');
   }
 
-  void _navigateToDetail(UserModel user) {
-    _addToRecent(user.uid);
+  void _selectCustomer(UserModel user) {
+    ref.read(recentCustomersProvider.notifier).addRecent(user);
     context.push(
       AppRoutes.customerDetail.replaceFirst(':uid', user.uid),
       extra: user,
     );
-  }
-
-  Future<void> _showAddCustomerDialog() async {
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Yeni Musteri Ekle',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Ad Soyad',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Ad giriniz' : null,
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Telefon',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  hintText: '05XX XXX XX XX',
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Telefon giriniz' : null,
-                textInputAction: TextInputAction.done,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Iptal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              minimumSize: Size.zero,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              Navigator.of(dialogContext).pop();
-              await _saveNewCustomer(
-                nameController.text.trim(),
-                phoneController.text.trim(),
-              );
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _saveNewCustomer(String name, String phone) async {
-    try {
-      await ref.read(customerRepositoryProvider).createCustomer(
-            name: name,
-            phone: phone,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Müşteri başarıyla eklendi'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hata: $e'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   @override
@@ -220,13 +171,17 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: const Text('Musteri Ara'),
+        elevation: 0,
+        title: const Text(
+          'Müşteri Ara',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+            fontFamily: 'Poppins',
+          ),
+        ),
         iconTheme: const IconThemeData(color: AppColors.secondary),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddCustomerDialog,
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.person_add, color: AppColors.textWhite),
       ),
       body: Column(
         children: [
@@ -237,11 +192,8 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
           ),
           Expanded(
             child: _query.isEmpty
-                ? _RecentCustomers(onTap: _navigateToDetail)
-                : _SearchResults(
-                    query: _query,
-                    onTap: _navigateToDetail,
-                  ),
+                ? _RecentList(onTap: _selectCustomer)
+                : _SearchResults(query: _query, onTap: _selectCustomer),
           ),
         ],
       ),
@@ -250,7 +202,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Private widgets
+// Search Bar
 // ---------------------------------------------------------------------------
 
 class _SearchBar extends StatelessWidget {
@@ -272,8 +224,11 @@ class _SearchBar extends StatelessWidget {
       child: TextField(
         controller: controller,
         onChanged: onChanged,
+        autofocus: false,
         decoration: InputDecoration(
-          hintText: 'Ad veya telefon numarasi...',
+          hintText: 'Ad, soyad veya telefon numarası...',
+          hintStyle:
+              const TextStyle(color: AppColors.textHint, fontSize: 14),
           prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
@@ -285,89 +240,96 @@ class _SearchBar extends StatelessWidget {
               );
             },
           ),
+          filled: true,
+          fillColor: AppColors.background,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
         ),
       ),
     );
   }
 }
 
-class _RecentCustomers extends ConsumerWidget {
-  final ValueChanged<UserModel> onTap;
+// ---------------------------------------------------------------------------
+// Recent customers list
+// ---------------------------------------------------------------------------
 
-  const _RecentCustomers({required this.onTap});
+class _RecentList extends ConsumerWidget {
+  final ValueChanged<UserModel> onTap;
+  const _RecentList({required this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recentIds = ref.watch(recentCustomerIdsProvider);
-    if (recentIds.isEmpty) {
-      return const _EmptyState(message: 'Henuz musteri goruntulenmedi');
+    final recents = ref.watch(recentCustomersProvider);
+
+    if (recents.isEmpty) {
+      return const _EmptyState(
+        icon: Icons.person_search_rounded,
+        message: 'Arama yaparak müşteri bulun',
+        subtitle: 'Son görüntülenenler burada çıkar',
+      );
     }
 
-    final customersAsync = ref.watch(_recentCustomersProvider(recentIds));
-    return customersAsync.when(
-      loading: () => _buildShimmerList(),
-      error: (e, _) => _ErrorState(message: e.toString()),
-      data: (customers) {
-        if (customers.isEmpty) {
-          return const _EmptyState(message: 'Henuz musteri goruntulenmedi');
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Son Musteriler',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: customers.length,
-                itemBuilder: (_, i) => _CustomerCard(
-                  user: customers[i],
-                  onTap: onTap,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            'Son Müşteriler',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildShimmerList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: 5,
-      itemBuilder: (_, __) => const _ShimmerCard(),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: recents.length,
+            itemBuilder: (_, i) =>
+                _CustomerCard(user: recents[i], onTap: onTap),
+          ),
+        ),
+      ],
     );
   }
 }
 
+// ---------------------------------------------------------------------------
+// Search results
+// ---------------------------------------------------------------------------
+
 class _SearchResults extends ConsumerWidget {
   final String query;
   final ValueChanged<UserModel> onTap;
-
   const _SearchResults({required this.query, required this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final resultsAsync = ref.watch(customerSearchProvider(query));
-    return resultsAsync.when(
-      loading: () => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: 5,
-        itemBuilder: (_, __) => const _ShimmerCard(),
-      ),
+    final async = ref.watch(customerSearchProvider(query));
+    return async.when(
+      loading: () => _ShimmerList(),
       error: (e, _) => _ErrorState(message: e.toString()),
       data: (users) {
         if (users.isEmpty) {
-          return const _EmptyState(message: 'Sonuc bulunamadi');
+          return const _EmptyState(
+            icon: Icons.search_off_rounded,
+            message: 'Sonuç bulunamadı',
+            subtitle: 'Farklı bir isim veya telefon numarası deneyin',
+          );
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -379,25 +341,53 @@ class _SearchResults extends ConsumerWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Customer card
+// ---------------------------------------------------------------------------
+
 class _CustomerCard extends StatelessWidget {
   final UserModel user;
   final ValueChanged<UserModel> onTap;
-
   const _CustomerCard({required this.user, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final initials = _initials(user.name);
+    final parts = user.name.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts.first[0]}${parts.last[0]}'.toUpperCase()
+        : user.name.isNotEmpty
+            ? user.name[0].toUpperCase()
+            : '?';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 0,
+      color: AppColors.surface,
       child: InkWell(
         onTap: () => onTap(user),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              _AvatarCircle(initials: initials),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: AppColors.secondary,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: AppColors.textWhite,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -413,7 +403,7 @@ class _CustomerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      user.phone,
+                      user.phone.isNotEmpty ? user.phone : 'Telefon yok',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -422,124 +412,128 @@ class _CustomerCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _OrderButton(onPressed: () => onTap(user)),
+              ElevatedButton(
+                  onPressed: () => onTap(user),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.textWhite,
+                    elevation: 0,
+                    minimumSize: const Size(80, 36),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('Sipariş Al'),
+                ),
             ],
           ),
         ),
       ),
     );
   }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
 }
 
-class _AvatarCircle extends StatelessWidget {
-  final String initials;
+// ---------------------------------------------------------------------------
+// Shimmer, Empty, Error
+// ---------------------------------------------------------------------------
 
-  const _AvatarCircle({required this.initials});
-
+class _ShimmerList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: const BoxDecoration(
-        color: AppColors.secondary,
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        initials,
-        style: const TextStyle(
-          color: AppColors.textWhite,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: 6,
+      itemBuilder: (_, __) => Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 0,
+        color: AppColors.surface,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: AppColors.border,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 14,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 12,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _OrderButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _OrderButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: AppColors.textWhite,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          minimumSize: const Size(80, 44),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        child: const Text('Sipariş Al'),
-      ),
-    );
-  }
-}
-
-class _ShimmerCard extends StatelessWidget {
-  const _ShimmerCard();
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String subtitle;
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: AppColors.border,
-                shape: BoxShape.circle,
+            Icon(icon, size: 64, color: AppColors.border),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 14,
-                    width: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 12,
-                    width: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.divider,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textHint,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -548,56 +542,30 @@ class _ShimmerCard extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  final String message;
-
-  const _EmptyState({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.person_search, size: 64, color: AppColors.textHint),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ErrorState extends StatelessWidget {
   final String message;
-
   const _ErrorState({required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: 12),
-            Text(
-              'Bir hata olustu',
-              style: const TextStyle(
-                fontSize: 16,
+            const Icon(Icons.wifi_off_rounded,
+                size: 56, color: AppColors.error),
+            const SizedBox(height: 16),
+            const Text(
+              'Bağlantı Hatası',
+              style: TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               message,
               style: const TextStyle(
@@ -605,6 +573,8 @@ class _ErrorState extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

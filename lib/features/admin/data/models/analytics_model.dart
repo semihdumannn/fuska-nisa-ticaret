@@ -45,18 +45,18 @@ class AnalyticsTopProductData {
 }
 
 // ---------------------------------------------------------------------------
-// Musteri buyumesi — aylik yeni/toplam/aktif musteri sayilari
+// Müşteri buyumesi — aylik yeni/toplam/aktif müşteri sayilari
 // ---------------------------------------------------------------------------
 class CustomerGrowthData {
   final DateTime date;
 
-  /// Ay icerisinde ilk kez kayit olan musteri sayisi
+  /// Ay icerisinde ilk kez kayit olan müşteri sayisi
   final int newCustomers;
 
-  /// Kumulatif toplam musteri sayisi
+  /// Kumulatif toplam müşteri sayisi
   final int totalCustomers;
 
-  /// Ilgili ay icerisinde en az bir siparis veren musteri sayisi
+  /// Ilgili ay icerisinde en az bir siparis veren müşteri sayisi
   final int activeCustomers;
 
   const CustomerGrowthData({

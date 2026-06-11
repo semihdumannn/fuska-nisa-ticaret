@@ -77,7 +77,7 @@ class ReportExportService {
     // --- Saha Performansi ---
     buffer.writeln('== SAHA PERSONELI PERFORMANSI ==');
     buffer.writeln(
-        'Personel,Toplam Siparis,Toplam Gelir (TL),Ort. Siparis (TL),Musteri Sayisi');
+        'Personel,Toplam Siparis,Toplam Gelir (TL),Ort. Siparis (TL),Müşteri Sayisi');
     for (final a in agents) {
       buffer.writeln(
         '${a.agentName},'

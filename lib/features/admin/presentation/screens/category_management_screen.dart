@@ -1,13 +1,42 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/network/api_endpoints.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import 'package:nisa_ticaret/core/services/cache_service.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/admin/presentation/widgets/admin_sidebar.dart';
+import 'package:nisa_ticaret/features/products/data/models/api_category_model.dart';
 import 'package:nisa_ticaret/features/products/data/models/category_model.dart';
 
 const double _kDesktopBreakpoint = 1024.0;
+
+// ---------------------------------------------------------------------------
+// API'den kategori listesini çeken provider — GET /v1/categories
+// ---------------------------------------------------------------------------
+final _apiCategoriesProvider =
+    FutureProvider<List<ApiCategoryModel>>((ref) async {
+  final dio = ref.read(apiClientProvider).dio;
+  try {
+    final response = await dio.get(ApiEndpoints.categories);
+    final body = response.data;
+    List<dynamic> rawList = [];
+    if (body is List) {
+      rawList = body;
+    } else if (body is Map && body['data'] is List) {
+      rawList = body['data'] as List;
+    }
+    return rawList
+        .map((j) => ApiCategoryModel.fromJson(j as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  } on DioException {
+    return [];
+  }
+});
 
 // ─────────────────────────────────────────────
 // Preset renk paleti (Fuska Design System)
@@ -42,11 +71,11 @@ Color _hexToColor(String hex) {
 // ─────────────────────────────────────────────
 // Ana Ekran
 // ─────────────────────────────────────────────
-class CategoryManagementScreen extends StatelessWidget {
+class CategoryManagementScreen extends ConsumerWidget {
   const CategoryManagementScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDesktop = MediaQuery.sizeOf(context).width >= _kDesktopBreakpoint;
 
     if (isDesktop) {
@@ -85,7 +114,7 @@ class CategoryManagementScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: _CategoryList(),
+      body: const _CategoryList(),
     );
   }
 }
@@ -121,55 +150,64 @@ class _CategoryPageContent extends StatelessWidget {
             ],
           ),
         ),
-        Expanded(child: _CategoryList()),
+        const Expanded(child: _CategoryList()),
       ],
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Liste — StreamBuilder ile gercek zamanli
+// Liste — API FutureProvider ile okuma
+// Yazma (ekle/düzenle/sil/toggle) hâlâ Firestore üzerinden.
 // ─────────────────────────────────────────────
-class _CategoryList extends StatelessWidget {
+class _CategoryList extends ConsumerWidget {
+  const _CategoryList();
+
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection(AppConstants.categoriesCollection)
-          .orderBy('sortOrder')
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildShimmer();
-        }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncCategories = ref.watch(_apiCategoriesProvider);
 
-        if (snapshot.hasError) {
-          return _buildError(snapshot.error.toString());
-        }
-
-        final docs = snapshot.data?.docs ?? [];
-
-        if (docs.isEmpty) {
+    return asyncCategories.when(
+      loading: () => _buildShimmer(),
+      error: (e, _) => _buildError(e.toString()),
+      data: (categories) {
+        if (categories.isEmpty) {
           return _buildEmpty(context);
         }
-
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: docs.length,
+          itemCount: categories.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
-            final category =
-                CategoryModel.fromFirestore(docs[index]);
+            final cat = categories[index];
+            // Firestore'daki CategoryModel ile uyumluluk için basit adapter
+            final firestoreCat = _toFirestoreCategory(cat);
             return _CategoryListItem(
-              category: category,
+              category: firestoreCat,
               onEdit: () =>
-                  _showCategoryForm(context, category: category),
-              onDelete: () =>
-                  _confirmDelete(context, category),
+                  _showCategoryForm(context, category: firestoreCat),
+              onDelete: () => _confirmDelete(context, firestoreCat),
             );
           },
         );
       },
+    );
+  }
+
+  /// ApiCategoryModel'i mevcut CategoryModel'e dönüştürür.
+  /// Yazma işlemleri Firestore'a gittiğinden CategoryModel.id = slug kullanılır.
+  CategoryModel _toFirestoreCategory(ApiCategoryModel cat) {
+    return CategoryModel(
+      id: cat.id.toString(),
+      name: cat.name,
+      slug: cat.slug,
+      iconName: cat.iconName,
+      color: cat.color,
+      sortOrder: cat.sortOrder,
+      isActive: cat.isActive,
+      parentId: cat.parentId?.toString(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
   }
 
@@ -189,9 +227,9 @@ class _CategoryList extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, color: AppColors.error, size: 48),
           const SizedBox(height: 12),
-          Text(
-            'Kategoriler yuklenemedi',
-            style: const TextStyle(
+          const Text(
+            'Kategoriler yüklenemedi',
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -354,12 +392,12 @@ class _CategoryListItem extends StatelessWidget {
             _ActiveToggle(category: category),
             const SizedBox(width: 4),
 
-            // Duzenle
+            // Düzenle
             IconButton(
               icon: const Icon(Icons.edit_outlined,
                   size: 18, color: AppColors.textSecondary),
               onPressed: onEdit,
-              tooltip: 'Duzenle',
+              tooltip: 'Düzenle',
               padding: const EdgeInsets.all(6),
               constraints:
                   const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -466,7 +504,7 @@ Future<void> _confirmDelete(
         ),
       ),
       content: Text(
-        '"${category.name}" kategorisini silmek istediginizden emin misiniz? Bu islemi geri alamazsiniz.',
+        '"${category.name}" kategorisini silmek istediğinizden emin misiniz? Bu işlemi geri alamazsınız.',
         style: const TextStyle(
           fontFamily: 'Poppins',
           fontSize: 14,
@@ -476,7 +514,7 @@ Future<void> _confirmDelete(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Iptal'),
+          child: const Text('İptal'),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -520,7 +558,7 @@ Future<void> _confirmDelete(
 }
 
 // ─────────────────────────────────────────────
-// Cache Temizleme + data_versions Guncelleme
+// Cache Temizleme + data_versions Güncelleme
 // ─────────────────────────────────────────────
 Future<void> _invalidateCache() async {
   // 1. Hive cache temizle
@@ -537,7 +575,7 @@ Future<void> _invalidateCache() async {
 }
 
 // ─────────────────────────────────────────────
-// BottomSheet Form (Ekle / Duzenle)
+// BottomSheet Form (Ekle / Düzenle)
 // ─────────────────────────────────────────────
 void _showCategoryForm(BuildContext context,
     {required CategoryModel? category}) {
@@ -604,7 +642,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
       final now = DateTime.now();
 
       if (_isEdit) {
-        // Guncelle
+        // Güncelle
         final updated = widget.category!.copyWith(
           name: name,
           slug: slug,
@@ -650,7 +688,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
           SnackBar(
             content: Text(
               _isEdit
-                  ? '"$name" kategorisi guncellendi.'
+                  ? '"$name" kategorisi güncellendi.'
                   : '"$name" kategorisi eklendi.',
             ),
             backgroundColor: AppColors.success,
@@ -703,7 +741,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
 
               // Baslik
               Text(
-                _isEdit ? 'Kategoriyi Duzenle' : 'Yeni Kategori',
+                _isEdit ? 'Kategoriyi Düzenle' : 'Yeni Kategori',
                 style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 18,

@@ -1,59 +1,104 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/network/api_endpoints.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import '../../data/models/admin_user_model.dart';
 import '../../data/models/order_summary_model.dart';
 
 // ---------------------------------------------------------------------------
-// Kullanici listesi notifier
+// Kullanici listesi notifier — REST API tabanlı
 // ---------------------------------------------------------------------------
 
 class AdminUsersNotifier
     extends Notifier<AsyncValue<List<AdminUserModel>>> {
-  FirebaseFirestore get _db => FirebaseFirestore.instance;
+  Dio get _dio => ref.read(apiClientProvider).dio;
 
   @override
   AsyncValue<List<AdminUserModel>> build() {
-    final sub = _db
-        .collection(AppConstants.usersCollection)
-        .orderBy('name')
-        .snapshots()
-        .listen(
-          (snap) {
-            state = AsyncValue.data(
-              snap.docs.map(AdminUserModel.fromFirestore).toList(),
-            );
-          },
-          onError: (Object e, StackTrace st) =>
-              state = AsyncValue.error(e, st),
-        );
-    ref.onDispose(sub.cancel);
+    _load();
     return const AsyncValue.loading();
   }
 
-  Future<void> loadUsers() async {} // Stream otomatik güncelliyor
+  Future<void> refresh() => _load();
 
-  Future<void> updateUserRole(String userId, UserRole role) async {
-    await _db
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .update({
-      'role': role.value,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+  Future<void> _load() async {
+    try {
+      final users = await _fetchUsers();
+      state = AsyncValue.data(users);
+    } on DioException catch (e, st) {
+      if (e.response?.statusCode == 403) {
+        state = AsyncValue.error(
+          const AdminRoleException(
+            'Yetersiz yetki: admin rolünüz gerekiyor.\n'
+            'Çözüm: Veritabanında rolünüzü "admin" yapın.',
+          ),
+          st,
+        );
+      } else {
+        state = AsyncValue.error(e, st);
+      }
+    } catch (e, st) {
+      if (state is! AsyncData) {
+        state = AsyncValue.error(e, st);
+      }
+    }
+  }
+
+  Future<List<AdminUserModel>> _fetchUsers() async {
+    final response = await _dio.get(
+      ApiEndpoints.adminUsers,
+      queryParameters: {'per_page': 200, 'page': 1},
+    );
+    final body = response.data as Map<String, dynamic>;
+    final data = body['data'] as List? ?? [];
+    return data
+        .map((j) => AdminUserModel.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> toggleBlock(String userId) async {
     final user = state.value?.where((u) => u.id == userId).firstOrNull;
     if (user == null) return;
-    await _db
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .update({
-      'isActive': user.isBlocked, // isBlocked=true → isActive=false, toggle
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    final id = int.tryParse(userId);
+    if (id == null) return;
+
+    await _dio.put(
+      ApiEndpoints.adminUserStatus(id),
+      data: {'is_active': user.isBlocked}, // isBlocked=true → aktifleştir
+    );
+
+    state = AsyncValue.data(
+      state.value!.map((u) {
+        if (u.id != userId) return u;
+        return u.copyWith(isBlocked: !u.isBlocked);
+      }).toList(),
+    );
   }
+
+  Future<void> updateUserRole(String userId, UserRole role) async {
+    final id = int.tryParse(userId);
+    if (id == null) return;
+
+    await _dio.put(
+      '${ApiEndpoints.adminUsers}/$id/role',
+      data: {'role': role.value},
+    );
+
+    state = AsyncValue.data(
+      state.value!.map((u) {
+        if (u.id != userId) return u;
+        return u.copyWith(role: role);
+      }).toList(),
+    );
+  }
+}
+
+class AdminRoleException implements Exception {
+  final String message;
+  const AdminRoleException(this.message);
+  @override
+  String toString() => message;
 }
 
 final adminUsersProvider =
@@ -62,7 +107,7 @@ final adminUsersProvider =
 );
 
 // ---------------------------------------------------------------------------
-// Filtre state'leri (Riverpod 3.x: NotifierProvider yerine)
+// Filtre state'leri
 // ---------------------------------------------------------------------------
 
 class _UserSearchNotifier extends Notifier<String> {
@@ -94,7 +139,7 @@ final userPageProvider =
     NotifierProvider<_UserPageNotifier, int>(_UserPageNotifier.new);
 
 // ---------------------------------------------------------------------------
-// Filtrelenmis kullanici listesi
+// Filtrelenmis kullanici listesi (client-side, cache üzerinde)
 // ---------------------------------------------------------------------------
 
 final filteredUsersProvider = Provider<List<AdminUserModel>>((ref) {
@@ -105,7 +150,6 @@ final filteredUsersProvider = Provider<List<AdminUserModel>>((ref) {
   return usersAsync.when(
     data: (users) {
       var result = users;
-
       if (search.isNotEmpty) {
         result = result
             .where((u) =>
@@ -113,11 +157,9 @@ final filteredUsersProvider = Provider<List<AdminUserModel>>((ref) {
                 u.phone.contains(search))
             .toList();
       }
-
       if (roleFilter != null) {
         result = result.where((u) => u.role == roleFilter).toList();
       }
-
       return result;
     },
     loading: () => [],
@@ -125,7 +167,6 @@ final filteredUsersProvider = Provider<List<AdminUserModel>>((ref) {
   );
 });
 
-// Sayfalanmis kullanici listesi (15/sayfa)
 const int kUsersPageSize = 15;
 
 final pagedUsersProvider = Provider<List<AdminUserModel>>((ref) {
@@ -139,11 +180,11 @@ final pagedUsersProvider = Provider<List<AdminUserModel>>((ref) {
 
 final totalUserPagesProvider = Provider<int>((ref) {
   final filtered = ref.watch(filteredUsersProvider);
-  return ((filtered.length) / kUsersPageSize).ceil().clamp(1, 9999);
+  return (filtered.length / kUsersPageSize).ceil().clamp(1, 9999);
 });
 
 // ---------------------------------------------------------------------------
-// Kullanici istatistikleri (header)
+// Kullanici istatistikleri
 // ---------------------------------------------------------------------------
 
 class UserStats {
@@ -176,21 +217,9 @@ final userStatsProvider = Provider<UserStats>((ref) {
       blocked: users.where((u) => u.isBlocked).length,
     ),
     loading: () => const UserStats(
-      total: 0,
-      customer: 0,
-      fieldAgent: 0,
-      delivery: 0,
-      admin: 0,
-      blocked: 0,
-    ),
+        total: 0, customer: 0, fieldAgent: 0, delivery: 0, admin: 0, blocked: 0),
     error: (_, __) => const UserStats(
-      total: 0,
-      customer: 0,
-      fieldAgent: 0,
-      delivery: 0,
-      admin: 0,
-      blocked: 0,
-    ),
+        total: 0, customer: 0, fieldAgent: 0, delivery: 0, admin: 0, blocked: 0),
   );
 });
 
@@ -200,7 +229,6 @@ final userStatsProvider = Provider<UserStats>((ref) {
 
 final userDetailProvider =
     FutureProvider.family<AdminUserModel, String>((ref, userId) async {
-  // Yüklü listeden önce bak
   final cached = ref
       .watch(adminUsersProvider)
       .value
@@ -208,26 +236,41 @@ final userDetailProvider =
       .firstOrNull;
   if (cached != null) return cached;
 
-  // Firestore'dan direkt çek
-  final doc = await FirebaseFirestore.instance
-      .collection(AppConstants.usersCollection)
-      .doc(userId)
-      .get();
-  if (!doc.exists) throw Exception('Kullanici bulunamadi: $userId');
-  return AdminUserModel.fromFirestore(doc);
+  final dio = ref.read(apiClientProvider).dio;
+  final id = int.tryParse(userId);
+  if (id == null) throw Exception('Gecersiz kullanici ID: $userId');
+
+  final response = await dio.get('${ApiEndpoints.adminUsers}/$id');
+  final body = response.data as Map<String, dynamic>;
+  final data = body['data'] as Map<String, dynamic>? ?? body;
+  return AdminUserModel.fromJson(data);
 });
 
 // ---------------------------------------------------------------------------
-// Kullaniciya ait siparisler
+// Kullaniciya ait siparisler (admin orders API üzerinden filtre)
 // ---------------------------------------------------------------------------
 
 final userOrdersProvider =
-    FutureProvider.family<List<OrderSummaryModel>, String>((ref, userId) async {
-  final snap = await FirebaseFirestore.instance
-      .collection(AppConstants.ordersCollection)
-      .where('customerId', isEqualTo: userId)
-      .orderBy('createdAt', descending: true)
-      .limit(20)
-      .get();
-  return snap.docs.map(OrderSummaryModel.fromFirestore).toList();
+    FutureProvider.family<List<OrderSummaryModel>, String>(
+        (ref, userId) async {
+  final dio = ref.read(apiClientProvider).dio;
+  final response = await dio.get(
+    ApiEndpoints.adminOrders,
+    queryParameters: {'user_id': userId, 'per_page': 20, 'page': 1},
+  );
+  final body = response.data as Map<String, dynamic>;
+  final data = body['data'] as List? ?? [];
+  return data.map((j) {
+    final m = j as Map<String, dynamic>;
+    return OrderSummaryModel(
+      id: (m['id'] ?? '').toString(),
+      orderNo: m['order_number'] as String? ?? m['orderNo'] as String? ?? '',
+      date: m['created_at'] != null
+          ? DateTime.parse(m['created_at'] as String)
+          : DateTime.now(),
+      amount: (m['total'] as num? ?? 0).toDouble(),
+      status: OrderStatus.fromString(m['status'] as String? ?? 'pending'),
+      itemCount: (m['items_count'] as num? ?? m['itemCount'] as num? ?? 0).toInt(),
+    );
+  }).toList();
 });

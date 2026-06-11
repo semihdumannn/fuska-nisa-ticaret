@@ -92,21 +92,16 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   void _loadProduct() {
     final products = ref.read(adminProductsProvider).value ?? [];
-    final product =
-        products.where((p) => p.id == widget.productId).firstOrNull;
+    // ApiProductModel.id is int; widget.productId is String — parse to compare
+    final productIdInt = int.tryParse(widget.productId ?? '');
+    final product = products.where((p) => p.id == productIdInt).firstOrNull;
     if (product == null) return;
 
     _nameCtrl.text = product.name;
-    _descCtrl.text = product.description;
+    _descCtrl.text = product.description ?? '';
     setState(() {
-      try {
-        _selectedCategoryIds = List<String>.from(product.categoryIds);
-      } catch (_) {
-        _selectedCategoryIds = product.categoryId.isNotEmpty ? [product.categoryId] : [];
-      }
-      if (_selectedCategoryIds.isEmpty && product.categoryId.isNotEmpty) {
-        _selectedCategoryIds = [product.categoryId];
-      }
+      _selectedCategoryIds =
+          product.categoryIds.map((id) => id.toString()).toList();
       _isActive = product.isActive;
       _imageUrl = product.imageUrl;
     });
@@ -391,7 +386,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= _kDesktopBreakpoint;
-    final title = _isEditing ? 'Urunu Duzenle' : 'Yeni Urun';
+    final title = _isEditing ? 'Ürünü Düzenle' : 'Yeni Ürün';
 
     if (isDesktop) {
       return Scaffold(
@@ -667,7 +662,7 @@ class _ActiveToggle extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Aktif urunler musteri uygulamasinda gorunur',
+                  'Aktif ürünler müşteri uygulamasinda görünür',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -754,7 +749,7 @@ class _RightColumn extends ConsumerWidget {
             categoriesAsync.when(
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => const Text(
-                'Kategoriler yuklenemedi',
+                'Kategoriler yüklenemedi',
                 style: TextStyle(color: AppColors.error, fontSize: 13),
               ),
               data: (categories) {
@@ -1305,7 +1300,7 @@ class _VariantCardState extends State<_VariantCard> {
 }
 
 // ---------------------------------------------------------------------------
-// _FormSection — baslik + icerik kart
+// _FormSection — başlık + içerik kart
 // ---------------------------------------------------------------------------
 class _FormSection extends StatelessWidget {
   const _FormSection({
@@ -1398,7 +1393,7 @@ class _FormActions extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          child: const Text('Iptal'),
+          child: const Text('İptal'),
         ),
         const SizedBox(width: 12),
         ElevatedButton(

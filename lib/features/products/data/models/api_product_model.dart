@@ -1,5 +1,38 @@
 import '../../domain/entities/product_entity.dart';
 
+/// Ürün JSON'ında gömülü gelen kategori snapshot'ı.
+class ApiEmbeddedCategory {
+  final int id;
+  final String name;
+  final String slug;
+  final String? icon;
+  final String? color;
+  final int? parentId;
+  final int sortOrder;
+
+  const ApiEmbeddedCategory({
+    required this.id,
+    required this.name,
+    this.slug = '',
+    this.icon,
+    this.color,
+    this.parentId,
+    this.sortOrder = 0,
+  });
+
+  factory ApiEmbeddedCategory.fromJson(Map<String, dynamic> json) {
+    return ApiEmbeddedCategory(
+      id: json['id'] as int,
+      name: json['name'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      icon: json['icon'] as String? ?? json['icon_name'] as String?,
+      color: json['color'] as String?,
+      parentId: json['parent_id'] as int?,
+      sortOrder: json['sort_order'] as int? ?? 0,
+    );
+  }
+}
+
 class ApiProductModel {
   final int id;
   final String name;
@@ -19,6 +52,7 @@ class ApiProductModel {
   final List<String> tags;
   final int order;
   final List<ApiProductVariantModel> variants;
+  final List<ApiEmbeddedCategory> embeddedCategories;
 
   // Koli varyant snapshot
   final String? koliVariantId;
@@ -46,6 +80,7 @@ class ApiProductModel {
     this.tags = const [],
     this.order = 0,
     this.variants = const [],
+    this.embeddedCategories = const [],
     this.koliVariantId,
     this.koliPrice,
     this.koliSalePrice,
@@ -54,13 +89,51 @@ class ApiProductModel {
   });
 
   factory ApiProductModel.fromJson(Map<String, dynamic> json) {
-    // category_ids: list of int veya category_id: int
+    // ── Kategori ID'leri ─────────────────────────────────────────────────
+    // API: categories: [{id:33, name:"..."}]  VEYA  category_ids:[1,2]
     List<int> parsedCategoryIds = [];
-    if (json['category_ids'] != null) {
+    if (json['categories'] != null && (json['categories'] as List).isNotEmpty) {
+      parsedCategoryIds = (json['categories'] as List)
+          .map((c) => (c as Map<String, dynamic>)['id'] as int)
+          .toList();
+    } else if (json['category_ids'] != null) {
       parsedCategoryIds = List<int>.from(json['category_ids'] as List);
     } else if (json['category_id'] != null) {
       parsedCategoryIds = [json['category_id'] as int];
     }
+
+    // ── İlk kategori adı ─────────────────────────────────────────────────
+    String? parsedCategoryName;
+    if (json['categories'] != null && (json['categories'] as List).isNotEmpty) {
+      parsedCategoryName =
+          (json['categories'] as List).first['name'] as String?;
+    } else {
+      parsedCategoryName = json['category_name'] as String?;
+    }
+
+    // ── Görsel URL'leri ───────────────────────────────────────────────────
+    // API: images: [{id:71, url:"https://...", is_primary:true}]
+    //      primary_image: "https://..."
+    final String? primaryImage = json['primary_image'] as String?
+        ?? json['image_url'] as String?;
+
+    List<String> parsedImageUrls = [];
+    if (json['images'] != null && (json['images'] as List).isNotEmpty) {
+      parsedImageUrls = (json['images'] as List)
+          .map((img) => (img as Map<String, dynamic>)['url'] as String? ?? '')
+          .where((u) => u.isNotEmpty)
+          .toList();
+    } else if (json['image_urls'] != null) {
+      parsedImageUrls = List<String>.from(json['image_urls'] as List);
+    }
+
+    // ── Marka ────────────────────────────────────────────────────────────
+    // API: brand: {id:36, name:"Poli"}  VEYA  brand_id / brand_name
+    final brandMap = json['brand'] as Map<String, dynamic>?;
+    final int? parsedBrandId =
+        brandMap?['id'] as int? ?? json['brand_id'] as int?;
+    final String? parsedBrandName =
+        brandMap?['name'] as String? ?? json['brand_name'] as String?;
 
     return ApiProductModel(
       id: json['id'] as int,
@@ -74,15 +147,13 @@ class ApiProductModel {
           : json['discounted_price'] != null
               ? (json['discounted_price'] as num).toDouble()
               : null,
-      primaryStock: json['stock_quantity'] as int?,
-      imageUrl: json['image_url'] as String?,
-      imageUrls: json['image_urls'] != null
-          ? List<String>.from(json['image_urls'] as List)
-          : [],
+      primaryStock: json['stock_quantity'] as int? ?? json['stock'] as int?,
+      imageUrl: primaryImage,
+      imageUrls: parsedImageUrls,
       categoryIds: parsedCategoryIds,
-      categoryName: json['category_name'] as String?,
-      brandId: json['brand_id'] as int?,
-      brandName: json['brand_name'] as String?,
+      categoryName: parsedCategoryName,
+      brandId: parsedBrandId,
+      brandName: parsedBrandName,
       isActive: json['is_active'] as bool? ?? true,
       isFeatured: json['is_featured'] as bool? ?? false,
       unit: json['unit'] as String?,
@@ -94,6 +165,11 @@ class ApiProductModel {
           ? (json['variants'] as List)
               .map((v) =>
                   ApiProductVariantModel.fromJson(v as Map<String, dynamic>))
+              .toList()
+          : [],
+      embeddedCategories: json['categories'] != null
+          ? (json['categories'] as List)
+              .map((c) => ApiEmbeddedCategory.fromJson(c as Map<String, dynamic>))
               .toList()
           : [],
       koliVariantId: json['koli_variant_id']?.toString(),
@@ -136,7 +212,7 @@ class ApiProductModel {
     );
   }
 
-  /// Cache'e yazmak için sade map
+  /// Cache'e yazmak için sade map (kendi field adlarımızı kullanır)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -156,6 +232,11 @@ class ApiProductModel {
       'unit': unit,
       'tags': tags,
       'order': order,
+      'koli_variant_id': koliVariantId,
+      'koli_price': koliPrice,
+      'koli_sale_price': koliSalePrice,
+      'koli_stock': koliStock,
+      'koli_package_qty': koliPackageQty,
     };
   }
 }

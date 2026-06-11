@@ -73,6 +73,15 @@ class CacheManager {
     await _dataBox.delete(key);
   }
 
+  /// Verilen prefix ile başlayan tüm cache key'lerini siler.
+  Future<void> invalidateByPrefix(String prefix) async {
+    final keysToDelete = _dataBox.keys
+        .whereType<String>()
+        .where((k) => k.startsWith(prefix))
+        .toList();
+    await _dataBox.deleteAll(keysToDelete);
+  }
+
   /// Eski adi clearCache — geri uyumluluk icin korunuyor.
   Future<void> clearCache(String key) async {
     await invalidate(key);

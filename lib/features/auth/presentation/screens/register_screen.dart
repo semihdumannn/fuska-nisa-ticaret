@@ -1,10 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
+import 'package:nisa_ticaret/features/auth/presentation/providers/auth_datasource_providers.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -41,7 +41,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    final phone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+    final local = ref.read(authLocalDatasourceProvider);
+    final phone = await local.getSavedPhone() ?? '';
 
     await ref
         .read(authNotifierProvider.notifier)

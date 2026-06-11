@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../data/models/analytics_model.dart';
 import '../../data/repositories/analytics_repository.dart';
 
@@ -47,12 +48,10 @@ final reportDateRangeProvider =
         _ReportDateRangeNotifier.new);
 
 // ---------------------------------------------------------------------------
-// Repository provider
-// Mock'tan Firebase'e gecmek icin bu satirı degistir:
-//   return FirebaseAnalyticsRepository();
+// Repository provider — API tabanlı implementasyon
 // ---------------------------------------------------------------------------
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
-  return FirebaseAnalyticsRepository();
+  return ApiAnalyticsRepository(ref.read(apiClientProvider).dio);
 });
 
 // ---------------------------------------------------------------------------
@@ -127,7 +126,7 @@ final reportTopProductsProvider =
 });
 
 // ---------------------------------------------------------------------------
-// Musteri buyumesi — Firebase users + orders koleksiyonundan
+// Müşteri buyumesi — Firebase users + orders koleksiyonundan
 // ---------------------------------------------------------------------------
 final reportCustomerGrowthProvider =
     FutureProvider<List<CustomerGrowthData>>((ref) {

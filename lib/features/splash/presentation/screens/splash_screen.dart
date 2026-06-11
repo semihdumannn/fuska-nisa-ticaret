@@ -9,7 +9,9 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/asset_paths.dart' show AssetPaths;
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../auth/presentation/bloc/auth_provider.dart';
+import '../../../auth/presentation/providers/auth_datasource_providers.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -150,11 +152,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     final user = ref.read(authStateProvider).value;
+    final local = ref.read(authLocalDatasourceProvider);
 
     if (user != null) {
-      // Giriş yapılmış → role'üne göre git
-      _navigate(user);
+      // Sanctum token + cache mevcut — varlığını /v1/auth/me ile doğrula
+      // (401 olursa interceptor TOTP secret ile sessizce yeniler)
+      await _verifySession();
+      if (!mounted) return;
+      final cachedApiUser = local.getUser();
+      _navigate(cachedApiUser != null ? UserModel.fromApiUser(cachedApiUser) : user);
     } else {
+      // Token/cache yok → cihazda TOTP secret var mı bak (sessiz giriş)
+      final hasSecret = await local.hasTotpCredentials;
+      if (hasSecret) {
+        await _verifySession();
+        if (!mounted) return;
+        final cachedApiUser = local.getUser();
+        if (cachedApiUser != null) {
+          _navigate(UserModel.fromApiUser(cachedApiUser));
+          return;
+        }
+      }
+
       // 3. Onboarding kontrolü — sadece giriş yapmamış kullanıcılar için
       final prefs = await SharedPreferences.getInstance();
       final onboardingSeen =
@@ -169,6 +188,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       } else {
         _navigate(null);
       }
+    }
+  }
+
+  /// Sanctum token'ın geçerliliğini /v1/auth/me ile doğrular.
+  /// 401 durumunda AuthInterceptor cihazdaki TOTP secret ile sessizce
+  /// yeni bir token alır ve isteği tekrar dener.
+  Future<void> _verifySession() async {
+    try {
+      final local = ref.read(authLocalDatasourceProvider);
+      final remote = ref.read(authRemoteDatasourceProvider);
+      final freshUser = await remote.getCurrentUser();
+      await local.saveUser(freshUser);
+      ref.invalidate(authStateProvider);
+    } catch (e) {
+      debugPrint('SplashScreen._verifySession hata: $e');
     }
   }
 

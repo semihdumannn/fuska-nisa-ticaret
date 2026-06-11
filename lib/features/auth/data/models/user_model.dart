@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'api_user_model.dart';
 
 class UserModel extends Equatable {
   final String uid;
@@ -35,6 +36,19 @@ class UserModel extends Equatable {
       role == UserRole.delivery;
 
   bool get isAdmin => role == UserRole.admin;
+
+  /// Backend (Laravel API) kullanıcısından UserModel oluşturur.
+  factory UserModel.fromApiUser(ApiUserModel apiUser) {
+    return UserModel(
+      uid: apiUser.id.toString(),
+      name: apiUser.name,
+      phone: apiUser.phone,
+      email: apiUser.email,
+      role: UserRole.fromString(apiUser.role),
+      isActive: apiUser.isActive ?? true,
+      createdAt: DateTime.now(),
+    );
+  }
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;

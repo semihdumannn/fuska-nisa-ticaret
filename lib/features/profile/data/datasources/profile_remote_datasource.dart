@@ -51,8 +51,26 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
           if (companyName != null) 'company_name': companyName,
         },
       );
-      return ApiProfileModel.fromJson(
-          response.data['data'] as Map<String, dynamic>);
+
+      final body = response.data;
+
+      // API farklı yapılarda yanıt verebilir:
+      // {"data": {...}}  |  {"user": {...}}  |  doğrudan {...}
+      Map<String, dynamic>? json;
+      if (body is Map) {
+        if (body['data'] is Map) {
+          json = body['data'] as Map<String, dynamic>;
+        } else if (body['user'] is Map) {
+          json = body['user'] as Map<String, dynamic>;
+        } else if (body.containsKey('id')) {
+          json = Map<String, dynamic>.from(body);
+        }
+      }
+
+      // Yanıt parse edilemezse güncel profili yeniden çek
+      if (json == null) return getProfile();
+
+      return ApiProfileModel.fromJson(json);
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
     }
@@ -106,8 +124,13 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
         ApiEndpoints.addresses,
         data: addressData,
       );
-      return ApiAddressModel.fromJson(
-          response.data['data'] as Map<String, dynamic>);
+      final body = response.data as Map<String, dynamic>;
+      final json = body.containsKey('data')
+          ? body['data'] as Map<String, dynamic>
+          : body.containsKey('address')
+              ? body['address'] as Map<String, dynamic>
+              : body;
+      return ApiAddressModel.fromJson(json);
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
     }
@@ -121,8 +144,13 @@ class ProfileRemoteDatasource implements IProfileRemoteDatasource {
         ApiEndpoints.addressDetail(id),
         data: data,
       );
-      return ApiAddressModel.fromJson(
-          response.data['data'] as Map<String, dynamic>);
+      final body = response.data as Map<String, dynamic>;
+      final json = body.containsKey('data')
+          ? body['data'] as Map<String, dynamic>
+          : body.containsKey('address')
+              ? body['address'] as Map<String, dynamic>
+              : body;
+      return ApiAddressModel.fromJson(json);
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
     }

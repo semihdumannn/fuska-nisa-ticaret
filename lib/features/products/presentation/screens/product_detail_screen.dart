@@ -15,7 +15,6 @@ import 'package:nisa_ticaret/features/home/widgets/product_card.dart';
 import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
 import 'package:nisa_ticaret/features/products/data/models/variant_model.dart';
 import 'package:nisa_ticaret/features/products/data/repositories/product_repository.dart';
-import 'package:nisa_ticaret/features/products/data/repositories/variant_repository.dart';
 import 'package:nisa_ticaret/features/products/presentation/bloc/product_detail_provider.dart';
 
 /// Urun detay sayfasi.
@@ -112,7 +111,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   // ─────────────────────────────────────────────
-  // Ana icerik
+  // Ana içerik
   // ─────────────────────────────────────────────
 
   Widget _buildContent(
@@ -166,20 +165,32 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   // ─────────────────────────────────────────────
 
   Widget _buildInfoCard(BuildContext context, ProductModel product) {
-    final variantsAsync = ref.watch(variantsByProductProvider(product.id));
-    final hasVariants =
-        (variantsAsync.hasValue && variantsAsync.value!.isNotEmpty);
+    // variantsByProductProvider yerine ProductModel.koliVariant kullan.
+    // koliVariant anında mevcut — ekstra API çağrısı yok.
+    final koliVariant = product.koliVariant;
+    final variants = koliVariant != null ? [koliVariant] : <VariantModel>[];
+    final hasVariants = variants.isNotEmpty;
 
-    // Secili varyant veya urunun kendisinden hesapla
-    final effectivePrice = _selectedVariant?.effectivePrice ?? 0.0;
-    final hasDiscount = _selectedVariant?.hasDiscount ?? false;
-    final discountPercent = _selectedVariant?.discountPercent.toInt() ?? 0;
-    final originalPrice = _selectedVariant?.price ?? 0.0;
-    final isProductInStock = _selectedVariant?.inStock ?? true;
+    // İlk yüklenmede koli varyantını otomatik seç
+    if (_selectedVariant == null && koliVariant != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _selectedVariant = koliVariant);
+      });
+    }
+
+    // Seçili varyant varsa ondan, yoksa ürünün kendi fiyat/stok alanlarından al
+    final effectivePrice =
+        _selectedVariant?.effectivePrice ?? product.effectivePrice;
+    final hasDiscount =
+        _selectedVariant?.hasDiscount ?? product.hasDiscount;
+    final discountPercent =
+        _selectedVariant?.discountPercent.toInt() ?? product.discountPercent.toInt();
+    final originalPrice = _selectedVariant?.price ?? product.price;
+    final isProductInStock = _selectedVariant?.inStock ?? product.inStock;
     final minQty = _selectedVariant?.minOrderQty ?? product.minOrderQty;
     final maxQty = _selectedVariant != null
         ? min(_selectedVariant!.maxOrderQty, _selectedVariant!.stock)
-        : 1;
+        : product.maxOrderQty;
 
     return Transform.translate(
       offset: const Offset(0, -20),
@@ -216,44 +227,15 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
             const SizedBox(height: 8),
 
-            // Varyant secici (varyant varsa goster)
-            variantsAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: SizedBox(
-                  height: 36,
-                  child: Center(child: LinearProgressIndicator()),
-                ),
-              ),
-              error: (_, __) => const SizedBox.shrink(),
-              data: (variants) {
-                if (variants.isEmpty) return const SizedBox.shrink();
-
-                // Sadece koli varyantlarını göster; yoksa fallback olarak hepsini göster
-                final koliVariants =
-                    variants.where((v) => v.unit == 'koli').toList();
-                final displayVariants =
-                    koliVariants.isNotEmpty ? koliVariants : variants;
-
-                // İlk yüklenmede koli varyantını otomatik seç
-                if (_selectedVariant == null) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      setState(() => _selectedVariant = displayVariants.first);
-                    }
-                  });
-                }
-
-                // Tek koli varyantı varsa chip gösterme, sadece packageQty etiketi göster
-                if (displayVariants.length == 1) {
-                  final v = displayVariants.first;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: _buildKoliLabel(v),
-                  );
-                }
-
-                return Padding(
+            // Varyant gösterimi — anında mevcut, loading yok
+            if (hasVariants)
+              if (variants.length == 1)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: _buildKoliLabel(variants.first),
+                )
+              else
+                Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +252,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: displayVariants
+                        children: variants
                             .map(
                               (v) => _VariantChip(
                                 variant: v,
@@ -287,9 +269,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       ),
                     ],
                   ),
-                );
-              },
-            ),
+                ),
 
             // Fiyat satiri
             if (_selectedVariant != null || !hasVariants)
@@ -310,13 +290,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     const SizedBox(width: 8),
                   ],
                   Text(
-                    hasVariants
+                    effectivePrice > 0
                         ? '${effectivePrice.toStringAsFixed(2)} TL'
-                        : 'Fiyat icin varyant secin',
+                        : 'Fiyat yok',
                     style: TextStyle(
-                      fontSize: hasVariants ? 26 : 14,
+                      fontSize: 26,
                       fontWeight: FontWeight.w700,
-                      color: hasVariants
+                      color: effectivePrice > 0
                           ? AppColors.primary
                           : AppColors.textSecondary,
                     ),
@@ -470,8 +450,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   // ─────────────────────────────────────────────
 
   Widget _buildRelatedSection(BuildContext context, ProductModel product) {
+    if (product.categoryIds.isEmpty) return const SizedBox.shrink();
+
     final relatedAsync =
-        ref.watch(productsByCategoryProvider(product.categoryIds.firstOrNull ?? ''));
+        ref.watch(productsByCategoryProvider(product.categoryIds.first));
 
     return relatedAsync.when(
       loading: () => _buildRelatedShimmer(),
@@ -672,7 +654,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   // ─────────────────────────────────────────────
-  // Hata / bulunamadi durumlari
+  // Hata / bulunamadı durumlari
   // ─────────────────────────────────────────────
 
   Widget _buildError(BuildContext context) {
@@ -1255,7 +1237,7 @@ class _CartIconButton extends ConsumerWidget {
             borderRadius: BorderRadius.circular(20),
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () => context.push(AppRoutes.cart),
+              onTap: () => context.go(AppRoutes.cart),
               child: const SizedBox(
                 width: 40,
                 height: 40,

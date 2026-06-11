@@ -10,12 +10,10 @@ import '../../features/splash/presentation/screens/splash_screen.dart';
 // Screens - Auth
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/phone_auth_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 
 // Screens - Customer
 import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/products/presentation/screens/product_list_screen.dart';
 import '../../features/products/presentation/screens/product_detail_screen.dart';
 import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/orders/presentation/screens/checkout_screen.dart';
@@ -23,6 +21,7 @@ import '../../features/orders/presentation/screens/order_success_screen.dart';
 import '../../features/orders/presentation/screens/order_list_screen.dart';
 import '../../features/orders/presentation/screens/order_detail_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/profile_edit_screen.dart';
 
 // Screens - Field Agent
 import '../../features/field_agent/presentation/screens/field_agent_home_screen.dart';
@@ -65,7 +64,6 @@ class AppRoutes {
   // Auth
   static const String onboarding = '/onboarding';
   static const String phoneAuth = '/phone-auth';
-  static const String otp = '/otp';
   static const String register = '/register';
 
   // Customer
@@ -78,6 +76,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String orderDetail = '/orders/:id';
   static const String profile = '/profile';
+  static const String profileEdit = '/profile/edit';
 
   // Field Agent
   static const String fieldAgentHome = '/field-agent';
@@ -101,6 +100,7 @@ class AppRoutes {
   static const String adminUserDetail = '/admin/users/:id';
   static const String adminReports = '/admin/reports';
   static const String categoryManagement = '/admin/categories';
+  static const String adminTerminal = '/admin/terminal';
 
   // Notifications
   static const String notifications = '/notifications';
@@ -165,13 +165,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PhoneAuthScreen(),
       ),
       GoRoute(
-        path: AppRoutes.otp,
-        builder: (context, state) {
-          final phone = state.extra as String;
-          return OtpScreen(phoneNumber: phone);
-        },
-      ),
-      GoRoute(
         path: AppRoutes.register,
         builder: (context, state) => const RegisterScreen(),
       ),
@@ -182,28 +175,40 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const HomeScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.productList,
-            builder: (context, state) {
-              final categoryId = state.uri.queryParameters['categoryId'];
-              return ProductListScreen(categoryId: categoryId);
-            },
+            pageBuilder: (context, state) => const MaterialPage(
+              key: ValueKey('shell-home'),
+              child: HomeScreen(),
+            ),
           ),
           GoRoute(
             path: AppRoutes.cart,
-            builder: (context, state) => const CartScreen(),
+            pageBuilder: (context, state) => const MaterialPage(
+              key: ValueKey('shell-cart'),
+              child: CartScreen(),
+            ),
           ),
           GoRoute(
             path: AppRoutes.orders,
-            builder: (context, state) => const OrderListScreen(),
+            pageBuilder: (context, state) => const MaterialPage(
+              key: ValueKey('shell-orders'),
+              child: OrderListScreen(),
+            ),
           ),
           GoRoute(
             path: AppRoutes.profile,
-            builder: (context, state) => const ProfileScreen(),
+            pageBuilder: (context, state) => const MaterialPage(
+              key: ValueKey('shell-profile'),
+              child: ProfileScreen(),
+            ),
           ),
         ],
+      ),
+
+      // Profile Edit — ShellRoute içinden push edilir
+      GoRoute(
+        parentNavigatorKey: _rootNavKey,
+        path: AppRoutes.profileEdit,
+        builder: (context, state) => const ProfileEditScreen(),
       ),
 
       // Product Detail (full screen) — ShellRoute içinden push edilir
@@ -229,7 +234,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavKey,
         path: AppRoutes.orderSuccess,
         builder: (context, state) {
-          final orderNo = state.extra as String;
+          final orderNo = state.extra as String? ?? '';
           return OrderSuccessScreen(orderNo: orderNo);
         },
       ),
@@ -351,6 +356,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.adminReports,
         builder: (context, state) => const AdminReportsScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.adminTerminal,
+        builder: (context, state) => const FieldAgentHomeScreen(),
+      ),
 
       // Notifications — ShellRoute içinden push edilir
       GoRoute(
@@ -401,20 +410,18 @@ class _BottomNav extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
 
     int currentIndex = 0;
-    if (location.startsWith(AppRoutes.productList)) currentIndex = 1;
-    if (location.startsWith(AppRoutes.cart)) currentIndex = 2;
-    if (location.startsWith(AppRoutes.orders)) currentIndex = 3;
-    if (location.startsWith(AppRoutes.profile)) currentIndex = 4;
+    if (location.startsWith(AppRoutes.cart)) currentIndex = 1;
+    if (location.startsWith(AppRoutes.orders)) currentIndex = 2;
+    if (location.startsWith(AppRoutes.profile)) currentIndex = 3;
 
     return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: (index) {
         switch (index) {
           case 0: context.go(AppRoutes.home); break;
-          case 1: context.go(AppRoutes.productList); break;
-          case 2: context.go(AppRoutes.cart); break;
-          case 3: context.go(AppRoutes.orders); break;
-          case 4: context.go(AppRoutes.profile); break;
+          case 1: context.go(AppRoutes.cart); break;
+          case 2: context.go(AppRoutes.orders); break;
+          case 3: context.go(AppRoutes.profile); break;
         }
       },
       items: [
@@ -422,25 +429,16 @@ class _BottomNav extends ConsumerWidget {
           icon: _NavIcon(path: AssetPaths.icNavHome, isActive: currentIndex == 0),
           label: 'Ana Sayfa',
         ),
-        // Ürünler için dedicated SVG yok — Material Icon kullanılıyor
         BottomNavigationBarItem(
-          icon: Icon(
-            currentIndex == 1 ? Icons.grid_view : Icons.grid_view_outlined,
-            color: currentIndex == 1 ? AppColors.primary : AppColors.textSecondary,
-            size: 24,
-          ),
-          label: 'Ürünler',
-        ),
-        BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavCart, isActive: currentIndex == 2),
+          icon: _NavIcon(path: AssetPaths.icNavCart, isActive: currentIndex == 1),
           label: 'Sepet',
         ),
         BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavOrders, isActive: currentIndex == 3),
+          icon: _NavIcon(path: AssetPaths.icNavOrders, isActive: currentIndex == 2),
           label: 'Siparişler',
         ),
         BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavProfile, isActive: currentIndex == 4),
+          icon: _NavIcon(path: AssetPaths.icNavProfile, isActive: currentIndex == 3),
           label: 'Profil',
         ),
       ],

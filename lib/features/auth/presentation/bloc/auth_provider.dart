@@ -1,33 +1,79 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nisa_ticaret/core/cache/cache_keys.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import 'package:nisa_ticaret/core/services/notification_service.dart';
+import 'package:nisa_ticaret/features/auth/data/datasources/auth_local_datasource.dart';
+import 'package:nisa_ticaret/features/auth/data/models/api_user_model.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
-import 'package:nisa_ticaret/features/auth/data/repositories/auth_repository.dart';
+import 'package:nisa_ticaret/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:nisa_ticaret/features/auth/presentation/providers/auth_datasource_providers.dart';
+import 'package:nisa_ticaret/features/auth/presentation/providers/auth_repository_provider.dart';
+import 'package:nisa_ticaret/features/profile/data/providers/profile_data_providers.dart';
+
+/// Login sonrası gidilecek route. Cart → phoneAuth akışında '/checkout' set edilir.
+class _PostLoginRouteNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void set(String? route) => state = route;
+}
+
+final postLoginRouteProvider =
+    NotifierProvider<_PostLoginRouteNotifier, String?>(
+  _PostLoginRouteNotifier.new,
+);
 
 // ---------------------------------------------------------------------------
-// authRepositoryProvider — singleton repository
+// authStateProvider — cihaz-bağlı TOTP + backend cache tabanlı.
+// Firestore belge kontrolü YOK. Backend (Laravel API) kullanıcı bilgilerinin
+// tek kaynağı; oturum varlığı Sanctum token'ın cache'de bulunmasıyla anlaşılır.
+//
+// authNotifierProvider da izlenir: login/logout sonrası step değişince
+// stream yeniden çalışır ve cache'den güncel kullanıcıyı okur.
 // ---------------------------------------------------------------------------
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository();
-});
+// Uygulama session'ında FCM token'ın backend'e kaydedilip kaydedilmediğini izler
+bool _fcmTokenRegisteredThisSession = false;
 
-// ---------------------------------------------------------------------------
-// authStateProvider — mevcut, korunuyor
-// Artık doğrudan Firebase yerine repository stream'ini kullanıyor.
-// ---------------------------------------------------------------------------
 final authStateProvider = StreamProvider<UserModel?>((ref) {
-  return ref.watch(authRepositoryProvider).userStream;
+  // authNotifierProvider'ı izle → step değişince (özellikle done) stream yenilenir
+  ref.watch(authNotifierProvider);
+  final cacheManager = ref.watch(cacheManagerProvider);
+  final local = ref.watch(authLocalDatasourceProvider);
+
+  if (!local.hasToken) {
+    _fcmTokenRegisteredThisSession = false;
+    return Stream.value(null);
+  }
+
+  final userJson =
+      cacheManager.getCachedData<Map<dynamic, dynamic>>(CacheKeys.userProfile);
+  if (userJson == null) return Stream.value(null);
+  try {
+    final apiUser = ApiUserModel.fromJson(
+      AuthLocalDatasource.deepStringify(userJson),
+    );
+    final user = UserModel.fromApiUser(apiUser);
+    // Startup'ta mevcut session varsa da FCM token'ı backend'e kaydet (bir kez)
+    if (!_fcmTokenRegisteredThisSession) {
+      _fcmTokenRegisteredThisSession = true;
+      notificationService
+          .onUserSignedIn(dio: ref.read(apiClientProvider).dio)
+          .ignore();
+    }
+    return Stream.value(user);
+  } catch (e) {
+    debugPrint('[authStateProvider] cache parse hatası: $e');
+    return Stream.value(null);
+  }
 });
 
 // ---------------------------------------------------------------------------
 // AuthStep — telefon auth akışının adımları
+// Kullanıcıya OTP sorulmaz; tüm akış cihazda otomatik yürür.
 // ---------------------------------------------------------------------------
 enum AuthStep {
   idle,
-  sendingCode,
-  codeSent,
-  verifyingCode,
+  authenticating,
   creatingUser,
   done,
 }
@@ -38,124 +84,100 @@ enum AuthStep {
 @immutable
 class AuthState {
   final AuthStep step;
-  final String? verificationId;
   final String? error;
 
   const AuthState({
     this.step = AuthStep.idle,
-    this.verificationId,
     this.error,
   });
 
   AuthState copyWith({
     AuthStep? step,
-    String? verificationId,
     String? error,
     bool clearError = false,
   }) {
     return AuthState(
       step: step ?? this.step,
-      verificationId: verificationId ?? this.verificationId,
       error: clearError ? null : (error ?? this.error),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// AuthNotifier — tüm telefon auth işlemleri (Firebase çağrısı YOK)
+// AuthNotifier — cihaz-bağlı TOTP auth akışı (SMS/OTP YOK)
 // ---------------------------------------------------------------------------
 class AuthNotifier extends Notifier<AuthState> {
-  late final AuthRepository _repository;
+  late final IAuthRepository _repository;
 
   @override
   AuthState build() {
-    _repository = ref.read(authRepositoryProvider);
+    _repository = ref.read(apiAuthRepositoryProvider);
     return const AuthState();
   }
 
   // -------------------------------------------------------------------------
-  // Telefon numarasına SMS kodu gönder
+  // Telefon numarası ile sessiz kimlik doğrulama (TOTP)
   // -------------------------------------------------------------------------
-  Future<void> sendPhoneCode(String phone) async {
-    state = state.copyWith(step: AuthStep.sendingCode, clearError: true);
+  Future<void> authenticate(String phone) async {
+    state = state.copyWith(step: AuthStep.authenticating, clearError: true);
 
-    try {
-      await _repository.sendVerificationCode(
-        phone: phone,
-        onCodeSent: (verificationId, _) {
-          state = state.copyWith(
-            step: AuthStep.codeSent,
-            verificationId: verificationId,
-            clearError: true,
-          );
-        },
-        onError: (error) {
-          state = state.copyWith(step: AuthStep.idle, error: error);
-        },
-        onAutoVerified: (credential) {
-          _handleAutoVerify(credential);
-        },
-      );
-    } on AuthException catch (e) {
-      state = state.copyWith(step: AuthStep.idle, error: e.message);
-    } catch (_) {
-      state = state.copyWith(
-        step: AuthStep.idle,
-        error: 'Bir hata oluştu. Tekrar deneyin.',
-      );
-    }
+    final result = await _repository.authenticateWithPhone(phone);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(step: AuthStep.idle, error: failure.message);
+      },
+      (user) {
+        // Backend yeni kullanıcıya varsayılan olarak 'User' ismi atar.
+        if (user.name.trim().isEmpty || user.name.trim() == 'User') {
+          state = state.copyWith(step: AuthStep.creatingUser, clearError: true);
+        } else {
+          notificationService
+              .onUserSignedIn(dio: ref.read(apiClientProvider).dio)
+              .ignore();
+          state = state.copyWith(step: AuthStep.done, clearError: true);
+        }
+      },
+    );
   }
 
   // -------------------------------------------------------------------------
-  // Kullanıcının girdiği SMS kodunu doğrula
-  // -------------------------------------------------------------------------
-  Future<void> verifyOTP(String smsCode) async {
-    if (state.verificationId == null) return;
-
-    state = state.copyWith(step: AuthStep.verifyingCode, clearError: true);
-
-    try {
-      final result = await _repository.verifyOTP(
-        verificationId: state.verificationId!,
-        smsCode: smsCode,
-      );
-
-      _handleUserCheckResult(result);
-    } on AuthException catch (e) {
-      state = state.copyWith(step: AuthStep.idle, error: e.message);
-    } catch (_) {
-      state = state.copyWith(
-        step: AuthStep.idle,
-        error: 'Bir hata oluştu. Tekrar deneyin.',
-      );
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Yeni kullanıcı profili oluştur
+  // Yeni kullanıcı profili oluştur — backend API'ye yazar (Firestore değil)
   // -------------------------------------------------------------------------
   Future<void> createUserProfile(String name, String phone) async {
-    final uid = _repository.currentUser?.uid;
-    if (uid == null) {
-      state = state.copyWith(
-        step: AuthStep.idle,
-        error: 'Oturum bulunamadı. Tekrar giriş yapın.',
-      );
-      return;
-    }
-
     try {
-      await _repository.createUserProfile(
-        uid: uid,
-        name: name,
-        phone: phone,
-      );
-      // Profil oluşturulunca FCM token'ı Firestore'a kaydet
-      notificationService.onUserSignedIn().ignore();
+      // 1. Profil güncelle — PUT /v1/profile
+      final profileDs = ref.read(profileRemoteDatasourceProvider);
+      await profileDs.updateProfile(name: name);
+
+      // 2. /me ile güncel kullanıcıyı çek — backend phone fallback ile
+      //    staff user bağlandıysa gerçek rolü buradan okuruz.
+      final local = ref.read(authLocalDatasourceProvider);
+      final remote = ref.read(authRemoteDatasourceProvider);
+      try {
+        final freshUser = await remote.getCurrentUser();
+        await local.saveUser(freshUser);
+        debugPrint('[Auth] Register sonrası rol: ${freshUser.role}');
+      } catch (_) {
+        // /me başarısız olursa eski cache'i name ile güncelle
+        final existing = local.getUser();
+        if (existing != null) {
+          await local.saveUser(ApiUserModel(
+            id: existing.id,
+            name: name,
+            phone: phone,
+            email: existing.email,
+            role: existing.role,
+            isActive: existing.isActive,
+            profile: existing.profile,
+          ));
+        }
+      }
+
+      final dio = ref.read(apiClientProvider).dio;
+      notificationService.onUserSignedIn(dio: dio).ignore();
       state = state.copyWith(step: AuthStep.done, clearError: true);
-    } on AuthException catch (e) {
-      state = state.copyWith(step: AuthStep.idle, error: e.message);
-    } catch (_) {
+    } catch (e) {
       state = state.copyWith(
         step: AuthStep.idle,
         error: 'Profil oluşturulamadı. Tekrar deneyin.',
@@ -167,17 +189,22 @@ class AuthNotifier extends Notifier<AuthState> {
   // Çıkış
   // -------------------------------------------------------------------------
   Future<void> signOut() async {
-    // Çıkış yapmadan önce FCM token'ı temizle
     await notificationService.onUserSignedOut();
 
-    try {
-      await _repository.signOut();
-    } on AuthException catch (e) {
-      state = state.copyWith(error: e.message);
-      return;
-    } catch (_) {
-      // Sessizce devam et
-    }
+    // Backend logout + Sanctum token/cache temizle (TOTP secret cihazda kalır
+    // — aynı telefonla tekrar girişte sessiz totp-login yapılabilsin).
+    await _repository.logout();
+
+    // Kullanıcıya özel tüm cache'leri temizle
+    final cache = ref.read(cacheManagerProvider);
+    await Future.wait([
+      cache.invalidateByPrefix(CacheKeys.addresses),
+      cache.invalidate(CacheKeys.orders),
+      cache.invalidate(CacheKeys.userProfile),
+      cache.invalidate(CacheKeys.notifications),
+      cache.invalidate(CacheKeys.notificationsUnreadCount),
+    ]);
+
     state = const AuthState();
   }
 
@@ -186,32 +213,6 @@ class AuthNotifier extends Notifier<AuthState> {
   // -------------------------------------------------------------------------
   void reset() {
     state = const AuthState();
-  }
-
-  // ── Private Helpers ────────────────────────────────────────────────────────
-
-  /// Android otomatik doğrulama: credential geldiğinde repository'ye ilet
-  void _handleAutoVerify(PhoneAuthCredential credential) {
-    _repository.signInWithCredential(credential).then((result) {
-      _handleUserCheckResult(result);
-    }).catchError((e) {
-      final message = e is AuthException
-          ? e.message
-          : 'Otomatik doğrulama başarısız.';
-      state = state.copyWith(step: AuthStep.idle, error: message);
-    });
-  }
-
-  /// Repository'den dönen UserCheckResult'e göre state'i ayarla
-  void _handleUserCheckResult(UserCheckResult result) {
-    switch (result) {
-      case UserCheckResult.existingUser:
-        // Giriş başarılı — FCM token'ı yenile (token rotasyonu için)
-        notificationService.onUserSignedIn().ignore();
-        state = state.copyWith(step: AuthStep.done, clearError: true);
-      case UserCheckResult.newUser:
-        state = state.copyWith(step: AuthStep.creatingUser, clearError: true);
-    }
   }
 }
 

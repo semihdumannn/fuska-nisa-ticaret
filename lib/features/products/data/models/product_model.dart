@@ -80,7 +80,7 @@ class ProductModel extends Equatable {
   }
 
   bool get inStock {
-    if (koliVariantId != null) return (koliStock ?? 0) > 0;
+    if (koliVariantId != null && koliStock != null) return koliStock! > 0;
     return (primaryStock ?? 0) > 0;
   }
 

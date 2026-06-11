@@ -25,7 +25,7 @@ class UpdateProfileUsecase {
   Future<Either<Failure, ProfileEntity>> call(UpdateProfileInput input) {
     if (!input.hasChanges) {
       return Future.value(
-          const Left(ServerFailure('Guncellenecek alan bulunamadi')));
+          const Left(ServerFailure('Güncellenecek alan bulunamadı')));
     }
     return _repository.updateProfile(
       name: input.name,

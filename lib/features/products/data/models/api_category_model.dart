@@ -1,5 +1,22 @@
 import '../../domain/entities/category_entity.dart';
 
+/// Laravel Resource Collection veya düz array olarak gelen children'ı parse et.
+List<ApiCategoryModel> _parseChildren(dynamic raw) {
+  if (raw == null) return const [];
+  if (raw is List) {
+    return raw
+        .map((c) => ApiCategoryModel.fromJson(c as Map<String, dynamic>))
+        .toList();
+  }
+  // Laravel Resource Collection: {"data": [...]}
+  if (raw is Map && raw.containsKey('data') && raw['data'] is List) {
+    return (raw['data'] as List)
+        .map((c) => ApiCategoryModel.fromJson(c as Map<String, dynamic>))
+        .toList();
+  }
+  return const [];
+}
+
 class ApiCategoryModel {
   final int id;
   final String name;
@@ -38,16 +55,11 @@ class ApiCategoryModel {
       slug: json['slug'] as String? ?? '',
       description: json['description'] as String?,
       imageUrl: json['image_url'] as String?,
-      iconName: json['icon_name'] as String? ?? '',
+      iconName: json['icon'] as String? ?? json['icon_name'] as String? ?? '',
       iconAsset: json['icon_asset'] as String?,
       color: json['color'] as String? ?? '#000000',
       parentId: json['parent_id'] as int?,
-      children: json['children'] != null
-          ? (json['children'] as List)
-              .map((c) =>
-                  ApiCategoryModel.fromJson(c as Map<String, dynamic>))
-              .toList()
-          : [],
+      children: _parseChildren(json['children']),
       productCount:
           json['products_count'] as int? ?? json['product_count'] as int? ?? 0,
       isActive: json['is_active'] as bool? ?? true,

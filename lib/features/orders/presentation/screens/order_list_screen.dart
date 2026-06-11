@@ -1,14 +1,15 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
+import 'package:nisa_ticaret/core/utils/navigation_guard.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
+import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
 
 class OrderListScreen extends ConsumerStatefulWidget {
   const OrderListScreen({super.key});
@@ -20,7 +21,7 @@ class OrderListScreen extends ConsumerStatefulWidget {
 class _OrderListScreenState extends ConsumerState<OrderListScreen> {
   OrderStatus? _filter;
 
-  List<OrderModel> _applyFilter(List<OrderModel> orders) {
+  List<OrderEntity> _applyFilter(List<OrderEntity> orders) {
     if (_filter == null) return orders;
     return orders.where((o) => o.status == _filter).toList();
   }
@@ -95,14 +96,31 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
               data: (orders) {
                 final filtered = _applyFilter(orders);
                 if (filtered.isEmpty) {
-                  return _EmptyState(isFiltered: _filter != null);
+                  return RefreshIndicator(
+                    color: AppColors.primary,
+                    onRefresh: () async =>
+                        ref.invalidate(userOrdersProvider),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: _EmptyState(isFiltered: _filter != null),
+                      ),
+                    ),
+                  );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    return _OrderCard(order: filtered[index]);
-                  },
+                return RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async =>
+                      ref.invalidate(userOrdersProvider),
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      return _OrderCard(order: filtered[index]);
+                    },
+                  ),
                 );
               },
             ),
@@ -246,117 +264,174 @@ class _FilterTabs extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _OrderCard extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _OrderCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = _statusColor(order.status);
+    final previewItems = order.items.take(3).toList();
+    final extraCount = order.items.length - previewItems.length;
+
+    return GestureDetector(
+      onTap: () => context.safePush(
+        AppRoutes.orderDetail.replaceFirst(':id', order.id.toString()),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Sol kenar — status rengi
+                Container(
+                  width: 4,
+                  color: statusColor,
+                ),
+                // Kart içeriği
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Üst: sipariş no + status badge
+                        Row(
+                          children: [
+                            Text(
+                              'Sipariş #${order.orderNumber}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.secondary,
+                              ),
+                            ),
+                            const Spacer(),
+                            _StatusBadge(status: order.status),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // Orta: ürün görselleri
+                        Row(
+                          children: [
+                            ...previewItems.map((item) => _ProductThumb(
+                                  imageUrl: item.productImageUrl,
+                                )),
+                            if (extraCount > 0)
+                              Container(
+                                width: 40,
+                                height: 40,
+                                margin: const EdgeInsets.only(left: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.border,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '+$extraCount',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(color: AppColors.divider, height: 1),
+                        const SizedBox(height: 10),
+                        // Alt: tarih + tutar
+                        Row(
+                          children: [
+                            Text(
+                              _formatDate(order.createdAt),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '₺${order.total.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: AppColors.textHint,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductThumb extends StatelessWidget {
+  final String? imageUrl;
+  const _ProductThumb({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      width: 40,
+      height: 40,
+      margin: const EdgeInsets.only(right: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.imageBg,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Üst: sipariş no + status badge
-          Row(
-            children: [
-              Text(
-                '#${order.orderNo}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.secondary,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: imageUrl != null
+            ? CachedNetworkImage(
+                imageUrl: imageUrl!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => const Icon(
+                  Icons.inventory_2,
+                  size: 20,
+                  color: AppColors.textHint,
                 ),
-              ),
-              const Spacer(),
-              _StatusBadge(status: order.status),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Orta: tarih + ürün sayısı
-          Row(
-            children: [
-              const Icon(
-                Icons.calendar_today_outlined,
-                size: 12,
+                errorWidget: (_, __, ___) => const Icon(
+                  Icons.inventory_2,
+                  size: 20,
+                  color: AppColors.textHint,
+                ),
+              )
+            : const Icon(
+                Icons.inventory_2,
+                size: 20,
                 color: AppColors.textHint,
               ),
-              const SizedBox(width: 4),
-              Text(
-                _formatDate(order.createdAt),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${order.totalItems} ürün',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(color: AppColors.divider, height: 1),
-          const SizedBox(height: 12),
-          // Alt: toplam + detay butonu
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Toplam',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    '₺${order.total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              OutlinedButton(
-                onPressed: () => context.push(AppRoutes.orderDetail.replaceFirst(':id', order.id)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Detay Gör',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -467,7 +542,7 @@ class _EmptyState extends StatelessWidget {
               )
             else
               ElevatedButton(
-                onPressed: () => context.go(AppRoutes.productList),
+                onPressed: () => context.go(AppRoutes.home),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(0, 52),
                   padding: const EdgeInsets.symmetric(horizontal: 32),

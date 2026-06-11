@@ -180,7 +180,7 @@ class _ColumnHeaders extends StatelessWidget {
       child: Row(
         children: [
           _HeaderCell('#No', flex: 2),
-          _HeaderCell('Musteri', flex: 3),
+          _HeaderCell('Müşteri', flex: 3),
           if (isWide) _HeaderCell('Tutar', flex: 2),
           _HeaderCell('Durum', flex: 3),
           if (isWide) _HeaderCell('Tarih', flex: 3),
@@ -307,9 +307,9 @@ class _OrderRow extends StatelessWidget {
                 const SizedBox(width: 4),
                 _ActionButton(
                   icon: Icons.edit_outlined,
-                  tooltip: 'Duzenle',
+                  tooltip: 'Düzenle',
                   onTap: () {
-                    // TODO: siparis durum guncelleme
+                    // TODO: siparis durum güncelleme
                   },
                 ),
               ],
@@ -363,7 +363,7 @@ class _EmptyTablePlaceholder extends StatelessWidget {
       height: 120,
       child: Center(
         child: Text(
-          'Siparis bulunamadi',
+          'Siparis bulunamadı',
           style: TextStyle(
             color: AppColors.textHint,
             fontSize: 14,

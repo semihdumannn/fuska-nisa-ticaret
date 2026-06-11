@@ -29,7 +29,7 @@ class ApiUserModel {
       isActive: json['is_active'] as bool?,
       profile: json['profile'] != null
           ? ApiUserProfileModel.fromJson(
-              json['profile'] as Map<String, dynamic>)
+              Map<String, dynamic>.from(json['profile'] as Map))
           : null,
     );
   }
@@ -76,9 +76,17 @@ class ApiUserProfileModel {
     return ApiUserProfileModel(
       avatarUrl: json['avatar_url'] as String?,
       companyName: json['company_name'] as String?,
-      balance: (json['balance'] as num?)?.toDouble(),
-      creditLimit: (json['credit_limit'] as num?)?.toDouble(),
+      balance: _toDouble(json['balance']),
+      creditLimit: _toDouble(json['credit_limit']),
     );
+  }
+
+  // Backend bazen balance/credit_limit'i String ("0.00") olarak dönüyor
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {

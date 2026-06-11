@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
-import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
+import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
+import 'package:nisa_ticaret/features/orders/presentation/providers/api_orders_provider.dart';
 
 // ---------------------------------------------------------------------------
 // DeliveryDetailScreen
@@ -20,16 +19,17 @@ class DeliveryDetailScreen extends ConsumerWidget {
   // -------------------------------------------------------------------------
   // Google Maps navigasyon
   // -------------------------------------------------------------------------
-  Future<void> _launchNavigation(DeliveryAddress address) async {
-    final lat = address.lat;
-    final lng = address.lng;
+  Future<void> _launchNavigation(OrderAddressEntity address) async {
+    final lat = address.latitude;
+    final lng = address.longitude;
+    final district = address.district ?? '';
 
     Uri uri;
     if (lat != null && lng != null) {
       uri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
     } else {
       final encoded = Uri.encodeComponent(
-        '${address.fullAddress}, ${address.district}, ${address.city}',
+        '${address.address}, $district, ${address.city}',
       );
       uri = Uri.parse('google.navigation:q=$encoded&mode=d');
     }
@@ -43,7 +43,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
         ? Uri.parse(
             'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving')
         : Uri.parse(
-            'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent('${address.fullAddress}, ${address.city}')}');
+            'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent('${address.address}, ${address.city}')}');
 
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
@@ -53,16 +53,17 @@ class DeliveryDetailScreen extends ConsumerWidget {
   // -------------------------------------------------------------------------
   // Harici Maps aç
   // -------------------------------------------------------------------------
-  Future<void> _openInMaps(DeliveryAddress address) async {
-    final lat = address.lat;
-    final lng = address.lng;
+  Future<void> _openInMaps(OrderAddressEntity address) async {
+    final lat = address.latitude;
+    final lng = address.longitude;
+    final district = address.district ?? '';
     final Uri uri;
     if (lat != null && lng != null) {
       uri = Uri.parse(
           'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     } else {
       final q = Uri.encodeComponent(
-          '${address.fullAddress}, ${address.district}, ${address.city}');
+          '${address.address}, $district, ${address.city}');
       uri =
           Uri.parse('https://www.google.com/maps/search/?api=1&query=$q');
     }
@@ -77,7 +78,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
   Future<void> _deliver(
     BuildContext context,
     WidgetRef ref,
-    OrderModel order,
+    OrderEntity order,
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -91,7 +92,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '#${order.orderNo} numaralı sipariş müşteriye teslim edildi olarak işaretlensin mi?',
+              '#${order.orderNumber} numaralı sipariş müşteriye teslim edildi olarak işaretlensin mi?',
             ),
             const SizedBox(height: 8),
             const Text(
@@ -124,27 +125,40 @@ class DeliveryDetailScreen extends ConsumerWidget {
     if (confirm != true || !context.mounted) return;
 
     try {
-      final user = ref.read(authStateProvider).value;
-      if (user == null) return;
-
-      await ref.read(orderRepositoryProvider).updateOrderStatus(
+      final success = await ref
+          .read(apiOrdersNotifierProvider.notifier)
+          .updateStatus(
             orderId: order.id,
             newStatus: OrderStatus.delivered,
-            updatedBy: user.uid,
           );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-                'Sipariş teslim edildi olarak işaretlendi.'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        if (success) {
+          ref.invalidate(orderStreamProvider(order.id.toString()));
+          ref.invalidate(activeOrdersProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'Sipariş teslim edildi olarak işaretlendi.'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Güncelleme başarısız. Tekrar deneyin.'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -191,20 +205,11 @@ class DeliveryDetailScreen extends ConsumerWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          data: (order) => order == null
-              ? const Text(
-                  'Teslimat Detayı',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                )
-              : Column(
+          data: (order) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '#${order.orderNo}',
+                      '#${order.orderNumber}',
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
@@ -234,15 +239,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
       body: orderAsync.when(
         loading: () => _buildShimmer(),
         error: (e, _) => _buildErrorState(context, e),
-        data: (order) {
-          if (order == null) {
-            return _buildErrorState(
-              context,
-              'Sipariş bulunamadı.',
-            );
-          }
-          return _buildContent(context, ref, order);
-        },
+        data: (order) => _buildContent(context, ref, order),
       ),
     );
   }
@@ -253,7 +250,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
-    OrderModel order,
+    OrderEntity order,
   ) {
     return Column(
       children: [
@@ -267,9 +264,9 @@ class DeliveryDetailScreen extends ConsumerWidget {
                 _AddressCard(
                   order: order,
                   onNavigate: () =>
-                      _launchNavigation(order.deliveryAddress),
+                      _launchNavigation(order.address),
                   onOpenMaps: () =>
-                      _openInMaps(order.deliveryAddress),
+                      _openInMaps(order.address),
                 ),
                 const SizedBox(height: 12),
                 _ProductsCard(order: order),
@@ -387,11 +384,13 @@ class DeliveryDetailScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _CustomerCard extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _CustomerCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
+    final phone = order.address.phone;
+    final recipientName = order.address.fullName;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBg,
@@ -405,14 +404,14 @@ class _CustomerCard extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.secondary,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
-                order.customerName.isNotEmpty
-                    ? order.customerName[0].toUpperCase()
+                recipientName.isNotEmpty
+                    ? recipientName[0].toUpperCase()
                     : '?',
                 style: const TextStyle(
                   fontSize: 18,
@@ -429,7 +428,7 @@ class _CustomerCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  order.customerName,
+                  recipientName,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -438,7 +437,7 @@ class _CustomerCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  order.customerPhone,
+                  phone,
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -462,8 +461,7 @@ class _CustomerCard extends StatelessWidget {
               ),
               tooltip: 'Ara',
               onPressed: () async {
-                final uri =
-                    Uri.parse('tel:${order.customerPhone}');
+                final uri = Uri.parse('tel:$phone');
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri);
                 }
@@ -481,7 +479,7 @@ class _CustomerCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _AddressCard extends ConsumerWidget {
-  final OrderModel order;
+  final OrderEntity order;
   final VoidCallback onNavigate;
   final VoidCallback onOpenMaps;
 
@@ -493,7 +491,8 @@ class _AddressCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final addr = order.deliveryAddress;
+    final addr = order.address;
+    final district = addr.district ?? '';
 
     return Container(
       decoration: BoxDecoration(
@@ -527,7 +526,7 @@ class _AddressCard extends ConsumerWidget {
           const SizedBox(height: 10),
           // Adres detay
           Text(
-            addr.fullAddress,
+            addr.address,
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.textPrimary,
@@ -535,23 +534,12 @@ class _AddressCard extends ConsumerWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '${addr.district}, ${addr.city}',
+            district.isNotEmpty ? '$district, ${addr.city}' : addr.city,
             style: const TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
           ),
-          if (addr.notes != null && addr.notes!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              addr.notes!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
           const SizedBox(height: 14),
           // Aksiyon butonlar
           Row(
@@ -621,7 +609,7 @@ class _AddressCard extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _ProductsCard extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _ProductsCard({required this.order});
 
   @override
@@ -675,9 +663,10 @@ class _ProductsCard extends StatelessWidget {
   }
 
   Widget _buildSummary() {
+    final discount = order.discount ?? 0.0;
     return Column(
       children: [
-        if (order.discount > 0) ...[
+        if (discount > 0) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -709,7 +698,7 @@ class _ProductsCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '-₺${order.discount.toStringAsFixed(2)}',
+                '-₺${discount.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -751,7 +740,7 @@ class _ProductsCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ProductRow extends StatelessWidget {
-  final OrderItem item;
+  final OrderItemEntity item;
   const _ProductRow({required this.item});
 
   @override
@@ -762,9 +751,9 @@ class _ProductRow extends StatelessWidget {
         // Gorsel
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+          child: item.productImageUrl != null && item.productImageUrl!.isNotEmpty
               ? CachedNetworkImage(
-                  imageUrl: item.imageUrl!,
+                  imageUrl: item.productImageUrl!,
                   width: 48,
                   height: 48,
                   fit: BoxFit.cover,
@@ -806,7 +795,7 @@ class _ProductRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '×${item.qty}',
+              '×${item.quantity}',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -847,7 +836,7 @@ class _ProductRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PaymentCard extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   const _PaymentCard({required this.order});
 
   @override
@@ -884,40 +873,7 @@ class _PaymentCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          // Odeme yontemi
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Ödeme Yöntemi',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withAlpha(18),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.secondary.withAlpha(60),
-                  ),
-                ),
-                child: Text(
-                  order.paymentMethod.displayName,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.secondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Odeme durumu
+          // Ödeme durumu
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -975,7 +931,7 @@ class _PaymentStatusPill extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// [5] Siparis Notu Kartı
+// [5] Sipariş Notu Kartı
 // ---------------------------------------------------------------------------
 
 class _NotesCard extends StatelessWidget {
@@ -1032,7 +988,7 @@ class _NotesCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DeliverBottomBar extends StatelessWidget {
-  final OrderModel order;
+  final OrderEntity order;
   final VoidCallback onDeliver;
 
   const _DeliverBottomBar({
@@ -1100,7 +1056,7 @@ class _DeliverBottomBar extends StatelessWidget {
           if (isDelivered) ...[
             const SizedBox(height: 4),
             Text(
-              'Teslim tarihi: ${_formatDate(order.updatedAt)}',
+              'Teslim tarihi: ${_formatDate(order.deliveredAt ?? order.updatedAt ?? DateTime.now())}',
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,

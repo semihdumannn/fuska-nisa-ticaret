@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
-import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
 import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
+import 'package:nisa_ticaret/features/orders/data/providers/order_data_providers.dart';
+import 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart';
+import 'package:nisa_ticaret/features/orders/domain/usecases/get_order_detail_usecase.dart';
 
 class OrderRepository {
   final FirebaseFirestore _firestore;
@@ -183,32 +185,46 @@ class OrderRepository {
 }
 
 // ---------------------------------------------------------------------------
-// Provider — singleton repository
+// Provider — singleton Firestore repository (field_agent vb. icin korunuyor)
 // ---------------------------------------------------------------------------
 final orderRepositoryProvider = Provider<OrderRepository>((ref) {
   return OrderRepository();
 });
 
 // ---------------------------------------------------------------------------
-// Kullanicinin siparisleri — gercek zamanli stream (cache yok: CLAUDE.md)
+// Kullanicinin siparisleri — API (FutureProvider)
 // ---------------------------------------------------------------------------
-final userOrdersProvider = StreamProvider<List<OrderModel>>((ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return const Stream.empty();
-  return ref.watch(orderRepositoryProvider).watchUserOrders(user.uid);
+final userOrdersProvider = FutureProvider<List<OrderEntity>>((ref) async {
+  final repo = ref.watch(apiOrderRepositoryProvider);
+  final result = await repo.getOrders(page: 1, perPage: 50);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (orders) => orders,
+  );
 });
 
 // ---------------------------------------------------------------------------
-// Tekil siparis stream — OrderDetailScreen icin
+// Tekil siparis detayi — API (FutureProvider.family)
 // ---------------------------------------------------------------------------
 final orderStreamProvider =
-    StreamProvider.family<OrderModel?, String>((ref, orderId) {
-  return ref.watch(orderRepositoryProvider).watchOrder(orderId);
+    FutureProvider.family<OrderEntity, String>((ref, orderId) async {
+  final id = int.tryParse(orderId) ?? 0;
+  final repo = ref.watch(apiOrderRepositoryProvider);
+  final result = await GetOrderDetailUsecase(repo)(id);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (order) => order,
+  );
 });
 
 // ---------------------------------------------------------------------------
-// Aktif siparisler — staff/admin paneli icin (cache yok)
+// Aktif siparisler — API (pending/confirmed/preparing/on_the_way)
 // ---------------------------------------------------------------------------
-final activeOrdersProvider = StreamProvider<List<OrderModel>>((ref) {
-  return ref.watch(orderRepositoryProvider).watchActiveOrders();
+final activeOrdersProvider = FutureProvider<List<OrderEntity>>((ref) async {
+  final repo = ref.watch(apiOrderRepositoryProvider);
+  final result = await repo.getOrders(page: 1, perPage: 100);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (orders) => orders.where((o) => o.status.isActive).toList(),
+  );
 });

@@ -42,29 +42,15 @@ const List<AdminSidebarItem> _kSidebarItems = [
     route: AppRoutes.adminHome,
   ),
   AdminSidebarItem(
-    id: 'products',
-    label: 'Urunler',
-    icon: Icons.inventory_2_outlined,
-    iconFilled: Icons.inventory_2,
-    route: AppRoutes.productManagement,
-  ),
-  AdminSidebarItem(
-    id: 'categories',
-    label: 'Kategoriler',
-    icon: Icons.category_outlined,
-    iconFilled: Icons.category,
-    route: AppRoutes.categoryManagement,
-  ),
-  AdminSidebarItem(
     id: 'orders',
-    label: 'Siparisler',
+    label: 'Siparişler',
     icon: Icons.receipt_long_outlined,
     iconFilled: Icons.receipt_long,
     route: AppRoutes.orderManagement,
   ),
   AdminSidebarItem(
     id: 'customers',
-    label: 'Musteriler',
+    label: 'Müşteriler',
     icon: Icons.people_outline,
     iconFilled: Icons.people,
     route: AppRoutes.adminUsers,
@@ -77,11 +63,11 @@ const List<AdminSidebarItem> _kSidebarItems = [
     route: AppRoutes.adminReports,
   ),
   AdminSidebarItem(
-    id: 'settings',
-    label: 'Ayarlar',
-    icon: Icons.settings_outlined,
-    iconFilled: Icons.settings,
-    route: AppRoutes.adminDashboard, // TODO: ayarlar route
+    id: 'terminal',
+    label: 'Terminal Modu',
+    icon: Icons.point_of_sale_outlined,
+    iconFilled: Icons.point_of_sale,
+    route: AppRoutes.adminTerminal,
   ),
 ];
 
@@ -178,7 +164,7 @@ class _SidebarHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Yonetim Paneli',
+                  'Yönetim Paneli',
                   style: TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 11,
@@ -312,7 +298,7 @@ class _SidebarFooter extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  'Yonetici',
+                  'Yönetici',
                   style: TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 11,
@@ -330,7 +316,7 @@ class _SidebarFooter extends ConsumerWidget {
             ),
             onPressed: () =>
                 ref.read(authNotifierProvider.notifier).signOut(),
-            tooltip: 'Cikis Yap',
+            tooltip: 'Çıkış Yap',
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),

@@ -6,11 +6,13 @@ import 'package:nisa_ticaret/features/products/data/models/category_model.dart';
 class CategoryCard extends StatelessWidget {
   final CategoryModel category;
   final VoidCallback onTap;
+  final bool isSelected;
 
   const CategoryCard({
     super.key,
     required this.category,
     required this.onTap,
+    this.isSelected = false,
   });
 
   @override
@@ -18,6 +20,7 @@ class CategoryCard extends StatelessWidget {
     return CategoryIconWidget(
       categoryIcon: _resolveIcon(category),
       onTap: onTap,
+      isSelected: isSelected,
     );
   }
 
@@ -32,6 +35,28 @@ class CategoryCard extends StatelessWidget {
         return CategoryIcon(
           icon: iconData,
           backgroundColor: bg,
+          foregroundColor: fg,
+          label: category.name,
+        );
+      }
+      // iconName var ama map'te yok → renk bazlı fallback
+      final fg = _parseColor(category.color) ?? AppColors.textSecondary;
+      final bg = fg.withValues(alpha: 0.12);
+      return CategoryIcon(
+        icon: Icons.category_outlined,
+        backgroundColor: bg,
+        foregroundColor: fg,
+        label: category.name,
+      );
+    }
+
+    // iconName boş veya null → önce slug, sonra color fallback
+    if (category.color.isNotEmpty) {
+      final fg = _parseColor(category.color);
+      if (fg != null) {
+        return CategoryIcon(
+          icon: Icons.category_outlined,
+          backgroundColor: fg.withValues(alpha: 0.12),
           foregroundColor: fg,
           label: category.name,
         );
@@ -92,12 +117,15 @@ class CategoryCard extends StatelessWidget {
   /// Material icon adından IconData döndürür.
   /// Firestore'da "water_drop", "local_drink" gibi snake_case isimler beklenir.
   static IconData? _materialIconFromName(String name) {
+    if (name.isEmpty) return null;
     const map = <String, IconData>{
       'water_drop': Icons.water_drop,
-      'water': Icons.water,
+      'water': Icons.water_drop,
+      'water_full': Icons.water,
       'local_drink': Icons.local_drink,
       'liquor': Icons.liquor,
       'local_bar': Icons.local_bar,
+      'local_cafe': Icons.local_cafe,
       'emoji_food_beverage': Icons.emoji_food_beverage,
       'coffee': Icons.coffee,
       'sports_bar': Icons.sports_bar,
@@ -105,7 +133,7 @@ class CategoryCard extends StatelessWidget {
       'breakfast_dining': Icons.breakfast_dining,
       'category': Icons.category,
       'category_outlined': Icons.category_outlined,
-      'star': Icons.star,
+      'star': Icons.star_outlined,
       'local_offer': Icons.local_offer,
       'sell': Icons.sell,
       'percent': Icons.percent,
@@ -119,6 +147,7 @@ class CategoryCard extends StatelessWidget {
       'kitchen': Icons.kitchen,
       'shopping_bag': Icons.shopping_bag,
       'inventory_2': Icons.inventory_2,
+      'more_horiz': Icons.more_horiz,
     };
     return map[name];
   }

@@ -32,7 +32,7 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
         ),
         child: const Center(
           child: Text(
-            'Veri bulunamadi',
+            'Veri bulunamadı',
             style: TextStyle(color: AppColors.textHint, fontFamily: 'Poppins'),
           ),
         ),

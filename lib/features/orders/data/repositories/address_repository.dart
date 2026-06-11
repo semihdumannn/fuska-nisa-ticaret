@@ -1,8 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nisa_ticaret/core/cache/cache_keys.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
 import 'package:nisa_ticaret/features/orders/data/models/address_model.dart';
+import 'package:nisa_ticaret/features/profile/data/providers/profile_data_providers.dart';
+import 'package:nisa_ticaret/features/profile/domain/entities/address_entity.dart';
+import 'package:nisa_ticaret/features/profile/domain/usecases/get_addresses_usecase.dart';
 
 class AddressRepository {
   final FirebaseFirestore _firestore;
@@ -102,14 +107,50 @@ final addressRepositoryProvider = Provider<AddressRepository?>((ref) {
 // ---------------------------------------------------------------------------
 // Adres listesi stream
 // ---------------------------------------------------------------------------
-final addressesProvider = StreamProvider<List<AddressModel>>((ref) {
-  final authState = ref.watch(authStateProvider);
-  // Auth henuz yukleniyor — loading state'de bekle (stream emit etmeden)
-  if (authState.isLoading) return const Stream.empty();
-  // Auth tamam ama kullanici yok — bos liste emit et (empty state goster)
-  final repo = ref.watch(addressRepositoryProvider);
-  if (repo == null) return Stream.value([]);
-  return repo.watchAddresses();
+AddressModel _entityToModel(AddressEntity entity) {
+  return AddressModel(
+    id: entity.id?.toString() ?? '',
+    userId: '',
+    label: entity.title,
+    fullAddress: entity.fullAddress,
+    district: entity.district ?? '',
+    city: entity.city,
+    lat: entity.latitude,
+    lng: entity.longitude,
+    isDefault: entity.isDefault,
+  );
+}
+
+final addressesProvider = FutureProvider<List<AddressModel>>((ref) async {
+  // Kullanıcı giriş yapmamışsa boş döndür — 401 hatasını önler
+  final user = ref.watch(authStateProvider).value;
+  if (user == null) return [];
+
+  // Kullanıcıya özel cache key — farklı kullanıcılar birbirinin adresini göremez
+  final userAddressKey = '${CacheKeys.addresses}_${user.uid}';
+
+  final cache = ref.read(cacheManagerProvider);
+  final rawCached = cache.getCachedData<List>(userAddressKey);
+  if (rawCached != null) {
+    return rawCached
+        .map((e) => AddressModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  final repo = ref.watch(apiProfileRepositoryProvider);
+  final result = await GetAddressesUsecase(repo)();
+  return result.fold(
+    (failure) => <AddressModel>[],
+    (entities) {
+      final models = entities.map(_entityToModel).toList();
+      cache.cacheData(
+        userAddressKey,
+        models.map((m) => m.toJson()).toList(),
+        ttl: CacheKeys.addressesTtl,
+      ).ignore();
+      return models;
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

@@ -35,16 +35,25 @@ class ApiAddressModel {
       title: json['title'] as String? ?? 'Adres',
       fullName: json['full_name'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
-      addressLine:
-          json['address_line'] as String? ?? json['address'] as String? ?? '',
+      addressLine: json['full_address'] as String?
+          ?? json['address_line'] as String?
+          ?? json['address'] as String?
+          ?? '',
       city: json['city'] as String? ?? '',
       district: json['district'] as String?,
       neighborhood: json['neighborhood'] as String?,
       postalCode: json['postal_code'] as String?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: _parseDouble(json['latitude']),
+      longitude: _parseDouble(json['longitude']),
       isDefault: json['is_default'] as bool? ?? false,
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -52,7 +61,7 @@ class ApiAddressModel {
       'title': title,
       'full_name': fullName,
       'phone': phone,
-      'address_line': addressLine,
+      'full_address': addressLine,
       'city': city,
       if (district != null) 'district': district,
       if (neighborhood != null) 'neighborhood': neighborhood,
@@ -85,7 +94,7 @@ class ApiAddressModel {
       'title': entity.title,
       'full_name': entity.fullName,
       'phone': entity.phone,
-      'address_line': entity.addressLine,
+      'full_address': entity.addressLine,
       'city': entity.city,
       if (entity.district != null) 'district': entity.district,
       if (entity.neighborhood != null) 'neighborhood': entity.neighborhood,

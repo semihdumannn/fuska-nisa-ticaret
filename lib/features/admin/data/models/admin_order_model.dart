@@ -16,12 +16,12 @@ enum AdminOrderStatus {
 
   String get displayName => switch (this) {
         AdminOrderStatus.pending => 'Bekliyor',
-        AdminOrderStatus.confirmed => 'Onaylandi',
-        AdminOrderStatus.preparing => 'Hazirlaniyor',
+        AdminOrderStatus.confirmed => 'Onaylandı',
+        AdminOrderStatus.preparing => 'Hazırlanıyor',
         AdminOrderStatus.onTheWay => 'Yolda',
         AdminOrderStatus.delivered => 'Teslim Edildi',
-        AdminOrderStatus.cancelled => 'Iptal',
-        AdminOrderStatus.refunded => 'Iade',
+        AdminOrderStatus.cancelled => 'İptal',
+        AdminOrderStatus.refunded => 'İade',
       };
 
   Color get color => switch (this) {
@@ -43,6 +43,22 @@ enum AdminOrderStatus {
         AdminOrderStatus.cancelled => Icons.cancel_outlined,
         AdminOrderStatus.refunded => Icons.replay_outlined,
       };
+
+  /// Backend state machine kuralları: hangi statüye geçilebilir.
+  List<AdminOrderStatus> get allowedTransitions => switch (this) {
+        AdminOrderStatus.pending    => [confirmed, cancelled],
+        AdminOrderStatus.confirmed  => [preparing, cancelled],
+        AdminOrderStatus.preparing  => [onTheWay, cancelled],
+        AdminOrderStatus.onTheWay   => [delivered, cancelled],
+        AdminOrderStatus.delivered  => [refunded],
+        AdminOrderStatus.cancelled  => [],
+        AdminOrderStatus.refunded   => [],
+      };
+
+  bool get isFinal =>
+      this == AdminOrderStatus.delivered ||
+      this == AdminOrderStatus.cancelled ||
+      this == AdminOrderStatus.refunded;
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +291,64 @@ class AdminOrderModel {
       cancellationReason: cancellationReason ?? this.cancellationReason,
     );
   }
+
+  // ── API JSON → AdminOrderModel ────────────────────────────────────────────
+  factory AdminOrderModel.fromApiJson(Map<String, dynamic> json) {
+    AdminOrderStatus mapStatus(String s) => switch (s) {
+          'confirmed'  => AdminOrderStatus.confirmed,
+          'preparing'  => AdminOrderStatus.preparing,
+          'on_the_way' => AdminOrderStatus.onTheWay,
+          'delivered'  => AdminOrderStatus.delivered,
+          'cancelled'  => AdminOrderStatus.cancelled,
+          _            => AdminOrderStatus.pending,
+        };
+
+    AdminPaymentMethod mapPayment(String? s) => switch (s) {
+          'card_on_delivery' => AdminPaymentMethod.creditCard,
+          'bank_transfer'    => AdminPaymentMethod.bankTransfer,
+          _                  => AdminPaymentMethod.cash,
+        };
+
+    final customer = json['customer'] as Map<String, dynamic>?;
+    final address  = json['address']  as Map<String, dynamic>?;
+
+    final rawItems = json['items'] as List<dynamic>? ?? [];
+    final items = rawItems.map((e) {
+      final m = e as Map<String, dynamic>;
+      return OrderItemModel(
+        productId:   (m['product_id'] ?? '').toString(),
+        productName: m['product_name'] as String? ?? '',
+        unitPrice:   (m['unit_price'] as num? ?? 0).toDouble(),
+        quantity:    (m['quantity'] as num? ?? 0).toInt(),
+      );
+    }).toList();
+
+    final addrStr = address != null
+        ? [address['full_address'], address['city']]
+            .where((s) => s != null && (s as String).isNotEmpty)
+            .join(', ')
+        : '';
+
+    return AdminOrderModel(
+      id:              json['id'].toString(),
+      orderNumber:     json['order_number'] as String? ?? '',
+      customerId:      customer?['id']?.toString() ?? '',
+      customerName:    customer?['name']  as String? ?? '',
+      customerPhone:   customer?['phone'] as String? ?? '',
+      deliveryAddress: addrStr,
+      items:           items,
+      subtotal:        (json['subtotal']        as num? ?? 0).toDouble(),
+      deliveryFee:     (json['shipping_amount'] as num? ?? 0).toDouble(),
+      discount:        (json['discount_amount'] as num? ?? 0).toDouble(),
+      total:           (json['total']           as num? ?? 0).toDouble(),
+      status:          mapStatus(json['status'] as String? ?? 'pending'),
+      paymentMethod:   mapPayment(json['payment_method'] as String?),
+      createdAt:       DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      deliveredAt:     json['delivered_at'] != null
+          ? DateTime.tryParse(json['delivered_at'] as String)
+          : null,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -402,7 +476,7 @@ List<AdminOrderModel> generateMockOrders() {
         InternalNote(
           id: 'n1',
           authorName: 'Admin',
-          content: 'Musteri daha once sikayet etmisti, dikkatli olunmali.',
+          content: 'Müşteri daha once sikayet etmisti, dikkatli olunmali.',
           createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 30)),
         ),
       ],
@@ -464,7 +538,7 @@ List<AdminOrderModel> generateMockOrders() {
       status: AdminOrderStatus.cancelled,
       payment: AdminPaymentMethod.cash,
       hoursAgo: 6,
-      cancelReason: 'Musteri vazgecti',
+      cancelReason: 'Müşteri vazgecti',
     ),
     make(
       id: 'ord007',
@@ -623,7 +697,7 @@ List<AdminOrderModel> generateMockOrders() {
       status: AdminOrderStatus.cancelled,
       payment: AdminPaymentMethod.cash,
       hoursAgo: 26,
-      cancelReason: 'Stok yetersizligi nedeniyle iptal edildi',
+      cancelReason: 'Stok yetersizliği nedeniyle iptal edildi',
     ),
     make(
       id: 'ord015',
@@ -650,7 +724,7 @@ List<AdminOrderModel> generateMockOrders() {
         InternalNote(
           id: 'n3',
           authorName: 'Hasan Celik',
-          content: 'Musteri kapi yok notunu birakti, kapida teslim edildi.',
+          content: 'Müşteri kapi yok notunu birakti, kapida teslim edildi.',
           createdAt: DateTime.now().subtract(const Duration(hours: 28)),
         ),
       ],
@@ -762,13 +836,13 @@ List<AdminOrderModel> generateMockOrders() {
         InternalNote(
           id: 'n5',
           authorName: 'Mehmet Kaya',
-          content: 'Buyuk hacimli siparis, ekstra arac kullanildi.',
+          content: 'Büyük hacimli sipariş, ekstra araç kullanıldı.',
           createdAt: DateTime.now().subtract(const Duration(hours: 58)),
         ),
         InternalNote(
           id: 'n6',
           authorName: 'Admin',
-          content: 'Kurumsal musteri, indirim uygulanabilir.',
+          content: 'Kurumsal müşteri, indirim uygulanabilir.',
           createdAt: DateTime.now().subtract(const Duration(hours: 59)),
         ),
       ],

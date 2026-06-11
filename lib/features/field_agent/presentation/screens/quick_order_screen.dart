@@ -47,6 +47,10 @@ class _QuickOrderScreenState extends ConsumerState<QuickOrderScreen> {
   PaymentMethod _paymentMethod = PaymentMethod.cash;
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
+  // Misafir müşteri bilgileri (widget.customer == null ise kullanılır)
+  final TextEditingController _guestNameController = TextEditingController();
+  final TextEditingController _guestPhoneController = TextEditingController();
+  final TextEditingController _guestAddressController = TextEditingController();
 
   // ── Computed ───────────────────────────────────────────────────────────────
   double get _totalAmount {
@@ -81,6 +85,9 @@ class _QuickOrderScreenState extends ConsumerState<QuickOrderScreen> {
   void dispose() {
     _noteController.dispose();
     _searchController.dispose();
+    _guestNameController.dispose();
+    _guestPhoneController.dispose();
+    _guestAddressController.dispose();
     super.dispose();
   }
 
@@ -160,12 +167,18 @@ class _QuickOrderScreenState extends ConsumerState<QuickOrderScreen> {
           ? _selectedTimeSlot!
           : 'Saha terminali';
 
+      final isGuest = widget.customer == null;
+      final guestName = _guestNameController.text.trim();
+      final guestPhone = _guestPhoneController.text.trim();
+      final guestAddress = _guestAddressController.text.trim();
+
       final order = OrderModel(
         id: '',
         orderNo: '',
         customerId: widget.customer?.uid ?? agent.uid,
-        customerName: widget.customer?.name ?? 'Misafir Müşteri',
-        customerPhone: widget.customer?.phone ?? '',
+        customerName: widget.customer?.name ??
+            (guestName.isNotEmpty ? guestName : 'Misafir Müşteri'),
+        customerPhone: widget.customer?.phone ?? guestPhone,
         source: OrderSource.fieldAgent,
         createdBy: agent.uid,
         status: OrderStatus.pending,
@@ -178,7 +191,9 @@ class _QuickOrderScreenState extends ConsumerState<QuickOrderScreen> {
         ],
         items: items,
         deliveryAddress: DeliveryAddress(
-          fullAddress: deliveryNote,
+          fullAddress: isGuest && guestAddress.isNotEmpty
+              ? guestAddress
+              : deliveryNote,
           district: '-',
           city: '-',
           notes: _noteController.text.trim().isEmpty
@@ -289,6 +304,14 @@ class _QuickOrderScreenState extends ConsumerState<QuickOrderScreen> {
             customer: widget.customer,
             onChangeTap: () => context.push(AppRoutes.customerSearch),
           ),
+          if (widget.customer == null) ...[
+            const SizedBox(height: 4),
+            _GuestInfoForm(
+              nameController: _guestNameController,
+              phoneController: _guestPhoneController,
+              addressController: _guestAddressController,
+            ),
+          ],
           const SizedBox(height: 12),
           _buildSearchField(),
           const SizedBox(height: 8),
@@ -1365,6 +1388,137 @@ class _ShimmerRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.border,
               borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _GuestInfoForm -- misafir müşteri için ad, telefon, adres girişi
+// ---------------------------------------------------------------------------
+
+class _GuestInfoForm extends StatelessWidget {
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final TextEditingController addressController;
+
+  const _GuestInfoForm({
+    required this.nameController,
+    required this.phoneController,
+    required this.addressController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.person_add_outlined,
+                  size: 16, color: AppColors.primary),
+              const SizedBox(width: 6),
+              const Text(
+                'Misafir Müşteri Bilgileri',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: nameController,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              hintText: 'Ad Soyad',
+              prefixIcon: const Icon(Icons.person_outline,
+                  size: 18, color: AppColors.textHint),
+              filled: true,
+              fillColor: AppColors.background,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: phoneController,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              hintText: 'Telefon (05XX XXX XX XX)',
+              prefixIcon: const Icon(Icons.phone_outlined,
+                  size: 18, color: AppColors.textHint),
+              filled: true,
+              fillColor: AppColors.background,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: addressController,
+            textInputAction: TextInputAction.done,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Teslimat adresi (cadde, mahalle, daire...)',
+              prefixIcon: const Padding(
+                padding: EdgeInsets.only(bottom: 20),
+                child: Icon(Icons.location_on_outlined,
+                    size: 18, color: AppColors.textHint),
+              ),
+              filled: true,
+              fillColor: AppColors.background,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              ),
             ),
           ),
         ],

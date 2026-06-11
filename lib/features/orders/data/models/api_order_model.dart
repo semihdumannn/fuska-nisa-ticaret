@@ -115,7 +115,7 @@ class ApiOrderItemModel {
       variantName: json['variant_name'] as String?,
       quantity: json['quantity'] as int,
       unitPrice: (json['unit_price'] as num).toDouble(),
-      totalPrice: (json['total_price'] as num).toDouble(),
+      totalPrice: ((json['total'] ?? json['total_price']) as num? ?? 0).toDouble(),
     );
   }
 
@@ -160,9 +160,9 @@ class ApiOrderAddressModel {
   factory ApiOrderAddressModel.fromJson(Map<String, dynamic> json) {
     return ApiOrderAddressModel(
       id: json['id'] as int?,
-      fullName: json['full_name'] as String? ?? '',
+      fullName: json['full_name'] as String? ?? json['title'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
-      address: json['address'] as String? ?? '',
+      address: json['full_address'] as String? ?? json['address'] as String? ?? '',
       city: json['city'] as String? ?? '',
       district: json['district'] as String?,
       postalCode: json['postal_code'] as String?,

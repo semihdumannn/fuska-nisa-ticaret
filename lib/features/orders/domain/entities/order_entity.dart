@@ -44,6 +44,9 @@ enum OrderStatus {
     }
   }
 
+  /// API ve Firestore'da kullanılan string değeri.
+  String get value => apiValue;
+
   String get apiValue {
     if (this == OrderStatus.onTheWay) return 'on_the_way';
     return name;

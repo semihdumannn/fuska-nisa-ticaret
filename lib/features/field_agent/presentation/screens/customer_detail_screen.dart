@@ -4,27 +4,46 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/network/api_endpoints.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
+import 'package:nisa_ticaret/features/admin/data/models/order_summary_model.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
-import 'package:nisa_ticaret/features/field_agent/data/repositories/customer_repository.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
-import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
 
 // ---------------------------------------------------------------------------
-// Providers
+// Providers — Firestore yok, tümü API tabanlı
 // ---------------------------------------------------------------------------
 
 final customerOrdersProvider =
-    FutureProvider.family<List<OrderModel>, String>((ref, uid) {
-  return ref.watch(orderRepositoryProvider).getUserOrders(uid);
+    FutureProvider.family<List<OrderSummaryModel>, String>((ref, uid) async {
+  final dio = ref.watch(apiClientProvider).dio;
+  final response = await dio.get(
+    ApiEndpoints.adminOrders,
+    queryParameters: {'user_id': uid, 'per_page': 10, 'page': 1},
+  );
+  final body = response.data as Map<String, dynamic>;
+  final data = body['data'] as List? ?? [];
+  return data.map((j) {
+    final m = j as Map<String, dynamic>;
+    return OrderSummaryModel(
+      id: (m['id'] ?? '').toString(),
+      orderNo: m['order_number'] as String? ?? m['orderNo'] as String? ?? '',
+      date: m['created_at'] != null
+          ? DateTime.parse(m['created_at'] as String)
+          : DateTime.now(),
+      amount: (m['total'] as num? ?? 0).toDouble(),
+      status: OrderStatus.fromString(m['status'] as String? ?? 'pending'),
+      itemCount:
+          (m['items_count'] as num? ?? m['itemCount'] as num? ?? 0).toInt(),
+    );
+  }).toList();
 });
 
+// Adres API endpoint'i henüz mevcut değil — boş liste döner
 final customerAddressesProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, uid) {
-  // CustomerRepository.getCustomerAddresses → users/{uid}/addresses subcollection
-  return ref.watch(customerRepositoryProvider).getCustomerAddresses(uid);
-});
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, uid) async => []);
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -132,7 +151,7 @@ class _ContactCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
-                          'Musteri',
+                          'Müşteri',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -170,7 +189,7 @@ class _ContactCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Uye: $joinDate',
+                        'Üye: $joinDate',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -220,10 +239,10 @@ class _AddressesSection extends ConsumerWidget {
         const SizedBox(height: 8),
         addressesAsync.when(
           loading: () => const _ShimmerBlock(height: 72),
-          error: (e, _) => const _InlineError(message: 'Adresler yuklenemedi'),
+          error: (e, _) => const _InlineError(message: 'Adresler yüklenemedi'),
           data: (addresses) {
             if (addresses.isEmpty) {
-              return const _InlineEmpty(message: 'Kayitli adres yok');
+              return const _InlineEmpty(message: 'Kayıtlı adres yok');
             }
             return Column(
               children: addresses
@@ -311,7 +330,7 @@ class _OrderHistorySection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Siparis Gecmisi',
+          'Sipariş Geçmişi',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -322,23 +341,15 @@ class _OrderHistorySection extends ConsumerWidget {
             children: List.generate(3, (_) => const _ShimmerBlock(height: 56)),
           ),
           error: (e, _) =>
-              const _InlineError(message: 'Siparisler yuklenemedi'),
+              const _InlineError(message: 'Siparişler yüklenemedi'),
           data: (orders) {
             if (orders.isEmpty) {
-              return const _InlineEmpty(message: 'Siparis gecmisi yok');
+              return const _InlineEmpty(message: 'Sipariş geçmişi yok');
             }
             final displayed = orders.take(5).toList();
             return Column(
               children: [
                 ...displayed.map((o) => _OrderRow(order: o)),
-                if (orders.length > 5)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text('Tumunu Gor'),
-                    ),
-                  ),
               ],
             );
           },
@@ -349,13 +360,13 @@ class _OrderHistorySection extends ConsumerWidget {
 }
 
 class _OrderRow extends StatelessWidget {
-  final OrderModel order;
+  final OrderSummaryModel order;
 
   const _OrderRow({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('dd.MM.yy').format(order.createdAt);
+    final date = DateFormat('dd.MM.yy').format(order.date);
     final statusColor = _statusColor(order.status);
 
     return Card(
@@ -382,7 +393,7 @@ class _OrderRow extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              '${order.total.toStringAsFixed(2)} TL',
+              '${order.amount.toStringAsFixed(2)} TL',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -454,7 +465,7 @@ class _QuickOrderBar extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: () => context.push(AppRoutes.quickOrder, extra: customer),
         icon: const Icon(Icons.add_shopping_cart),
-        label: const Text('Hizli Siparis Olustur'),
+        label: const Text('Hızlı Sipariş Oluştur'),
       ),
     );
   }

@@ -49,6 +49,7 @@ class OrderRepositoryImpl implements IOrderRepository {
   Future<Either<Failure, OrderEntity>> createOrder({
     required List<Map<String, dynamic>> items,
     required int addressId,
+    String? paymentMethod,
     String? notes,
     String? couponCode,
   }) async {
@@ -56,6 +57,7 @@ class OrderRepositoryImpl implements IOrderRepository {
       final model = await _remoteDatasource.createOrder(
         items: items,
         addressId: addressId,
+        paymentMethod: paymentMethod,
         notes: notes,
         couponCode: couponCode,
       );

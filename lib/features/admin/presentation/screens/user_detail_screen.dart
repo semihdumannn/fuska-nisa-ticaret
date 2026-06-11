@@ -509,14 +509,14 @@ class _BlockToggleSection extends ConsumerWidget {
         ),
         content: Text(
           user.isBlocked
-              ? '${user.name} adli kullanicinin engelini kaldirmak istediginizden emin misiniz?'
-              : '${user.name} adli kullaniciyi engellemek istediginizden emin misiniz?',
+              ? '${user.name} adli kullanıcının engelini kaldırmak istediğinizden emin misiniz?'
+              : '${user.name} adli kullanıcıyı engellemek istediğinizden emin misiniz?',
           style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgec'),
+            child: const Text('Vazgeç'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -606,7 +606,7 @@ class _RoleChangeSection extends ConsumerWidget {
                 ? null
                 : () => _confirmRoleUpdate(context, ref),
             icon: const Icon(Icons.check_outlined, size: 16),
-            label: const Text('Rolu Guncelle'),
+            label: const Text('Rolu Güncelle'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.secondary,
               disabledBackgroundColor: AppColors.border,
@@ -658,14 +658,14 @@ class _RoleChangeSection extends ConsumerWidget {
                   color: selectedRole.roleColor,
                 ),
               ),
-              const TextSpan(text: ' olarak degistirmek istiyor musunuz?'),
+              const TextSpan(text: ' olarak değiştirmek istiyor musunuz?'),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgec'),
+            child: const Text('Vazgeç'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -687,7 +687,7 @@ class _RoleChangeSection extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Rol guncellendi: ${selectedRole.displayName}'),
+            content: Text('Rol güncellendi: ${selectedRole.displayName}'),
             backgroundColor: AppColors.success,
             duration: const Duration(seconds: 2),
           ),
@@ -987,7 +987,7 @@ class _OrdersErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Center(
         child: Text(
-          'Siparisler yuklenemedi: ${error.toString()}',
+          'Siparisler yüklenemedi: ${error.toString()}',
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.error,
@@ -1110,7 +1110,7 @@ class _DetailError extends StatelessWidget {
                 color: AppColors.error, size: 48),
             const SizedBox(height: 16),
             const Text(
-              'Kullanici yuklenemedi',
+              'Kullanici yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

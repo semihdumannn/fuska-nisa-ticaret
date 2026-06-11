@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/services/cache_service.dart';
 import 'package:nisa_ticaret/features/products/data/models/variant_model.dart';
+import 'package:nisa_ticaret/features/products/data/providers/product_data_providers.dart';
 import 'package:nisa_ticaret/features/products/data/repositories/category_repository.dart'
     show RepositoryException;
 
@@ -119,18 +120,20 @@ final variantRepositoryProvider = Provider<VariantRepository>((ref) {
   return VariantRepository();
 });
 
-/// productId'ye gore aktif varyantlari real-time dinle.
+/// productId'ye gore aktif varyantlari API'den getirir.
+/// API product detail endpoint'i variant'lari içerir.
 final variantsByProductProvider =
-    StreamProvider.family<List<VariantModel>, String>((ref, productId) {
-  return ref
-      .watch(variantRepositoryProvider)
-      .watchVariantsByProduct(productId);
+    FutureProvider.family<List<VariantModel>, String>((ref, productId) async {
+  final repo = ref.watch(apiProductRepositoryProvider);
+  final result = await repo.getProductDetail(productId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (entity) => entity.variants
+        .where((v) => v.isActive)
+        .map((v) => v.toVariantModel())
+        .toList(),
+  );
 });
 
-/// productId'ye gore aktif varyantlari cache'li getir.
-final variantsByProductFutureProvider =
-    FutureProvider.family<List<VariantModel>, String>((ref, productId) {
-  return ref
-      .watch(variantRepositoryProvider)
-      .getVariantsByProduct(productId);
-});
+/// Alias — geriye dönük uyumluluk için.
+final variantsByProductFutureProvider = variantsByProductProvider;

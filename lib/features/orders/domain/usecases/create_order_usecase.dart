@@ -6,12 +6,14 @@ import '../repositories/i_order_repository.dart';
 class CreateOrderInput {
   final List<Map<String, dynamic>> items;
   final int addressId;
+  final String? paymentMethod;
   final String? notes;
   final String? couponCode;
 
   const CreateOrderInput({
     required this.items,
     required this.addressId,
+    this.paymentMethod,
     this.notes,
     this.couponCode,
   });
@@ -31,6 +33,7 @@ class CreateOrderUsecase {
     return _repository.createOrder(
       items: input.items,
       addressId: input.addressId,
+      paymentMethod: input.paymentMethod,
       notes: input.notes,
       couponCode: input.couponCode,
     );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -188,11 +190,20 @@ final apiProductsNotifierProvider =
   ApiProductsNotifier.new,
 );
 
-/// Kategori bazlı ürün listesi
+/// Kategori bazlı ürün listesi (server-side filtreleme).
+/// keepAlive + 10 dk timer: kullanıcı kategori değiştirip geri gelince
+/// provider hayatta kalır → cache/in-memory'den anında yanıt verir.
 final apiProductsByCategoryProvider =
     FutureProvider.family<List<ProductEntity>, String>((ref, categoryId) async {
+  // Provider son subscriber ayrıldıktan 10 dakika sonra dispose edilir.
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 10), link.close);
+
   final repo = ref.watch(apiProductRepositoryProvider);
-  final result = await GetProductsUsecase(repo)(categoryId: categoryId);
+  final result = await GetProductsUsecase(repo)(
+    categoryId: categoryId,
+    perPage: 100,
+  );
   return result.fold(
     (failure) => throw Exception(failure.message),
     (products) => products,

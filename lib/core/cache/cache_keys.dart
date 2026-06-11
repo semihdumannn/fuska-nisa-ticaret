@@ -2,7 +2,8 @@ import '../config/app_config.dart';
 
 class CacheKeys {
   // Products
-  static const products = 'products_list';
+  static const products = 'products_list_v2';
+  static const featuredProducts = 'products_featured_v1';
   static String product(int id) => 'product_$id';
   static String productsByCategory(int categoryId) =>
       'products_category_$categoryId';
@@ -41,6 +42,8 @@ class CacheKeys {
       AppConfig.instance.categoriesCacheDuration;
 
   static Duration get brandsTtl => const Duration(hours: 24);
+
+  static Duration get addressesTtl => const Duration(hours: 24);
 
   static Duration get userProfileTtl => const Duration(hours: 1);
 

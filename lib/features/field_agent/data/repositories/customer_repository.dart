@@ -47,7 +47,7 @@ class CustomerRepository {
   // Listeleme ve Arama
   // =========================================================================
 
-  /// Paginated musteri listesi -- role:'customer', name'e gore sirali.
+  /// Paginated müşteri listesi -- role:'customer', name'e gore sirali.
   /// [lastDoc]: bir onceki sayfanin son dokumani (cursor-based pagination).
   Future<CustomerPage> getCustomers({DocumentSnapshot? lastDoc}) async {
     var query = _customers
@@ -70,7 +70,7 @@ class CustomerRepository {
     );
   }
 
-  /// Tek musteri -- uid ile getir.
+  /// Tek müşteri -- uid ile getir.
   /// role != customer ise null dondurur (guvenligi repository katmaninda korur).
   Future<UserModel?> getCustomerById(String uid) async {
     final doc = await _customers.doc(uid).get();
@@ -80,42 +80,45 @@ class CustomerRepository {
     return user;
   }
 
-  /// Telefon prefix arama -- Firestore range query.
-  /// phone >= query AND phone <= query + U+F8FF seklinde prefix match yapar.
+  /// Telefon prefix arama -- tek alan range query (composite index gerektirmez).
+  /// Role filtresi client-side yapılır.
   Future<List<UserModel>> searchByPhone(String phone) async {
     if (phone.isEmpty) return [];
 
     final snap = await _customers
-        .where('role', isEqualTo: UserRole.customer.value)
         .where('phone', isGreaterThanOrEqualTo: phone)
         .where('phone', isLessThanOrEqualTo: phone + _kUnicodeSuffix)
         .limit(AppConstants.pageSize)
         .get();
 
-    return snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
+    return snap.docs
+        .map((d) => UserModel.fromFirestore(d))
+        .where((u) => u.role == UserRole.customer)
+        .toList();
   }
 
-  /// Isim arama -- Firestore full-text desteklemedigi icin client-side filtrele.
-  /// Ilk 50 kayit getirilir, sonra Dart'ta contains kontrolu yapilir.
+  /// Isim arama -- tek alan where (composite index gerektirmez).
+  /// Client-side contains kontrolü yapılır.
   Future<List<UserModel>> searchByName(String name) async {
     if (name.isEmpty) return [];
 
     final snap = await _customers
         .where('role', isEqualTo: UserRole.customer.value)
-        .orderBy('name')
-        .limit(50)
+        .limit(100)
         .get();
 
-    final all = snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
     final q = name.toLowerCase();
-    return all.where((u) => u.name.toLowerCase().contains(q)).toList();
+    return snap.docs
+        .map((d) => UserModel.fromFirestore(d))
+        .where((u) => u.name.toLowerCase().contains(q))
+        .toList();
   }
 
   // =========================================================================
-  // Musteri Yazma
+  // Müşteri Yazma
   // =========================================================================
 
-  /// Yeni musteri olustur -- auto-ID, role zorunlu olarak 'customer'.
+  /// Yeni müşteri olustur -- auto-ID, role zorunlu olarak 'customer'.
   /// Saha personeli terminal modunda kullanir.
   Future<UserModel> createCustomer({
     required String name,
@@ -136,7 +139,7 @@ class CustomerRepository {
     return user;
   }
 
-  /// Mevcut musteri bilgilerini guncelle.
+  /// Mevcut müşteri bilgilerini guncelle.
   /// role alani guncellenmez -- guvenligi repository katmaninda zorla.
   Future<void> updateCustomer(UserModel customer) async {
     await _customers.doc(customer.uid).update({
@@ -151,7 +154,7 @@ class CustomerRepository {
   // Siparis gecmisi
   // =========================================================================
 
-  /// Musterinin siparis gecmisini getir -- OrderRepository'e delege et.
+  /// Müşterinin siparis gecmisini getir -- OrderRepository'e delege et.
   Future<List<OrderModel>> getCustomerOrders(String customerId) {
     return _orderRepository.getUserOrders(customerId);
   }
@@ -160,7 +163,7 @@ class CustomerRepository {
   // Adres yonetimi -- users/{uid}/addresses subcollection
   // =========================================================================
 
-  /// Musterinin adreslerini getir.
+  /// Müşterinin adreslerini getir.
   /// isDefault:true adresler liste basinda gelir (descending order).
   /// Mevcut top-level addresses koleksiyonu korunmakta -- bu subcollection
   /// field_agent terminal modunda yeni adres eklemek icin kullanilir.
@@ -178,7 +181,7 @@ class CustomerRepository {
         .toList();
   }
 
-  /// Musteriye yeni adres ekle -- subcollection.
+  /// Müşteriye yeni adres ekle -- subcollection.
   /// userId ve createdAt sunucu tarafindan eklenir.
   Future<void> addCustomerAddress(
     String customerId,
@@ -206,20 +209,20 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
   );
 });
 
-/// Ilk sayfa musteriler -- FutureProvider.
+/// Ilk sayfa müşteriler -- FutureProvider.
 /// Sonraki sayfa icin [CustomerRepository.getCustomers(lastDoc: ...)] kullan.
 final customersProvider = FutureProvider<CustomerPage>((ref) {
   return ref.watch(customerRepositoryProvider).getCustomers();
 });
 
-/// Tek musteri -- uid ile.
+/// Tek müşteri -- uid ile.
 final customerByIdProvider =
     FutureProvider.family<UserModel?, String>((ref, uid) {
   if (uid.isEmpty) return Future.value(null);
   return ref.watch(customerRepositoryProvider).getCustomerById(uid);
 });
 
-/// Musteri siparis gecmisi -- uid ile.
+/// Müşteri siparis gecmisi -- uid ile.
 final customerOrdersProvider =
     FutureProvider.family<List<OrderModel>, String>((ref, uid) {
   if (uid.isEmpty) return Future.value([]);

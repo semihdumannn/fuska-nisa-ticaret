@@ -66,22 +66,30 @@ class NetworkErrorWidget extends StatelessWidget {
 }
 
 class EmptyStateWidget extends StatelessWidget {
-  final String message;
+  final String title;
+  final String? subtitle;
   final IconData icon;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+  final String? ctaLabel;
+  final VoidCallback? onCta;
+  final Color? iconColor;
 
+  /// Backward-compat: eski `message` parametresi yerine `title` kullan.
+  /// Eski: EmptyStateWidget(message: '...', actionLabel: '...', onAction: ...)
   const EmptyStateWidget({
     super.key,
-    required this.message,
+    required this.title,
+    this.subtitle,
     this.icon = Icons.inbox_outlined,
-    this.actionLabel,
-    this.onAction,
+    this.ctaLabel,
+    this.onCta,
+    this.iconColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final resolvedIconColor = iconColor ??
+        theme.colorScheme.outline.withValues(alpha: 0.5);
 
     return Center(
       child: Padding(
@@ -89,24 +97,31 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 72,
-              color: theme.colorScheme.outline.withValues(alpha: 0.5),
-            ),
+            Icon(icon, size: 72, color: resolvedIconColor),
             const SizedBox(height: 16),
             Text(
-              message,
+              title,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 20),
-              OutlinedButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
+            if (subtitle != null && subtitle!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+            if (ctaLabel != null && onCta != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: onCta,
+                child: Text(ctaLabel!),
               ),
             ],
           ],

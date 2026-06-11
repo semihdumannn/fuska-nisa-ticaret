@@ -57,7 +57,7 @@ class DeliveryRepositoryImpl implements IDeliveryRepository {
       String orderId) async {
     final id = int.tryParse(orderId);
     if (id == null) {
-      return const Left(NotFoundFailure('Gecersiz siparis ID'));
+      return const Left(NotFoundFailure('Geçersiz sipariş ID'));
     }
     try {
       final model = await _remoteDatasource.deliverOrder(id);
@@ -75,7 +75,7 @@ class DeliveryRepositoryImpl implements IDeliveryRepository {
   ) async {
     final id = int.tryParse(orderId);
     if (id == null) {
-      return const Left(NotFoundFailure('Gecersiz siparis ID'));
+      return const Left(NotFoundFailure('Geçersiz sipariş ID'));
     }
     try {
       final model = switch (status) {

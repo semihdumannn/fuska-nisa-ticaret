@@ -11,9 +11,11 @@ import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart'
 import 'package:nisa_ticaret/features/cart/presentation/bloc/cart_provider.dart';
 import 'package:nisa_ticaret/features/home/widgets/product_card.dart';
 import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
-import 'package:nisa_ticaret/features/products/data/repositories/category_repository.dart' show rootCategoriesProvider, subCategoriesProvider;
-import 'package:nisa_ticaret/features/products/data/repositories/product_repository.dart';
+import 'package:nisa_ticaret/features/products/data/repositories/category_repository.dart' show categoriesProvider, rootCategoriesProvider, subCategoriesProvider;
+import 'package:nisa_ticaret/features/products/data/repositories/product_repository.dart'
+    show productsPageProvider;
 import 'package:nisa_ticaret/features/products/presentation/bloc/product_list_provider.dart';
+import 'package:nisa_ticaret/features/products/presentation/providers/api_products_provider.dart' show apiProductsByCategoryProvider, apiSearchResultsProvider;
 
 class ProductListScreen extends ConsumerStatefulWidget {
   final String? categoryId;
@@ -49,62 +51,116 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final productsAsync = ref.watch(allProductsProvider);
     final listState = ref.watch(productListProvider);
     final cart = ref.watch(cartProvider);
     final user = ref.watch(authStateProvider).asData?.value;
 
+    final searchQuery = listState.searchQuery.trim();
+
+    // Arama modunda API search kullan
+    if (searchQuery.isNotEmpty) {
+      final searchAsync = ref.watch(apiSearchResultsProvider(searchQuery))
+          .whenData((e) => e.map((x) => x.toProductModel()).toList());
+      return _buildScrollView(
+        context, cart.totalItems, user, listState,
+        productsAsync: searchAsync,
+        isSearchMode: true,
+      );
+    }
+
+    // Kategori seçiliyken server-side filtreleme yap — client-side filtreleme
+    // sadece yüklü ürünlere uygulandığından kategori ürünleri eksik görünür.
+    final selectedCategoryId = listState.selectedCategoryId;
+    if (selectedCategoryId != null) {
+      final categoryAsync = ref
+          .watch(apiProductsByCategoryProvider(selectedCategoryId))
+          .whenData((e) => e.map((x) => x.toProductModel()).toList());
+      return _buildScrollView(
+        context, cart.totalItems, user, listState,
+        productsAsync: categoryAsync,
+        serverFiltered: true,
+      );
+    }
+
+    final pageState = ref.watch(productsPageProvider);
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollEndNotification &&
             _scrollController.position.extentAfter < 200) {
-          productsAsync.whenData((all) {
-            if (listState.hasMore(all)) {
-              ref.read(productListProvider.notifier).loadNextPage();
-            }
-          });
+          ref.read(productsPageProvider.notifier).loadMore();
         }
         return false;
       },
-      child: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          _buildSliverAppBar(context, cart.totalItems, user),
-          SliverToBoxAdapter(
-            child: _CategorySection(
-              selectedCategoryId: listState.selectedCategoryId,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _SortRow(currentSort: listState.sortOption),
-          ),
-          productsAsync.when(
-            loading: () => _buildShimmerGrid(context),
-            error: (e, _) => SliverToBoxAdapter(
-              child: _ErrorState(
-                onRetry: () => ref.invalidate(allProductsProvider),
-              ),
-            ),
-            data: (all) {
-              final filtered = listState.filteredProducts(all);
-              if (filtered.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: _EmptyState(
-                    onReset: () {
-                      _searchController.clear();
-                      ref.read(productListProvider.notifier).reset();
-                    },
-                  ),
-                );
-              }
-              return _ProductGrid(
-                products: filtered,
-                hasMore: listState.hasMore(all),
-              );
-            },
-          ),
-        ],
+      child: _buildScrollView(
+        context, cart.totalItems, user, listState,
+        productsAsync: pageState.whenData((s) => s.products),
+        isLoadingMore: pageState.value?.isLoadingMore ?? false,
+        hasServerMore: pageState.value?.hasMore ?? false,
       ),
+    );
+  }
+
+  Widget _buildScrollView(
+    BuildContext context,
+    int cartCount,
+    UserModel? user,
+    ProductListState listState, {
+    required AsyncValue<List<ProductModel>> productsAsync,
+    bool isSearchMode = false,
+    bool isLoadingMore = false,
+    bool hasServerMore = false,
+    bool serverFiltered = false,
+  }) {
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        _buildSliverAppBar(context, cartCount, user),
+        SliverToBoxAdapter(
+          child: _CategorySection(
+            selectedCategoryId: listState.selectedCategoryId,
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: _SortRow(currentSort: listState.sortOption),
+        ),
+        productsAsync.when(
+          loading: () => _buildShimmerGrid(context),
+          error: (e, _) => SliverToBoxAdapter(
+            child: _ErrorState(
+              onRetry: () => ref.invalidate(productsPageProvider),
+            ),
+          ),
+          data: (all) {
+            // serverFiltered=true ise API zaten kategoriyle filtreledi,
+            // tekrar client-side kategori filtresi uygulanmaz.
+            final filtered = serverFiltered
+                ? listState.sortedAndSearchFiltered(all)
+                : listState.allFilteredProducts(all);
+            if (filtered.isEmpty) {
+              return SliverToBoxAdapter(
+                child: _EmptyState(
+                  onReset: () {
+                    _searchController.clear();
+                    ref.read(productListProvider.notifier).reset();
+                  },
+                ),
+              );
+            }
+            return _ProductGrid(
+              products: filtered,
+              hasMore: false, // sunucu tarafı lazy loading yönetiyor
+            );
+          },
+        ),
+        // Daha fazla yükleniyor göstergesi
+        if (isLoadingMore)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+      ],
     );
   }
 
@@ -124,7 +180,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.shopping_cart_outlined),
-              onPressed: () => context.push(AppRoutes.cart),
+              onPressed: () => context.go(AppRoutes.cart),
             ),
             if (cartCount > 0)
               Positioned(
@@ -251,8 +307,17 @@ class _CategorySection extends ConsumerWidget {
   }
 
   void _selectRoot(WidgetRef ref, String rootId) {
-    // Önce root seç, alt kategoriler yüklendikten sonra filtre güncellenir (_SubCategoryRow içinde)
-    ref.read(productListProvider.notifier).setCategory(rootId);
+    // Alt kategorileri anında al — categoriesProvider zaten yüklü
+    final allCats = ref.read(categoriesProvider).value ?? [];
+    final subIds = allCats
+        .where((c) => c.parentId == rootId)
+        .map((c) => c.id)
+        .toList();
+    if (subIds.isNotEmpty) {
+      ref.read(productListProvider.notifier).setRootCategory(rootId, subIds);
+    } else {
+      ref.read(productListProvider.notifier).setCategory(rootId);
+    }
   }
 
   Widget _buildShimmerChips() {

@@ -355,4 +355,111 @@ class DashboardStats {
       generatedAt: now,
     );
   }
+
+  /// API /v1/admin/analytics/dashboard yanıtından dashboard istatistikleri oluşturur.
+  /// Defensive parse — her field null check ile.
+  factory DashboardStats.fromApiJson(Map<String, dynamic> json, DateTime now) {
+    final todaySales = (json['today_revenue'] as num? ?? 0).toDouble();
+    final totalOrdersVal = (json['total_orders'] as num? ?? 0).toInt();
+    final activeCustomersVal = (json['total_customers'] as num? ?? 0).toInt();
+
+    // Haftalık satış grafiği
+    List<DailySalesData> weeklySales = [];
+    final weeklyRaw = json['weekly_orders'];
+    if (weeklyRaw is List) {
+      weeklySales = weeklyRaw.map((raw) {
+        final j = raw is Map<String, dynamic> ? raw : <String, dynamic>{};
+        final dateStr = j['date'] as String? ?? '';
+        DateTime date;
+        try {
+          date = DateTime.parse(dateStr);
+        } catch (_) {
+          date = now;
+        }
+        return DailySalesData(
+          date: date,
+          amount: (j['revenue'] as num? ?? j['total'] as num? ?? 0).toDouble(),
+          orderCount: (j['count'] as num? ?? j['order_count'] as num? ?? 0).toInt(),
+        );
+      }).toList();
+    }
+
+    // En çok satan ürünler
+    List<TopProductData> topProducts = [];
+    final topRaw = json['top_products'];
+    if (topRaw is List) {
+      topProducts = topRaw.asMap().entries.map((entry) {
+        final j = entry.value is Map<String, dynamic>
+            ? entry.value as Map<String, dynamic>
+            : <String, dynamic>{};
+        return TopProductData(
+          rank: entry.key + 1,
+          productId: (j['product_id'] as int? ?? 0).toString(),
+          productName: j['product_name'] as String? ?? '',
+          soldCount: (j['total_quantity'] as num? ?? 0).toInt(),
+          totalRevenue: (j['total_revenue'] as num? ?? 0).toDouble(),
+        );
+      }).toList();
+    }
+
+    // Son siparişler
+    List<RecentOrderSummary> recentOrders = [];
+    final recentRaw = json['recent_orders'];
+    if (recentRaw is List) {
+      recentOrders = recentRaw.map((raw) {
+        final j = raw is Map<String, dynamic> ? raw : <String, dynamic>{};
+        final statusStr = j['status'] as String? ?? 'pending';
+        final status = _parseOrderStatus(statusStr);
+        final dateStr = j['created_at'] as String? ?? '';
+        DateTime createdAt;
+        try {
+          createdAt = DateTime.parse(dateStr);
+        } catch (_) {
+          createdAt = now;
+        }
+        return RecentOrderSummary(
+          id: (j['id'] as int? ?? 0).toString(),
+          orderNo: j['order_number'] as String? ?? j['order_no'] as String? ?? '',
+          customerName: j['customer_name'] as String? ?? '',
+          total: (j['total'] as num? ?? 0).toDouble(),
+          status: status,
+          createdAt: createdAt,
+        );
+      }).toList();
+    }
+
+    return DashboardStats(
+      dailySales: todaySales,
+      dailySalesChangePercent: 0.0, // API bu alanı henüz döndürmüyor
+      totalOrders: totalOrdersVal,
+      activeCustomers: activeCustomersVal,
+      firebaseUsage: const FirebaseUsageStats(
+        dailyReads: 0,
+        dailyWrites: 0,
+        dailyDeletes: 0,
+      ),
+      weeklySales: weeklySales,
+      categorySales: const [],
+      topProducts: topProducts,
+      recentOrders: recentOrders,
+      generatedAt: now,
+    );
+  }
+}
+
+OrderStatus _parseOrderStatus(String s) {
+  switch (s) {
+    case 'confirmed':
+      return OrderStatus.confirmed;
+    case 'preparing':
+      return OrderStatus.preparing;
+    case 'on_the_way':
+      return OrderStatus.onTheWay;
+    case 'delivered':
+      return OrderStatus.delivered;
+    case 'cancelled':
+      return OrderStatus.cancelled;
+    default:
+      return OrderStatus.pending;
+  }
 }

@@ -45,7 +45,7 @@ class TopProductsList extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Bu haftanin en cok satan urunleri',
+            'Bu haftanin en çok satan ürünleri',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textHint,

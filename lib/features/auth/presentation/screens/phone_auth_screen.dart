@@ -48,7 +48,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
     }
 
     final phone = '+90${_controller.text.trim()}';
-    await ref.read(authNotifierProvider.notifier).sendPhoneCode(phone);
+    await ref.read(authNotifierProvider.notifier).authenticate(phone);
   }
 
   void _showErrorSnackBar(String message) {
@@ -76,9 +76,19 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   Widget build(BuildContext context) {
     // State listener — navigasyon ve hata yönetimi
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      if (next.step == AuthStep.codeSent) {
-        final phone = '+90${_controller.text.trim()}';
-        context.push(AppRoutes.otp, extra: phone);
+      if (next.step == AuthStep.creatingUser) {
+        context.push(AppRoutes.register);
+      }
+      if (next.step == AuthStep.done) {
+        final postLoginRoute = ref.read(postLoginRouteProvider);
+        if (postLoginRoute != null) {
+          ref.read(postLoginRouteProvider.notifier).set(null);
+          context.go(postLoginRoute);
+        } else if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(AppRoutes.home);
+        }
       }
       if (next.error != null && next.error != previous?.error) {
         _showErrorSnackBar(next.error!);
@@ -86,10 +96,23 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
     });
 
     final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState.step == AuthStep.sendingCode;
+    final isLoading = authState.step == AuthStep.authenticating;
+
+    final canPop = context.canPop();
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: canPop
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: AppColors.secondary, size: 20),
+                onPressed: () => context.pop(),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -98,7 +121,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 64),
+                SizedBox(height: canPop ? 24 : 48),
                 _LogoSection(),
                 const SizedBox(height: 40),
                 _TitleSection(),
@@ -133,17 +156,12 @@ class _LogoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.water_drop_rounded,
-          size: 52,
-          color: AppColors.primary,
+      child: SizedBox(
+        width: 180,
+        height: 120,
+        child: Image.asset(
+          'assets/images/app_icon.png',
+          fit: BoxFit.contain,
         ),
       ),
     );
@@ -160,7 +178,7 @@ class _TitleSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          'Hos Geldiniz',
+          'Hoş Geldiniz',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.secondary,
@@ -169,7 +187,7 @@ class _TitleSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Telefon numaranizi girin',
+          'Telefon numaranızı girin',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -200,7 +218,7 @@ class _PhoneInputField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Telefon Numarasi',
+          'Telefon Numarası',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: AppColors.textSecondary,
               ),

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../features/products/data/models/product_model.dart';
+import '../../../../features/products/data/models/api_product_model.dart';
 import '../providers/admin_products_provider.dart';
 import '../widgets/admin_sidebar.dart';
 
@@ -58,7 +58,7 @@ class AdminProductsScreen extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _ProductsContent — asil icerik
+// _ProductsContent — asıl içerik
 // ---------------------------------------------------------------------------
 class _ProductsContent extends ConsumerWidget {
   const _ProductsContent();
@@ -312,7 +312,7 @@ class _AddProductButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: () => context.push(AppRoutes.productNew),
       icon: const Icon(Icons.add, size: 18),
-      label: Text(isDesktop ? 'Yeni Urun Ekle' : 'Ekle'),
+      label: Text(isDesktop ? 'Yeni Ürün Ekle' : 'Ekle'),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textWhite,
@@ -518,7 +518,12 @@ class _ProductsTable extends ConsumerWidget {
     );
   }
 
-  DataRow _buildRow(BuildContext context, WidgetRef ref, ProductModel p) {
+  DataRow _buildRow(BuildContext context, WidgetRef ref, ApiProductModel p) {
+    final categoryLabel = p.categoryName ??
+        (p.embeddedCategories.isNotEmpty
+            ? p.embeddedCategories.first.name
+            : '—');
+
     return DataRow(
       cells: [
         // Gorsel
@@ -541,7 +546,7 @@ class _ProductsTable extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  p.unit,
+                  p.unit ?? '',
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
@@ -561,7 +566,7 @@ class _ProductsTable extends ConsumerWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              ProductCategory.nameForId(p.categoryId),
+              categoryLabel,
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.accent,
@@ -573,7 +578,7 @@ class _ProductsTable extends ConsumerWidget {
         ),
         // Fiyat
         DataCell(_PriceCell(product: p)),
-        // Indirim — denormalized alanlardan hesaplanir, ekstra okuma yok
+        // Indirim
         DataCell(_DiscountCell(product: p)),
         // Stok
         DataCell(_StockCell(product: p)),
@@ -595,7 +600,7 @@ class _ProductsTable extends ConsumerWidget {
               _ActionIcon(
                 icon: Icons.edit_outlined,
                 color: AppColors.secondary,
-                tooltip: 'Duzenle',
+                tooltip: 'Düzenle',
                 onTap: () => context.push('/admin/products/${p.id}/edit'),
               ),
               const SizedBox(width: 8),
@@ -612,7 +617,8 @@ class _ProductsTable extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, ProductModel p) {
+  void _confirmDelete(
+      BuildContext context, WidgetRef ref, ApiProductModel p) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -620,21 +626,21 @@ class _ProductsTable extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         title: const Text(
-          'Urunu Sil',
+          'Ürünü Sil',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
         content: Text(
-          '"${p.name}" urununu silmek istediginizden emin misiniz? Bu islem geri alinamaz.',
+          '"${p.name}" urununu silmek istediğinizden emin misiniz? Bu islem geri alınamaz.',
           style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text(
-              'Iptal',
+              'İptal',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 color: AppColors.textSecondary,
@@ -659,7 +665,8 @@ class _ProductsTable extends ConsumerWidget {
               backgroundColor: AppColors.error,
               foregroundColor: AppColors.textWhite,
               minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
@@ -710,13 +717,14 @@ class _ProductImage extends StatelessWidget {
 
 class _PriceCell extends StatelessWidget {
   const _PriceCell({required this.product});
-  final ProductModel product;
+  final ApiProductModel product;
 
   @override
   Widget build(BuildContext context) {
     // Koli varsa koli fiyati, yoksa primary fiyati goster
     final double? price = product.koliPrice ?? product.primaryPrice;
-    final double? salePrice = product.koliSalePrice ?? product.primarySalePrice;
+    final double? salePrice =
+        product.koliSalePrice ?? product.primarySalePrice;
 
     if (price == null || price == 0) {
       return const Text(
@@ -775,18 +783,27 @@ class _PriceCell extends StatelessWidget {
 
 class _DiscountCell extends StatelessWidget {
   const _DiscountCell({required this.product});
-  final ProductModel product;
+  final ApiProductModel product;
 
   @override
   Widget build(BuildContext context) {
-    if (!product.hasDiscount) {
+    final price = product.koliPrice ?? product.primaryPrice;
+    final salePrice = product.koliSalePrice ?? product.primarySalePrice;
+    final hasDiscount = price != null &&
+        price > 0 &&
+        salePrice != null &&
+        salePrice < price;
+
+    if (!hasDiscount) {
       return const Text(
         '-',
         style: TextStyle(color: AppColors.textHint, fontFamily: 'Poppins'),
       );
     }
+    final discountPercent =
+        ((price - salePrice) / price * 100).roundToDouble();
     return Text(
-      '%${product.discountPercent.toStringAsFixed(0)}',
+      '%${discountPercent.toStringAsFixed(0)}',
       style: const TextStyle(
         color: AppColors.primary,
         fontWeight: FontWeight.w600,
@@ -798,13 +815,13 @@ class _DiscountCell extends StatelessWidget {
 
 class _StockCell extends StatelessWidget {
   const _StockCell({required this.product});
-  final ProductModel product;
+  final ApiProductModel product;
 
   @override
   Widget build(BuildContext context) {
     // Koli stoku varsa onu, yoksa primary stoku goster
     final stock = product.koliStock ?? product.primaryStock ?? 0;
-    final isInStock = product.inStock;
+    final isInStock = stock > 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -936,7 +953,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: 16),
           Text(
-            'Urun bulunamadi',
+            'Urun bulunamadı',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -946,7 +963,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Arama kriterlerinizi degistirin veya yeni urun ekleyin.',
+            'Arama kriterlerinizi değiştirin veya yeni ürün ekleyin.',
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textHint,
@@ -1068,7 +1085,7 @@ class _ProductsError extends StatelessWidget {
                 color: AppColors.error, size: 48),
             const SizedBox(height: 16),
             const Text(
-              'Urunler yuklenemedi',
+              'Urunler yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

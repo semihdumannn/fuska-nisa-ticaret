@@ -5,7 +5,10 @@ import 'package:shimmer/shimmer.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/orders/data/models/address_model.dart';
+import 'package:nisa_ticaret/core/cache/cache_keys.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/address_repository.dart';
+import 'package:nisa_ticaret/features/profile/data/providers/profile_data_providers.dart';
 
 class AddressSelectionScreen extends ConsumerWidget {
   /// true → seç ve geri don, false → yonet
@@ -94,9 +97,19 @@ class _AddressList extends ConsumerWidget {
         return _AddressCard(
           address: address,
           isSelectionMode: isSelectionMode,
-          onTap: () {
+          onTap: () async {
             if (isSelectionMode) {
-              context.pop(address);
+              if (!address.isDefault) {
+                final addressId = int.tryParse(address.id);
+                if (addressId != null) {
+                  try {
+                    await ref.read(apiProfileRepositoryProvider).setDefaultAddress(addressId);
+                    await ref.read(cacheManagerProvider).invalidateByPrefix(CacheKeys.addresses);
+                    ref.invalidate(addressesProvider);
+                  } catch (_) {}
+                }
+              }
+              if (context.mounted) context.pop(address);
             } else {
               context.push(AppRoutes.addressForm, extra: address);
             }
@@ -106,6 +119,9 @@ class _AddressList extends ConsumerWidget {
             if (repo == null) return;
             try {
               await repo.setDefault(address.id);
+              // Cache'i temizle → defaultAddressProvider anında güncellenir
+              await ref.read(cacheManagerProvider).invalidateByPrefix(CacheKeys.addresses);
+              ref.invalidate(addressesProvider);
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -142,7 +158,7 @@ class _AddressList extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => ctx.pop(false),
-            child: const Text('Vazgec'),
+            child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () => ctx.pop(true),
@@ -305,7 +321,7 @@ class _AddressCard extends StatelessWidget {
                         Icon(Icons.edit_outlined,
                             size: 18, color: AppColors.textSecondary),
                         SizedBox(width: 8),
-                        Text('Duzenle'),
+                        Text('Düzenle'),
                       ],
                     ),
                   ),
@@ -512,7 +528,7 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Adresler yuklenemedi',
+              'Adresler yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

@@ -249,7 +249,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 12),
             const Text(
-              'Bildirimler yuklenemedi',
+              'Bildirimler yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

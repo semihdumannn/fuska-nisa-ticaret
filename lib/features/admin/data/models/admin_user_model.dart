@@ -85,21 +85,20 @@ class AdminUserModel {
   }
 
   factory AdminUserModel.fromJson(Map<String, dynamic> json) {
+    final isActive = json['is_active'] as bool? ?? json['isActive'] as bool? ?? true;
+    final createdAtRaw = json['created_at'] as String? ?? json['createdAt'] as String?;
+    final lastLoginRaw = json['last_login_at'] as String? ?? json['lastLoginAt'] as String?;
     return AdminUserModel(
-      id: json['id'] as String? ?? '',
+      id: (json['id'] ?? '').toString(),
       name: json['name'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       email: json['email'] as String?,
       role: UserRole.fromString(json['role'] as String? ?? 'customer'),
-      isBlocked: json['isBlocked'] as bool? ?? false,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      lastLoginAt: json['lastLoginAt'] != null
-          ? DateTime.parse(json['lastLoginAt'] as String)
-          : null,
-      totalOrders: (json['totalOrders'] as num? ?? 0).toInt(),
-      totalSpent: (json['totalSpent'] as num? ?? 0).toDouble(),
+      isBlocked: !isActive,
+      createdAt: createdAtRaw != null ? DateTime.parse(createdAtRaw) : DateTime.now(),
+      lastLoginAt: lastLoginRaw != null ? DateTime.parse(lastLoginRaw) : null,
+      totalOrders: (json['total_orders'] as num? ?? json['totalOrders'] as num? ?? 0).toInt(),
+      totalSpent: (json['total_spent'] as num? ?? json['totalSpent'] as num? ?? 0).toDouble(),
       address: json['address'] as String?,
     );
   }

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nisa_ticaret/core/config/app_config.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
-import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
+import 'package:nisa_ticaret/core/error/failures.dart';
 import 'package:nisa_ticaret/features/cart/presentation/bloc/cart_provider.dart';
 import 'package:nisa_ticaret/features/orders/data/models/address_model.dart';
-import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
 import 'package:nisa_ticaret/features/orders/data/repositories/address_repository.dart';
-import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
+import 'package:nisa_ticaret/features/orders/domain/usecases/create_order_usecase.dart';
+import 'package:nisa_ticaret/features/orders/presentation/providers/api_orders_provider.dart';
 import 'package:nisa_ticaret/features/products/data/models/variant_model.dart';
-import 'package:nisa_ticaret/features/products/data/repositories/variant_repository.dart';
+import 'package:nisa_ticaret/features/products/data/providers/product_data_providers.dart'
+    show apiProductRepositoryProvider;
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -29,6 +31,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final defaultAddr = ref.read(defaultAddressProvider);
+      if (_selectedAddress == null && defaultAddr != null) {
+        setState(() => _selectedAddress = defaultAddr);
+      }
+    });
   }
 
   /// Sipariş öncesi variant fiyatlarını Firestore'dan tazeler.
@@ -36,7 +45,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   /// true → devam et, false → kullanıcı iptal etti.
   Future<bool> _validatePrices() async {
     final cart = ref.read(cartProvider);
-    final variantRepo = ref.read(variantRepositoryProvider);
+    final productRepo = ref.read(apiProductRepositoryProvider);
 
     final productIds = cart.items
         .where((i) => i.variant != null)
@@ -49,12 +58,34 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final List<_PriceChange> changes = [];
 
     for (final productId in productIds) {
-      final freshVariants = await variantRepo.getVariantsFresh(productId);
+      final result = await productRepo.getProductDetail(productId);
+      final freshVariants = result.fold(
+        (_) => <dynamic>[],
+        (entity) => entity.variants,
+      );
+
       for (final item
           in cart.items.where((i) => i.product.id == productId && i.variant != null)) {
         final matching = freshVariants.where((v) => v.id == item.variant!.id);
         if (matching.isEmpty) continue;
-        final fresh = matching.first;
+        final freshEntity = matching.first;
+        final fresh = VariantModel(
+          id: freshEntity.id,
+          productId: freshEntity.productId,
+          name: freshEntity.name,
+          price: freshEntity.price,
+          salePrice: freshEntity.salePrice,
+          unit: freshEntity.unit,
+          stock: freshEntity.stock,
+          minOrderQty: freshEntity.minOrderQty,
+          maxOrderQty: freshEntity.maxOrderQty,
+          packageQty: freshEntity.packageQty,
+          isActive: freshEntity.isActive,
+          sku: freshEntity.sku,
+          barcode: freshEntity.barcode,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
         updatedVariants[fresh.id] = fresh;
         if ((fresh.effectivePrice - item.unitPrice).abs() > 0.001) {
           changes.add(_PriceChange(
@@ -89,7 +120,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             Icon(Icons.price_change_outlined, color: AppColors.warning),
             SizedBox(width: 8),
             Text(
-              'Fiyat Degisikligi',
+              'Fiyat Değişikliği',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
@@ -149,7 +180,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text(
-              'Iptal',
+              'İptal',
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
@@ -171,74 +202,75 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _placeOrder() async {
     setState(() => _isLoading = true);
     try {
+      // Minimum sipariş tutarı kontrolü
+      final cart = ref.read(cartProvider);
+      final minAmount = AppConfig.instance.minOrderAmount;
+      if (cart.total < minAmount) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Minimum sipariş tutarı ${minAmount.toStringAsFixed(0)} TL\'dir. '
+            'Sepetiniz: ${cart.total.toStringAsFixed(2)} TL',
+          ),
+          backgroundColor: AppColors.error,
+        ));
+        setState(() => _isLoading = false);
+        return;
+      }
+
       final canProceed = await _validatePrices();
       if (!canProceed) {
         setState(() => _isLoading = false);
         return;
       }
 
-      final user = ref.read(authStateProvider).value!;
-      final cart = ref.read(cartProvider);
-      final repo = ref.read(orderRepositoryProvider);
-      final now = DateTime.now();
+      // Adres ID'si — API'den gelen adresin integer ID'si
+      final addressId = int.tryParse(_selectedAddress!.id);
+      if (addressId == null || addressId <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Geçerli bir teslimat adresi seçin.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
 
-      final order = OrderModel(
-        id: '',
-        orderNo: '',
-        customerId: user.uid,
-        customerName: user.name,
-        customerPhone: user.phone,
-        source: OrderSource.customerApp,
-        createdBy: user.uid,
-        status: OrderStatus.pending,
-        statusHistory: [
-          StatusHistory(
-            status: OrderStatus.pending,
-            timestamp: now,
-            by: user.uid,
-          ),
-        ],
-        items: cart.items
-            .map(
-              (item) => OrderItem(
-                productId: item.product.id,
-                productName: item.product.name,
-                imageUrl: item.product.imageUrl,
-                qty: item.quantity,
-                unitPrice: item.unitPrice,
-                totalPrice: item.total,
-                variantId: item.variant?.id,
-                variantName: item.variant?.name,
-              ),
-            )
-            .toList(),
-        deliveryAddress: DeliveryAddress(
-          fullAddress: _selectedAddress!.fullAddress,
-          district: _selectedAddress!.district,
-          city: _selectedAddress!.city,
-          notes: _selectedAddress!.notes,
-        ),
-        paymentMethod: _paymentMethod,
-        subtotal: cart.subtotal,
-        discount: 0,
-        total: cart.total,
+      // Items'ı API formatına çevir — doğrudan order body'sine gönderilir
+      final items = cart.items.map((item) => {
+        'product_id': int.tryParse(item.product.id) ?? 0,
+        if (item.variant != null)
+          'variant_id': int.tryParse(item.variant!.id),
+        'quantity': item.quantity,
+      }).toList();
+
+      final input = CreateOrderInput(
+        items: items,
+        addressId: addressId,
+        paymentMethod: _paymentMethod.value,
         notes: _note.isEmpty ? null : _note,
-        createdAt: now,
-        updatedAt: now,
+        couponCode: null,
       );
 
-      final orderNo = await repo.createOrder(order);
-      ref.read(cartProvider.notifier).clear();
+      final notifier = ref.read(apiOrdersNotifierProvider.notifier);
+      final createdOrder = await notifier.createOrder(input);
 
-      if (mounted) {
-        context.go(AppRoutes.orderSuccess, extra: orderNo);
+      if (createdOrder != null) {
+        ref.read(cartProvider.notifier).clear();
+        if (mounted) {
+          context.go(AppRoutes.orderSuccess, extra: createdOrder.orderNumber);
+        }
       }
     } catch (e) {
       if (mounted) {
+        final message = e is Failure
+            ? e.message
+            : 'Sipariş oluşturulamadı. Lütfen tekrar deneyin.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Siparis olusturulamadi. Tekrar deneyin.'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: AppColors.error,
           ),
         );
@@ -263,7 +295,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Siparisi Onayla'),
+        title: const Text('Siparişi Onayla'),
         backgroundColor: AppColors.surface,
         iconTheme: const IconThemeData(color: AppColors.secondary),
       ),
@@ -274,9 +306,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 children: [
-                  // 1. Siparis Ozeti
+                  // 1. Sipariş Özeti
                   _SectionCard(
-                    title: 'Siparis Ozeti',
+                    title: 'Sipariş Özeti',
                     child: Column(
                       children: [
                         ...cart.items.map(
@@ -360,13 +392,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           ),
                   ),
 
-                  // 3. Odeme Yontemi
+                  // 3. Ödeme Yontemi
                   _SectionCard(
-                    title: 'Odeme Yontemi',
+                    title: 'Ödeme Yontemi',
                     child: Column(
                       children: [
                         _PaymentOption(
-                          label: 'Kapida Nakit',
+                          label: 'Kapıda Nakit',
                           icon: Icons.payments_outlined,
                           value: PaymentMethod.cash,
                           groupValue: _paymentMethod,
@@ -374,20 +406,28 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               setState(() => _paymentMethod = v!),
                         ),
                         _PaymentOption(
-                          label: 'Kredi/Banka Karti',
+                          label: 'Kapıda Kredi Kartı',
                           icon: Icons.credit_card_outlined,
                           value: PaymentMethod.cardOnDelivery,
                           groupValue: _paymentMethod,
+                          onChanged: (v) =>
+                              setState(() => _paymentMethod = v!),
+                        ),
+                        _PaymentOption(
+                          label: 'Diğer Kredi Kartı',
+                          icon: Icons.account_balance_outlined,
+                          value: PaymentMethod.onlineCard,
+                          groupValue: _paymentMethod,
                           onChanged: null,
-                          badge: 'Yakinda',
+                          badge: 'Yakında',
                         ),
                       ],
                     ),
                   ),
 
-                  // 4. Siparis Notu
+                  // 4. Sipariş Notu
                   _SectionCard(
-                    title: 'Siparis Notu (Opsiyonel)',
+                    title: 'Sipariş Notu (Opsiyonel)',
                     child: TextField(
                       maxLines: 3,
                       decoration: const InputDecoration(

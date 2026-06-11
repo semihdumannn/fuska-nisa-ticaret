@@ -95,63 +95,93 @@ class CategoryIconWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Icon circle
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: categoryIcon.backgroundColor,
-              shape: BoxShape.circle,
-              border: Border.all(
+      child: AnimatedScale(
+        scale: isSelected ? 1.08 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutBack,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon circle
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
                 color: isSelected
-                    ? categoryIcon.foregroundColor
-                    : Colors.black.withValues(alpha: 0.08),
-                width: isSelected ? 2 : 1,
+                    ? categoryIcon.foregroundColor.withValues(alpha: 0.15)
+                    : categoryIcon.backgroundColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? categoryIcon.foregroundColor
+                      : Colors.black.withValues(alpha: 0.06),
+                  width: isSelected ? 2.5 : 1,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: categoryIcon.foregroundColor
+                              .withValues(alpha: 0.30),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
               ),
-            ),
-            child: Center(
-              child: categoryIcon.isSvg
-                  // SVG Icon (errorBuilder: dosya bulunamazsa Flutter Icon'a fall back)
-                  ? SvgPicture.asset(
-                      categoryIcon.svgPath!,
-                      width: size * 0.5,
-                      height: size * 0.5,
-                      colorFilter: ColorFilter.mode(
-                        categoryIcon.foregroundColor,
-                        BlendMode.srcIn,
-                      ),
-                      placeholderBuilder: (_) => Icon(
-                        Icons.category_outlined,
+              child: Center(
+                child: categoryIcon.isSvg
+                    ? SvgPicture.asset(
+                        categoryIcon.svgPath!,
+                        width: size * 0.5,
+                        height: size * 0.5,
+                        colorFilter: ColorFilter.mode(
+                          categoryIcon.foregroundColor,
+                          BlendMode.srcIn,
+                        ),
+                        placeholderBuilder: (_) => Icon(
+                          Icons.category_outlined,
+                          size: size * 0.5,
+                          color: categoryIcon.foregroundColor,
+                        ),
+                      )
+                    : Icon(
+                        categoryIcon.icon!,
                         size: size * 0.5,
                         color: categoryIcon.foregroundColor,
                       ),
-                    )
-                  // Flutter Icon
-                  : Icon(
-                      categoryIcon.icon!,
-                      size: size * 0.5,
-                      color: categoryIcon.foregroundColor,
-                    ),
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 6),
-          
-          // Label
-          Text(
-            categoryIcon.label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected 
-                  ? categoryIcon.foregroundColor 
-                  : const Color(0xFF212121),
+
+            const SizedBox(height: 5),
+
+            // Label
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? categoryIcon.foregroundColor
+                    : const Color(0xFF616161),
+              ),
+              child: Text(categoryIcon.label),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 3),
+
+            // Seçili göstergesi — küçük dot
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: isSelected ? 6 : 0,
+              height: isSelected ? 6 : 0,
+              decoration: BoxDecoration(
+                color: categoryIcon.foregroundColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

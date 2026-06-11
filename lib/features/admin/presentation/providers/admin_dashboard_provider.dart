@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../orders/data/models/order_model.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../data/models/dashboard_stats_model.dart';
 
 // Secili tarih araligi state'i
@@ -64,26 +64,30 @@ class OrdersPageNotifier extends Notifier<int> {
 final ordersPageProvider =
     NotifierProvider<OrdersPageNotifier, int>(OrdersPageNotifier.new);
 
-/// Son 7 günün siparişlerini Firestore'dan çekip istatistikleri türetir.
+/// Dashboard istatistiklerini API'den çeker.
 /// Seçili tarih aralığı değişince yeniden tetiklenir.
 final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   ref.watch(selectedDateRangeProvider);
 
+  final dio = ref.read(apiClientProvider).dio;
   final now = DateTime.now();
-  final weekAgo = DateTime(now.year, now.month, now.day)
-      .subtract(const Duration(days: 6));
 
-  final snap = await FirebaseFirestore.instance
-      .collection(AppConstants.ordersCollection)
-      .where(
-        'createdAt',
-        isGreaterThanOrEqualTo: Timestamp.fromDate(weekAgo),
-      )
-      .orderBy('createdAt', descending: true)
-      .get();
-
-  final orders = snap.docs.map(OrderModel.fromFirestore).toList();
-  return DashboardStats.fromOrders(orders, now);
+  try {
+    final response = await dio.get(ApiEndpoints.adminAnalyticsDashboard);
+    final body = response.data;
+    if (body is Map<String, dynamic>) {
+      return DashboardStats.fromApiJson(body, now);
+    }
+    // body['data'] sarmalayıcısı varsa
+    if (body is Map && body['data'] is Map<String, dynamic>) {
+      return DashboardStats.fromApiJson(
+          body['data'] as Map<String, dynamic>, now);
+    }
+    return DashboardStats.mock();
+  } on DioException {
+    // API erişilemiyorsa mock döndür
+    return DashboardStats.mock();
+  }
 });
 
 // Filtrelenmis son siparisler (pagination + status filter)

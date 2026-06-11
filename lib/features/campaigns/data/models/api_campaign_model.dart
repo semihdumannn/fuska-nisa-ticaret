@@ -13,6 +13,7 @@ class ApiCampaignModel {
   final bool isCurrentlyActive;
   final int? usageLimit;
   final int usageCount;
+  final String? imageUrl;
 
   const ApiCampaignModel({
     required this.id,
@@ -29,6 +30,7 @@ class ApiCampaignModel {
     required this.isCurrentlyActive,
     this.usageLimit,
     required this.usageCount,
+    this.imageUrl,
   });
 
   factory ApiCampaignModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class ApiCampaignModel {
       isCurrentlyActive: json['is_currently_active'] as bool? ?? false,
       usageLimit: json['usage_limit'] as int?,
       usageCount: json['usage_count'] as int? ?? 0,
+      imageUrl: json['image_url'] as String? ?? json['banner_image'] as String?,
     );
   }
 
@@ -69,6 +72,7 @@ class ApiCampaignModel {
         'is_currently_active': isCurrentlyActive,
         'usage_limit': usageLimit,
         'usage_count': usageCount,
+        'image_url': imageUrl,
       };
 
   /// Kampanya yüzde indirim mi, sabit miktar mı?

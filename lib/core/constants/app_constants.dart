@@ -1,5 +1,8 @@
 import 'package:nisa_ticaret/core/config/app_config.dart';
 
+export 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart'
+    show OrderStatus;
+
 class AppConstants {
   // App Info
   static const String appName = 'Nisa Ticaret';
@@ -103,76 +106,19 @@ enum UserRole {
   }
 }
 
-enum OrderStatus {
-  pending,
-  confirmed,
-  preparing,
-  onTheWay,
-  delivered,
-  cancelled;
-
-  String get displayName {
-    switch (this) {
-      case OrderStatus.pending:
-        return 'Beklemede';
-      case OrderStatus.confirmed:
-        return 'Onaylandı';
-      case OrderStatus.preparing:
-        return 'Hazırlanıyor';
-      case OrderStatus.onTheWay:
-        return 'Yolda';
-      case OrderStatus.delivered:
-        return 'Teslim Edildi';
-      case OrderStatus.cancelled:
-        return 'İptal Edildi';
-    }
-  }
-
-  String get value {
-    switch (this) {
-      case OrderStatus.pending:
-        return 'pending';
-      case OrderStatus.confirmed:
-        return 'confirmed';
-      case OrderStatus.preparing:
-        return 'preparing';
-      case OrderStatus.onTheWay:
-        return 'on_the_way';
-      case OrderStatus.delivered:
-        return 'delivered';
-      case OrderStatus.cancelled:
-        return 'cancelled';
-    }
-  }
-
-  static OrderStatus fromString(String value) {
-    switch (value) {
-      case 'confirmed':
-        return OrderStatus.confirmed;
-      case 'preparing':
-        return OrderStatus.preparing;
-      case 'on_the_way':
-        return OrderStatus.onTheWay;
-      case 'delivered':
-        return OrderStatus.delivered;
-      case 'cancelled':
-        return OrderStatus.cancelled;
-      default:
-        return OrderStatus.pending;
-    }
-  }
-}
-
 enum PaymentMethod {
   cash,
-  cardOnDelivery;
+  cardOnDelivery,
+  onlineCard;
 
   String get displayName {
     switch (this) {
       case PaymentMethod.cash:
         return 'Kapıda Nakit';
       case PaymentMethod.cardOnDelivery:
-        return 'Kapıda Kart';
+        return 'Kapıda Kredi Kartı';
+      case PaymentMethod.onlineCard:
+        return 'Diğer Kredi Kartı';
     }
   }
 
@@ -182,6 +128,8 @@ enum PaymentMethod {
         return 'cash';
       case PaymentMethod.cardOnDelivery:
         return 'card_on_delivery';
+      case PaymentMethod.onlineCard:
+        return 'online_card';
     }
   }
 }

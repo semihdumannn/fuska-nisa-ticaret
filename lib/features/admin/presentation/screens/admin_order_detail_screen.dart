@@ -50,7 +50,7 @@ class AdminOrderDetailScreen extends ConsumerWidget {
         backgroundColor: AppColors.secondary,
         iconTheme: const IconThemeData(color: AppColors.textWhite),
         title: const Text(
-          'Siparis Detayi',
+          'Sipariş Detayı',
           style: TextStyle(
             color: AppColors.textWhite,
             fontSize: 16,
@@ -245,7 +245,7 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
 
           // Durum satiri
           const Text(
-            'Siparis Durumu',
+            'Sipariş Durumu',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -265,7 +265,7 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
 
           // Timeline
           const Text(
-            'Siparis Sureci',
+            'Sipariş Süreci',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -282,9 +282,9 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
           const Divider(),
           const SizedBox(height: 12),
 
-          // Musteri bilgileri
+          // Müşteri bilgileri
           const Text(
-            'Musteri Bilgileri',
+            'Müşteri Bilgileri',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -347,7 +347,7 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Iptal Sebebi',
+                          'İptal Sebebi',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -424,51 +424,41 @@ class _StatusChangeDropdown extends ConsumerWidget {
               .toList(),
           onChanged: (newStatus) async {
             if (newStatus == null || newStatus == order.status) return;
-            final confirmed = await showDialog<bool>(
+            final confirmed = await showModalBottomSheet<bool>(
               context: context,
-              builder: (_) => AlertDialog(
-                title: const Text(
-                  'Durum Degistir',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                content: Text(
-                  'Durumu "${newStatus.displayName}" olarak degistirmek istiyor musunuz?',
-                  style: const TextStyle(
-                      fontSize: 14, fontFamily: 'Poppins'),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Vazgec'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: newStatus.color,
-                      minimumSize: const Size(80, 40),
-                    ),
-                    child: const Text('Degistir'),
-                  ),
-                ],
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              builder: (_) => _StatusChangeSheet(
+                currentStatus: order.status,
+                newStatus: newStatus,
+                orderNumber: order.orderNumber,
               ),
             );
             if (confirmed == true && context.mounted) {
-              await ref
-                  .read(adminOrdersProvider.notifier)
-                  .updateStatus(order.id, newStatus);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'Durum "${newStatus.displayName}" olarak guncellendi'),
-                    backgroundColor: newStatus.color,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
+              try {
+                await ref
+                    .read(adminOrdersProvider.notifier)
+                    .updateStatus(order.id, newStatus);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Durum "${newStatus.displayName}" olarak güncellendi'),
+                      backgroundColor: newStatus.color,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceFirst('Exception: ', '')),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
               }
             }
           },
@@ -501,7 +491,7 @@ class _ItemsColumn extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Siparis Detayi',
+            'Sipariş Detayı',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -687,11 +677,11 @@ class _ItemsColumn extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Odeme yontemi
+          // Ödeme yontemi
           Row(
             children: [
               const Text(
-                'Odeme:',
+                'Ödeme:',
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -828,7 +818,7 @@ class _AssignmentNotesColumnState
         children: [
           // ----------- Saha Gorevlisi -----------
           _AssignmentSection(
-            title: 'Saha Gorevlisi',
+            title: 'Saha Görevlisi',
             icon: Icons.badge_outlined,
             assignedName: order.assignedAgentName,
             personsAsync: agentsAsync,
@@ -865,7 +855,7 @@ class _AssignmentNotesColumnState
 
           // ----------- Teslimat Gorevlisi -----------
           _AssignmentSection(
-            title: 'Teslimat Gorevlisi',
+            title: 'Teslimat Görevlisi',
             icon: Icons.local_shipping_outlined,
             assignedName: order.assignedDeliveryName,
             personsAsync: deliveryAsync,
@@ -1009,7 +999,7 @@ class _AssignmentNotesColumnState
               order.status != AdminOrderStatus.delivered)
             _DangerButton(
               icon: Icons.cancel_outlined,
-              label: 'Siparisi Iptal Et',
+              label: 'Siparisi İptal Et',
               color: AppColors.error,
               onTap: () => _showCancelDialog(context, ref, order),
             ),
@@ -1032,7 +1022,7 @@ class _AssignmentNotesColumnState
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Bu siparis icin aksiyon alinabilecek durum yok.',
+                'Bu sipariş için aksiyon alinabilecek durum yok.',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textHint,
@@ -1055,7 +1045,7 @@ class _AssignmentNotesColumnState
       context: context,
       builder: (_) => AlertDialog(
         title: const Text(
-          'Siparisi Iptal Et',
+          'Siparisi İptal Et',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -1067,7 +1057,7 @@ class _AssignmentNotesColumnState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${order.orderNumber} siparisini iptal etmek istediginizden emin misiniz?',
+              '${order.orderNumber} siparişini iptal etmek istediğinizden emin misiniz?',
               style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
             ),
             const SizedBox(height: 16),
@@ -1075,8 +1065,8 @@ class _AssignmentNotesColumnState
               controller: reasonController,
               maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'Iptal Sebebi (zorunlu)',
-                hintText: 'Iptal sebebini yazin...',
+                labelText: 'İptal Sebebi (zorunlu)',
+                hintText: 'İptal sebebini yazın...',
               ),
               style:
                   const TextStyle(fontSize: 13, fontFamily: 'Poppins'),
@@ -1086,7 +1076,7 @@ class _AssignmentNotesColumnState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgec'),
+            child: const Text('Vazgeç'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1097,7 +1087,7 @@ class _AssignmentNotesColumnState
               backgroundColor: AppColors.error,
               minimumSize: const Size(80, 40),
             ),
-            child: const Text('Iptal Et'),
+            child: const Text('İptal Et'),
           ),
         ],
       ),
@@ -1137,13 +1127,13 @@ class _AssignmentNotesColumnState
           ),
         ),
         content: Text(
-          '${order.orderNumber} siparisi icin iade süreci baslatilacak. Devam etmek istiyor musunuz?',
+          '${order.orderNumber} siparişi için iade süreci baslatilacak. Devam etmek istiyor musunuz?',
           style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgec'),
+            child: const Text('Vazgeç'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -1695,7 +1685,7 @@ class _DetailError extends StatelessWidget {
                 color: AppColors.error, size: 48),
             const SizedBox(height: 16),
             const Text(
-              'Siparis yuklenemedi',
+              'Siparis yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -1721,6 +1711,167 @@ class _DetailError extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status Change Bottom Sheet
+// ---------------------------------------------------------------------------
+
+class _StatusChangeSheet extends StatelessWidget {
+  final AdminOrderStatus currentStatus;
+  final AdminOrderStatus newStatus;
+  final String? orderNumber;
+
+  const _StatusChangeSheet({
+    required this.currentStatus,
+    required this.newStatus,
+    this.orderNumber,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Text(
+            'Sipariş Durumu Güncelle',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
+          if (orderNumber != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              orderNumber!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _StatusChip(status: currentStatus),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+              ),
+              _StatusChip(status: newStatus, isNew: true),
+            ],
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              child: const Text('Güncelle'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              minimumSize: const Size(double.infinity, 44),
+            ),
+            child: const Text(
+              'Vazgeç',
+              style: TextStyle(fontSize: 14, fontFamily: 'Poppins'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final AdminOrderStatus status;
+  final bool isNew;
+
+  const _StatusChip({required this.status, this.isNew = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: status.color.withValues(alpha: isNew ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: status.color.withValues(alpha: isNew ? 0.5 : 0.2),
+          width: isNew ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: status.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status.displayName,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isNew ? FontWeight.w700 : FontWeight.w500,
+              color: status.color,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -23,10 +23,8 @@ class ProductListState {
     this.currentPage = 1,
   });
 
-  List<ProductModel> filteredProducts(List<ProductModel> all) {
-    var result = _filteredUnpaged(all);
-
-    result = List<ProductModel>.from(result)..sort((a, b) {
+  List<ProductModel> _sorted(List<ProductModel> list) {
+    return List<ProductModel>.from(list)..sort((a, b) {
       switch (sortOption) {
         case SortOption.nameAsc:
           return a.name.compareTo(b.name);
@@ -40,7 +38,28 @@ class ProductListState {
           return a.order.compareTo(b.order);
       }
     });
+  }
 
+  /// Filtre + sıralama uygular, sayfa limiti OLMADAN — lazy loading için.
+  List<ProductModel> allFilteredProducts(List<ProductModel> all) =>
+      _sorted(_filteredUnpaged(all));
+
+  /// Server-side kategori filtresi uygulandıktan sonra sadece arama + sıralama.
+  /// Kategori filtresini tekrar uygulamamak için kullan.
+  List<ProductModel> sortedAndSearchFiltered(List<ProductModel> all) {
+    var result = all;
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      result = result
+          .where((p) => p.name.toLowerCase().contains(query))
+          .toList();
+    }
+    return _sorted(result);
+  }
+
+  /// Eski client-side pagination (geriye dönük uyumluluk).
+  List<ProductModel> filteredProducts(List<ProductModel> all) {
+    final result = _sorted(_filteredUnpaged(all));
     return result.take(currentPage * AppConstants.pageSize).toList();
   }
 

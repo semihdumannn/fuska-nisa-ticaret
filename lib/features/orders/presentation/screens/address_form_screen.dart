@@ -5,10 +5,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/data/turkish_cities.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
-import 'package:nisa_ticaret/features/orders/data/models/address_model.dart';
-import 'package:nisa_ticaret/features/orders/data/repositories/address_repository.dart';
-import 'package:nisa_ticaret/features/orders/presentation/screens/map_picker_screen.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
+import 'package:nisa_ticaret/features/orders/data/models/address_model.dart';
+import 'package:nisa_ticaret/features/orders/data/repositories/address_repository.dart'
+    show addressesProvider;
+import 'package:nisa_ticaret/features/orders/presentation/screens/map_picker_screen.dart';
+import 'package:nisa_ticaret/features/profile/domain/entities/address_entity.dart';
+import 'package:nisa_ticaret/features/profile/presentation/providers/api_profile_provider.dart'
+    show apiAddressesNotifierProvider;
 
 const _kLabels = ['Ev', 'Is', 'Diger'];
 
@@ -98,60 +102,53 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final repo = ref.read(addressRepositoryProvider);
-    if (repo == null) {
-      _showError('Oturum bulunamadi. Lutfen tekrar giris yapin.');
+    final user = ref.read(authStateProvider).value;
+    if (user == null) {
+      _showError('Oturum bulunamadı. Lutfen tekrar giris yapin.');
       return;
     }
-
-    final authState = ref.read(authStateProvider);
-    final userId = authState.value?.uid ?? '';
 
     setState(() => _isLoading = true);
 
     try {
-      final notesVal = _notesController.text.trim();
-      if (_isEditing) {
-        final updated = widget.address!.copyWith(
-          label: _selectedLabel,
-          fullAddress: _fullAddressController.text.trim(),
-          district: _selectedDistrict,
-          city: _selectedCity,
-          isDefault: _isDefault,
-          lat: _lat,
-          lng: _lng,
-          clearLat: _lat == null,
-          clearLng: _lng == null,
-          notes: notesVal.isEmpty ? null : notesVal,
-          clearNotes: notesVal.isEmpty,
-        );
-        await repo.updateAddress(updated);
-        if (mounted) {
-          setState(() => _hasChanges = false);
-          context.pop(updated);
-        }
+      final notifier = ref.read(apiAddressesNotifierProvider.notifier);
+      final existingId = _isEditing
+          ? int.tryParse(widget.address!.id)
+          : null;
+
+      final entity = AddressEntity(
+        id: existingId,
+        title: _selectedLabel,
+        fullName: user.name.isNotEmpty ? user.name : user.phone,
+        phone: user.phone,
+        addressLine: _fullAddressController.text.trim(),
+        city: _selectedCity,
+        district: _selectedDistrict.isEmpty ? null : _selectedDistrict,
+        latitude: _lat,
+        longitude: _lng,
+        isDefault: _isDefault,
+      );
+
+      bool success;
+      if (_isEditing && existingId != null) {
+        success = await notifier.updateAddress(entity);
       } else {
-        final newAddress = AddressModel(
-          id: '',
-          userId: userId,
-          label: _selectedLabel,
-          fullAddress: _fullAddressController.text.trim(),
-          district: _selectedDistrict,
-          city: _selectedCity,
-          isDefault: _isDefault,
-          lat: _lat,
-          lng: _lng,
-          notes: notesVal.isEmpty ? null : notesVal,
-        );
-        await repo.addAddress(newAddress);
-        if (mounted) {
+        success = await notifier.addAddress(entity);
+      }
+
+      if (mounted) {
+        if (success) {
+          // Adresler listesini yenile
+          ref.invalidate(addressesProvider);
           setState(() => _hasChanges = false);
-          context.pop(newAddress);
+          context.pop();
+        } else {
+          _showError('Adres kaydedilemedi. Tekrar deneyin.');
         }
       }
     } catch (e) {
       if (mounted) {
-        _showError('Adres kaydedilemedi. Tekrar deneyin.');
+        _showError('Adres kaydedilemedi: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -211,7 +208,7 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.background,
-          title: Text(_isEditing ? 'Adresi Duzenle' : 'Yeni Adres'),
+          title: Text(_isEditing ? 'Adresi Düzenle' : 'Yeni Adres'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () async {
@@ -302,43 +299,49 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
               const SizedBox(height: 16),
 
               // Varsayilan adres switch
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: SwitchListTile(
-                  value: _isDefault,
-                  onChanged: (value) {
-                    setState(() {
-                      _isDefault = value;
-                      _hasChanges = true;
-                    });
-                  },
-                  activeThumbColor: AppColors.primary,
-                  activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                  title: const Text(
-                    'Varsayilan adres olarak ayarla',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Siparislerinizde otomatik secilir',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  secondary: const Icon(
-                    Icons.star_outline,
-                    color: AppColors.primary,
-                  ),
-                  shape: RoundedRectangleBorder(
+              // Material eklenmiştir — ListTile ink efektleri DecoratedBox
+              // içinde kaybolmasın diye.
+              Material(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.border),
                     borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: SwitchListTile(
+                    value: _isDefault,
+                    onChanged: (value) {
+                      setState(() {
+                        _isDefault = value;
+                        _hasChanges = true;
+                      });
+                    },
+                    activeThumbColor: AppColors.primary,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                    title: const Text(
+                      'Varsayilan adres olarak ayarla',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Siparislerinizde otomatik secilir',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    secondary: const Icon(
+                      Icons.star_outline,
+                      color: AppColors.primary,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -430,7 +433,7 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
                         ),
                       )
                     : Text(
-                        _isEditing ? 'Guncelle' : 'Kaydet',
+                        _isEditing ? 'Güncelle' : 'Kaydet',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

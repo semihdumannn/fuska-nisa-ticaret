@@ -48,7 +48,7 @@ class AppConfig {
       
       // Limits
       'limits_maxCartItems': 100,
-      'limits_minOrderAmount': 50.0,
+      'limits_minOrderAmount': 200.0,
       'limits_maxDeliveryDistance': 15.0,
       
       // Version Control
@@ -57,7 +57,7 @@ class AppConfig {
       
       // Business
       'whatsapp_number': '+905551234567',
-      'min_order_amount': 50.0,
+      'min_order_amount': 200.0,
 
       // API Endpoints
       'api_coupon_endpoint': '/coupons/validate',
@@ -77,6 +77,22 @@ class AppConfig {
   String get baseUrl => _remoteConfig.getString('api_baseUrl');
   int get apiTimeout => _remoteConfig.getInt('api_timeout');
   String get couponEndpoint => _remoteConfig.getString('api_coupon_endpoint');
+
+  /// Medya/görsel base URL'i. baseUrl sonundaki /api kaldırılır.
+  String get storageBaseUrl {
+    final base = baseUrl;
+    if (base.endsWith('/api')) return base.substring(0, base.length - 4);
+    final lastSlash = base.lastIndexOf('/api');
+    if (lastSlash != -1) return base.substring(0, lastSlash);
+    return base;
+  }
+
+  /// Göreli URL'leri mutlak URL'e çevirir. Zaten http ile başlıyorsa dokunmaz.
+  String resolveUrl(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final base = storageBaseUrl;
+    return path.startsWith('/') ? '$base$path' : '$base/$path';
+  }
   
   // ============ Features ============
   bool get isWhatsappEnabled => _remoteConfig.getBool('features_whatsappEnabled');

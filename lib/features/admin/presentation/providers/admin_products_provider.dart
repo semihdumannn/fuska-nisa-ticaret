@@ -1,11 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../features/products/data/models/product_model.dart';
-import '../../../../features/products/data/models/variant_model.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/providers/core_providers.dart';
+import '../../../../features/products/data/models/api_product_model.dart';
+import 'admin_orders_provider.dart';
 
 // ---------------------------------------------------------------------------
-// Kategori sabitleri — admin formunda kullanilir
+// Kategori sabitleri — filtre dropdown'ında hâlâ kullanılır.
+// Gerçek kategori listesi ayrı bir provider'dan (API) gelecek.
 // ---------------------------------------------------------------------------
 class ProductCategory {
   const ProductCategory._();
@@ -26,70 +28,156 @@ class ProductCategory {
 }
 
 // ---------------------------------------------------------------------------
-// AdminProductsNotifier — Firestore stream ile urun listesi
+// AdminProductsNotifier — API tabanlı ürün yönetimi
 // ---------------------------------------------------------------------------
 class AdminProductsNotifier
-    extends Notifier<AsyncValue<List<ProductModel>>> {
+    extends Notifier<AsyncValue<List<ApiProductModel>>> {
+  Dio get _dio => ref.read(apiClientProvider).dio;
+
   @override
-  AsyncValue<List<ProductModel>> build() {
-    final sub = FirebaseFirestore.instance
-        .collection(AppConstants.productsCollection)
-        .orderBy('order')
-        .snapshots()
-        .listen(
-          (snap) {
-            state = AsyncValue.data(
-              snap.docs.map(ProductModel.fromFirestore).toList(),
-            );
-          },
-          onError: (Object e, StackTrace st) {
-            state = AsyncValue.error(e, st);
-          },
-        );
-    ref.onDispose(sub.cancel);
+  AsyncValue<List<ApiProductModel>> build() {
+    _load();
     return const AsyncValue.loading();
   }
 
-  Future<void> addProduct(ProductModel product) async {
+  Future<void> refresh() => _load();
+
+  Future<void> _load() async {
     try {
-      await FirebaseFirestore.instance
-          .collection(AppConstants.productsCollection)
-          .doc(product.id)
-          .set(product.toFirestore());
-    } catch (e, st) {
+      final products = await _fetchAllProducts();
+      state = AsyncValue.data(products);
+    } on AdminRoleException catch (e, st) {
       state = AsyncValue.error(e, st);
+    } catch (e, st) {
+      if (state is! AsyncData) {
+        state = AsyncValue.error(e, st);
+      }
+    }
+  }
+
+  Future<List<ApiProductModel>> _fetchAllProducts() async {
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.adminProducts,
+        queryParameters: {'per_page': 200, 'page': 1},
+      );
+      final body = response.data as Map<String, dynamic>;
+      final data = body['data'] as List? ?? [];
+      return data
+          .map((j) => ApiProductModel.fromJson(j as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw const AdminRoleException(
+          'Yetersiz yetki: Backend\'de admin rolünüz yok.\n\n'
+          'Çözüm: Backend veritabanında kullanıcınızın rolünü "admin" olarak güncelleyin.',
+        );
+      }
       rethrow;
     }
   }
 
-  Future<void> updateProduct(ProductModel product) async {
+  Future<void> addProduct(Map<String, dynamic> productData) async {
     try {
-      await FirebaseFirestore.instance
-          .collection(AppConstants.productsCollection)
-          .doc(product.id)
-          .update(product.toFirestore());
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final response = await _dio.post(
+        ApiEndpoints.adminProducts,
+        data: productData,
+      );
+      final json = response.data as Map<String, dynamic>;
+      final newProduct = ApiProductModel.fromJson(
+        json['data'] as Map<String, dynamic>? ?? json,
+      );
+      final current = state.value ?? [];
+      state = AsyncValue.data([newProduct, ...current]);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw const AdminRoleException('Ürün ekleme yetkisi yok.');
+      }
       rethrow;
     }
   }
 
-  Future<void> deleteProduct(String id) async {
+  Future<void> updateProduct(int id, Map<String, dynamic> productData) async {
     try {
-      await FirebaseFirestore.instance
-          .collection(AppConstants.productsCollection)
-          .doc(id)
-          .delete();
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final response = await _dio.put(
+        ApiEndpoints.adminProductDetail(id),
+        data: productData,
+      );
+      final json = response.data as Map<String, dynamic>;
+      final updated = ApiProductModel.fromJson(
+        json['data'] as Map<String, dynamic>? ?? json,
+      );
+      final current = state.value ?? [];
+      state = AsyncValue.data(current.map((p) {
+        return p.id == id ? updated : p;
+      }).toList());
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw const AdminRoleException('Ürün güncelleme yetkisi yok.');
+      }
       rethrow;
     }
   }
 
-  Future<void> toggleActive(String id) async {
+  Future<void> deleteProduct(int id) async {
+    try {
+      await _dio.delete(ApiEndpoints.adminProductDetail(id));
+      final current = state.value ?? [];
+      state = AsyncValue.data(current.where((p) => p.id != id).toList());
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw const AdminRoleException('Ürün silme yetkisi yok.');
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> toggleActive(int id) async {
     final current = state.value ?? [];
-    final product = current.firstWhere((p) => p.id == id);
-    await updateProduct(product.copyWith(isActive: !product.isActive));
+    final product = current.where((p) => p.id == id).firstOrNull;
+    if (product == null) return;
+    final newActive = !product.isActive;
+
+    // Optimistic update
+    state = AsyncValue.data(current.map((p) {
+      if (p.id != id) return p;
+      return ApiProductModel(
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        primaryPrice: p.primaryPrice,
+        primarySalePrice: p.primarySalePrice,
+        primaryStock: p.primaryStock,
+        imageUrl: p.imageUrl,
+        imageUrls: p.imageUrls,
+        categoryIds: p.categoryIds,
+        categoryName: p.categoryName,
+        brandId: p.brandId,
+        brandName: p.brandName,
+        isActive: newActive,
+        isFeatured: p.isFeatured,
+        unit: p.unit,
+        tags: p.tags,
+        order: p.order,
+        variants: p.variants,
+        embeddedCategories: p.embeddedCategories,
+        koliVariantId: p.koliVariantId,
+        koliPrice: p.koliPrice,
+        koliSalePrice: p.koliSalePrice,
+        koliStock: p.koliStock,
+        koliPackageQty: p.koliPackageQty,
+      );
+    }).toList());
+
+    try {
+      await _dio.put(
+        ApiEndpoints.adminProductDetail(id),
+        data: {'is_active': newActive},
+      );
+    } catch (_) {
+      // Rollback on error
+      await _load();
+    }
   }
 }
 
@@ -119,10 +207,10 @@ class ProductsPageNotifier extends Notifier<int> {
 }
 
 // ---------------------------------------------------------------------------
-// Provider tanimlari
+// Provider tanımları
 // ---------------------------------------------------------------------------
-final adminProductsProvider =
-    NotifierProvider<AdminProductsNotifier, AsyncValue<List<ProductModel>>>(
+final adminProductsProvider = NotifierProvider<AdminProductsNotifier,
+    AsyncValue<List<ApiProductModel>>>(
   AdminProductsNotifier.new,
 );
 
@@ -143,7 +231,7 @@ final productsPageProvider =
 
 const int kProductsPerPage = 10;
 
-final filteredProductsProvider = Provider<List<ProductModel>>((ref) {
+final filteredProductsProvider = Provider<List<ApiProductModel>>((ref) {
   final asyncProducts = ref.watch(adminProductsProvider);
   final search = ref.watch(productSearchProvider).toLowerCase().trim();
   final categoryFilter = ref.watch(productCategoryFilterProvider);
@@ -159,14 +247,21 @@ final filteredProductsProvider = Provider<List<ProductModel>>((ref) {
     data: (products) {
       var result = products;
       if (categoryFilter != null && categoryFilter.isNotEmpty) {
-        result = result.where((p) => p.categoryIds.contains(categoryFilter)).toList();
+        result = result
+            .where((p) =>
+                p.categoryName?.toLowerCase().contains(categoryFilter) ==
+                    true ||
+                p.embeddedCategories
+                    .any((c) => c.name.toLowerCase().contains(categoryFilter)))
+            .toList();
       }
       if (search.isNotEmpty) {
         result = result
             .where((p) =>
                 p.name.toLowerCase().contains(search) ||
-                p.description.toLowerCase().contains(search) ||
-                p.categoryIds.any((id) => id.toLowerCase().contains(search)))
+                (p.description?.toLowerCase().contains(search) ?? false) ||
+                (p.categoryName?.toLowerCase().contains(search) ?? false) ||
+                (p.brandName?.toLowerCase().contains(search) ?? false))
             .toList();
       }
       return result;
@@ -176,7 +271,7 @@ final filteredProductsProvider = Provider<List<ProductModel>>((ref) {
   );
 });
 
-final paginatedProductsProvider = Provider<List<ProductModel>>((ref) {
+final paginatedProductsProvider = Provider<List<ApiProductModel>>((ref) {
   final filtered = ref.watch(filteredProductsProvider);
   final page = ref.watch(productsPageProvider);
   final start = page * kProductsPerPage;
@@ -190,15 +285,13 @@ final totalProductPagesProvider = Provider<int>((ref) {
   return (filtered.length / kProductsPerPage).ceil().clamp(1, 9999);
 });
 
-/// Her urunun ilk aktif varyantini yukle — admin listesinde fiyat/stok icin.
+/// Her ürünün ilk aktif varyantını döner — ApiProductModel.variants'tan.
+/// Ekstra Firestore/API çağrısı yapmaz.
 final adminVariantProvider =
-    FutureProvider.family<VariantModel?, String>((ref, productId) async {
-  final snap = await FirebaseFirestore.instance
-      .collection(AppConstants.variantsCollection)
-      .where('productId', isEqualTo: productId)
-      .where('isActive', isEqualTo: true)
-      .limit(1)
-      .get();
-  if (snap.docs.isEmpty) return null;
-  return VariantModel.fromFirestore(snap.docs.first);
+    Provider.family<ApiProductVariantModel?, int>((ref, productId) {
+  final products = ref.watch(adminProductsProvider).value ?? [];
+  final product = products.where((p) => p.id == productId).firstOrNull;
+  if (product == null) return null;
+  final active = product.variants.where((v) => v.isActive).toList();
+  return active.isNotEmpty ? active.first : product.variants.firstOrNull;
 });

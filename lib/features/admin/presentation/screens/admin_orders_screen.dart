@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:nisa_ticaret/core/utils/navigation_guard.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/admin_order_model.dart';
 import '../providers/admin_orders_provider.dart';
@@ -83,7 +84,7 @@ class _MobileLayout extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Ana icerik alani
+// Ana içerik alani
 // ---------------------------------------------------------------------------
 
 class _OrdersContent extends ConsumerWidget {
@@ -113,7 +114,10 @@ class _OrdersBody extends ConsumerWidget {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= _kDesktopBreakpoint;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: () => ref.read(adminOrdersProvider.notifier).refresh(),
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(isDesktop ? 28 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,6 +137,7 @@ class _OrdersBody extends ConsumerWidget {
           const _PaginationRow(),
           const SizedBox(height: 40),
         ],
+      ),
       ),
     );
   }
@@ -343,7 +348,7 @@ class _FiltersRowState extends ConsumerState<_FiltersRow> {
     final width = MediaQuery.sizeOf(context).width;
     final isTablet = width >= _kTabletBreakpoint;
 
-    // Disi search field guncellemesi
+    // Disi search field güncellemesi
     if (_searchController.text != search) {
       _searchController.text = search;
       _searchController.selection = TextSelection.fromPosition(
@@ -407,7 +412,7 @@ class _FiltersRowState extends ConsumerState<_FiltersRow> {
         child: DropdownButton<AdminPaymentMethod?>(
           value: paymentFilter,
           hint: const Text(
-            'Odeme',
+            'Ödeme',
             style: TextStyle(
               fontSize: 13,
               fontFamily: 'Poppins',
@@ -421,7 +426,7 @@ class _FiltersRowState extends ConsumerState<_FiltersRow> {
             const DropdownMenuItem<AdminPaymentMethod?>(
               value: null,
               child: Text(
-                'Tum Odemeler',
+                'Tum Ödemeler',
                 style: TextStyle(fontSize: 13, fontFamily: 'Poppins'),
               ),
             ),
@@ -505,11 +510,11 @@ class _FiltersRowState extends ConsumerState<_FiltersRow> {
       children: [
         Row(
           children: [
-            statusDropdown,
+            Expanded(child: statusDropdown),
             const SizedBox(width: 8),
-            dateButton,
+            Expanded(child: dateButton),
             const SizedBox(width: 8),
-            paymentDropdown,
+            Expanded(child: paymentDropdown),
           ],
         ),
         const SizedBox(height: 8),
@@ -622,7 +627,7 @@ class _BulkActionsBar extends ConsumerWidget {
                       size: 18, color: AppColors.secondary),
                   const SizedBox(width: 8),
                   Text(
-                    '${selected.length} siparis secili',
+                    '${selected.length} sipariş seçili',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -642,7 +647,7 @@ class _BulkActionsBar extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                                '${selected.length} siparis onaylandi'),
+                                '${selected.length} sipariş onaylandı'),
                             backgroundColor: AppColors.success,
                             duration: const Duration(seconds: 2),
                           ),
@@ -703,7 +708,7 @@ class _BulkActionsBar extends ConsumerWidget {
 
     final buf = StringBuffer();
     buf.writeln(
-        'Siparis No,Musteri,Telefon,Tutar,Odeme,Durum,Tarih,Saha Gorevlisi,Teslimat');
+        'Sipariş No,Müşteri,Telefon,Tutar,Ödeme,Durum,Tarih,Saha Gorevlisi,Teslimat');
     for (final o in selected) {
       final fmt = DateFormat('dd/MM/yyyy HH:mm');
       buf.writeln(
@@ -714,7 +719,7 @@ class _BulkActionsBar extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content:
-            Text('${selected.length} siparis CSV formatinda hazirlandi'),
+            Text('${selected.length} sipariş CSV formatinda hazirlandi'),
         backgroundColor: AppColors.accent,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
@@ -852,10 +857,10 @@ class _OrdersTable extends ConsumerWidget {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        // Siparis No
+        // Sipariş No
         DataCell(
           TextButton(
-            onPressed: () => context.push(
+            onPressed: () => context.safePush(
               '/admin/orders/${order.id}',
             ),
             style: TextButton.styleFrom(
@@ -875,7 +880,7 @@ class _OrdersTable extends ConsumerWidget {
             ),
           ),
         ),
-        // Musteri
+        // Müşteri
         DataCell(
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -908,7 +913,7 @@ class _OrdersTable extends ConsumerWidget {
                 fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
           ),
         ),
-        // Odeme
+        // Ödeme
         DataCell(
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -959,7 +964,7 @@ class _OrdersTable extends ConsumerWidget {
                 color: AppColors.secondary,
                 tooltip: 'Goruntule',
                 onPressed: () =>
-                    context.push('/admin/orders/${order.id}'),
+                    context.safePush('/admin/orders/${order.id}'),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(
                     minWidth: 30, minHeight: 30),
@@ -982,7 +987,7 @@ class _QuickStatusMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<AdminOrderStatus>(
       icon: const Icon(Icons.more_vert, size: 17, color: AppColors.textSecondary),
-      tooltip: 'Durum degistir',
+      tooltip: 'Durum Değiştir',
       padding: EdgeInsets.zero,
       itemBuilder: (_) => AdminOrderStatus.values
           .where((s) => s != order.status)
@@ -1011,36 +1016,14 @@ class _QuickStatusMenu extends ConsumerWidget {
           )
           .toList(),
       onSelected: (newStatus) async {
-        final confirmed = await showDialog<bool>(
+        final confirmed = await showModalBottomSheet<bool>(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text(
-              'Durum Degistir',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            content: Text(
-              '${order.orderNumber} siparisinin durumunu "${newStatus.displayName}" olarak degistirmek istiyor musunuz?',
-              style:
-                  const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Vazgec'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: newStatus.color,
-                  minimumSize: const Size(80, 40),
-                ),
-                child: const Text('Degistir'),
-              ),
-            ],
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (_) => _StatusChangeSheet(
+            currentStatus: order.status,
+            newStatus: newStatus,
+            orderNumber: order.orderNumber,
           ),
         );
         if (confirmed == true && context.mounted) {
@@ -1090,7 +1073,7 @@ class _OrderMobileCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
-      onTap: () => context.push('/admin/orders/${order.id}'),
+      onTap: () => context.safePush('/admin/orders/${order.id}'),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -1299,7 +1282,7 @@ class _EmptyState extends StatelessWidget {
                 size: 48, color: AppColors.textHint),
             const SizedBox(height: 12),
             const Text(
-              'Siparis bulunamadi',
+              'Siparis bulunamadı',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -1309,7 +1292,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Filtre kriterlerini degistirmeyi deneyin',
+              'Filtre kriterlerini değiştirmeyi deneyin',
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textHint,
@@ -1438,36 +1421,270 @@ class _OrdersError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isRoleError = error is AdminRoleException;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.error, size: 48),
+            Icon(
+              isRoleError ? Icons.admin_panel_settings_outlined : Icons.error_outline_rounded,
+              color: isRoleError ? AppColors.warning : AppColors.error,
+              size: 56,
+            ),
             const SizedBox(height: 16),
-            const Text(
-              'Siparisler yuklenemedi',
-              style: TextStyle(
+            Text(
+              isRoleError ? 'Yetki Hatasi (403)' : 'Siparisler yüklenemedi',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
                 fontFamily: 'Poppins',
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            if (isRoleError) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Backend kullanıcı rolünüz "customer".\nAdmin panelini açmak için "admin" olmalı.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Düzeltme (HF Space → Tinker):',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'User::where("phone","<no>")\n  ->update(["role"=>"admin"]);',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(const ClipboardData(
+                    text: 'User::where("phone","<telefonunuz>")->update(["role" => "admin"]);',
+                  ));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Komut kopyalandı'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy_outlined, size: 16),
+                label: const Text(
+                  'Komutu Kopyala',
+                  style: TextStyle(fontSize: 13, fontFamily: 'Poppins'),
+                ),
+              ),
+            ] else
+              Text(
+                error.toString(),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status Change Bottom Sheet (shared with admin_order_detail_screen)
+// ---------------------------------------------------------------------------
+
+class _StatusChangeSheet extends StatelessWidget {
+  final AdminOrderStatus currentStatus;
+  final AdminOrderStatus newStatus;
+  final String? orderNumber;
+
+  const _StatusChangeSheet({
+    required this.currentStatus,
+    required this.newStatus,
+    this.orderNumber,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Text(
+            'Sipariş Durumu Güncelle',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
+          if (orderNumber != null) ...[
+            const SizedBox(height: 4),
             Text(
-              error.toString(),
+              orderNumber!,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: AppColors.textSecondary,
                 fontFamily: 'Poppins',
               ),
-              textAlign: TextAlign.center,
             ),
           ],
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _StatusChip(status: currentStatus),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+              ),
+              _StatusChip(status: newStatus, isNew: true),
+            ],
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              child: const Text('Güncelle'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              minimumSize: const Size(double.infinity, 44),
+            ),
+            child: const Text(
+              'Vazgeç',
+              style: TextStyle(fontSize: 14, fontFamily: 'Poppins'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final AdminOrderStatus status;
+  final bool isNew;
+
+  const _StatusChip({required this.status, this.isNew = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: status.color.withValues(alpha: isNew ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: status.color.withValues(alpha: isNew ? 0.5 : 0.2),
+          width: isNew ? 1.5 : 1,
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: status.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status.displayName,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isNew ? FontWeight.w700 : FontWeight.w500,
+              color: status.color,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
       ),
     );
   }

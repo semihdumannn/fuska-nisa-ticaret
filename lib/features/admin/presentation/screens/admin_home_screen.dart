@@ -67,7 +67,7 @@ class _MobileTabletLayout extends StatelessWidget {
         backgroundColor: AppColors.secondary,
         iconTheme: const IconThemeData(color: AppColors.textWhite),
         title: const Text(
-          'Yonetim Paneli',
+          'Yönetim Paneli',
           style: TextStyle(
             color: AppColors.textWhite,
             fontSize: 16,
@@ -81,7 +81,7 @@ class _MobileTabletLayout extends StatelessWidget {
             icon: const Icon(Icons.storefront_outlined,
                 color: AppColors.textWhite),
             tooltip: 'Müşteri Görünümü',
-            onPressed: () => context.go(AppRoutes.productList),
+            onPressed: () => context.go(AppRoutes.home),
           ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined,
@@ -96,7 +96,7 @@ class _MobileTabletLayout extends StatelessWidget {
   }
 }
 
-// Ortak dashboard icerik alani
+// Ortak dashboard içerik alanı
 class _DashboardContent extends ConsumerWidget {
   const _DashboardContent();
 
@@ -142,7 +142,7 @@ class _DashboardScrollView extends StatelessWidget {
   }
 }
 
-// Header: baslik + tarih secici + export
+// Header: başlık + tarih seçici + export
 class _DashboardHeader extends ConsumerWidget {
   final bool isDesktop;
 
@@ -162,7 +162,7 @@ class _DashboardHeader extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Yonetim Paneli',
+                'Yönetim Paneli',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -319,13 +319,13 @@ class _MetricsGrid extends StatelessWidget {
       childAspectRatio: isDesktop ? 1.5 : (isTablet ? 1.1 : 1.6),
       children: [
         MetricCard(
-          title: 'Gunluk Satis',
+          title: 'Günlük Satış',
           value: NumberFormat.currency(
             locale: 'tr_TR',
             symbol: '₺',
             decimalDigits: 0,
           ).format(stats.dailySales),
-          subtitle: 'Bugun toplam ciro',
+          subtitle: 'Bugün toplam ciro',
           icon: Icons.attach_money_rounded,
           iconColor: AppColors.success,
           iconBgColor: AppColors.success.withValues(alpha: 0.12),
@@ -335,17 +335,17 @@ class _MetricsGrid extends StatelessWidget {
               : MetricTrend.down,
         ),
         MetricCard(
-          title: 'Toplam Siparis',
+          title: 'Toplam Sipariş',
           value: '${stats.totalOrders} adet',
-          subtitle: 'Bugunun siparisleri',
+          subtitle: 'Bugünün siparişleri',
           icon: Icons.shopping_bag_outlined,
           iconColor: AppColors.primary,
           iconBgColor: AppColors.primary.withValues(alpha: 0.12),
         ),
         MetricCard(
-          title: 'Aktif Musteriler',
+          title: 'Aktif Müşteriler',
           value: '${stats.activeCustomers}',
-          subtitle: 'Son 30 gunde aktif',
+          subtitle: 'Son 30 günde aktif',
           icon: Icons.people_outline_rounded,
           iconColor: AppColors.secondary,
           iconBgColor: AppColors.secondary.withValues(alpha: 0.10),
@@ -580,7 +580,7 @@ class _DashboardError extends StatelessWidget {
                 color: AppColors.error, size: 48),
             const SizedBox(height: 16),
             const Text(
-              'Veriler yuklenemedi',
+              'Veriler yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

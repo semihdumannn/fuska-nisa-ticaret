@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:nisa_ticaret/core/utils/navigation_guard.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -72,7 +72,7 @@ class _MobileLayout extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Ana icerik alani
+// Ana içerik alani
 // ---------------------------------------------------------------------------
 
 class _UsersContent extends ConsumerWidget {
@@ -185,7 +185,7 @@ class _StatsRow extends ConsumerWidget {
 
     final items = [
       _StatItem('Toplam', stats.total, AppColors.secondary, Icons.people_outline),
-      _StatItem('Musteri', stats.customer, AppColors.secondary, Icons.person_outline),
+      _StatItem('Müşteri', stats.customer, AppColors.secondary, Icons.person_outline),
       _StatItem('Saha', stats.fieldAgent, AppColors.primary, Icons.badge_outlined),
       _StatItem('Teslimat', stats.delivery, AppColors.accent, Icons.local_shipping_outlined),
       _StatItem('Admin', stats.admin, AppColors.success, Icons.admin_panel_settings_outlined),
@@ -334,7 +334,7 @@ class _RoleFilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final roles = [null, UserRole.customer, UserRole.fieldAgent, UserRole.delivery, UserRole.admin];
-    final labels = ['Tumu', 'Musteri', 'Saha', 'Teslimat', 'Admin'];
+    final labels = ['Tumu', 'Müşteri', 'Saha', 'Teslimat', 'Admin'];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -432,7 +432,7 @@ class _UsersDataTable extends ConsumerWidget {
 
   DataRow _buildRow(BuildContext context, WidgetRef ref, AdminUserModel user) {
     return DataRow(
-      onSelectChanged: (_) => context.push(
+      onSelectChanged: (_) => context.safePush(
         AppRoutes.adminUserDetail.replaceFirst(':id', user.id),
       ),
       cells: [
@@ -615,7 +615,7 @@ class _ActionButtons extends StatelessWidget {
           icon: const Icon(Icons.visibility_outlined, size: 18),
           color: AppColors.secondary,
           tooltip: 'Goruntule',
-          onPressed: () => context.push(
+          onPressed: () => context.safePush(
             AppRoutes.adminUserDetail.replaceFirst(':id', user.id),
           ),
           padding: EdgeInsets.zero,
@@ -657,14 +657,14 @@ class _ActionButtons extends StatelessWidget {
         ),
         content: Text(
           user.isBlocked
-              ? '${user.name} adli kullanicinin engelini kaldirmak istediginizden emin misiniz?'
-              : '${user.name} adli kullaniciyi engellemek istediginizden emin misiniz? Kullanici giris yapamayacak.',
+              ? '${user.name} adli kullanıcının engelini kaldırmak istediğinizden emin misiniz?'
+              : '${user.name} adli kullanıcıyı engellemek istediğinizden emin misiniz? Kullanici giriş yapamayacak.',
           style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgec'),
+            child: const Text('Vazgeç'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -714,7 +714,7 @@ class _UserMobileCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
-      onTap: () => context.push(
+      onTap: () => context.safePush(
         AppRoutes.adminUserDetail.replaceFirst(':id', user.id),
       ),
       borderRadius: BorderRadius.circular(12),
@@ -888,7 +888,7 @@ class _EmptyState extends StatelessWidget {
                 size: 48, color: AppColors.textHint),
             const SizedBox(height: 12),
             const Text(
-              'Kullanici bulunamadi',
+              'Kullanici bulunamadı',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -898,7 +898,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Arama kriterlerini degistirmeyi deneyin',
+              'Arama kriterlerini değiştirmeyi deneyin',
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textHint,
@@ -1038,7 +1038,7 @@ class _UsersError extends StatelessWidget {
                 color: AppColors.error, size: 48),
             const SizedBox(height: 16),
             const Text(
-              'Kullanicilar yuklenemedi',
+              'Kullanicilar yüklenemedi',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

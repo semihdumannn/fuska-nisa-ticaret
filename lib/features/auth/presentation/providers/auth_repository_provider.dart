@@ -7,7 +7,7 @@ import 'auth_datasource_providers.dart';
 final apiAuthRepositoryProvider = Provider<IAuthRepository>((ref) {
   return AuthRepositoryImpl(
     remoteDatasource: ref.watch(authRemoteDatasourceProvider),
-    firebaseDatasource: ref.watch(firebaseAuthDatasourceProvider),
     localDatasource: ref.watch(authLocalDatasourceProvider),
+    totpService: ref.watch(totpServiceProvider),
   );
 });

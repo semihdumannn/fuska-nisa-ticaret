@@ -8,7 +8,9 @@ class ApiEndpoints {
 
   // Auth
   static const auth = '$_v1/auth';
-  static const firebaseLogin = '$auth/firebase-login';
+  static const deviceRegister = '$auth/device-register';
+  static const totpLogin = '$auth/totp-login';
+  static const serverTime = '$auth/server-time';
   static const logout = '$auth/logout';
   static const me = '$auth/me';
 
@@ -34,6 +36,14 @@ class ApiEndpoints {
   // Admin orders
   static const adminOrders = '$_v1/admin/orders';
   static String adminOrderStatus(int id) => '$adminOrders/$id/status';
+
+  // Admin users
+  static const adminUsers = '$_v1/admin/users';
+  static String adminUserStatus(int id) => '$adminUsers/$id/status';
+
+  // Admin products (kategori CRUD yok — API desteklemiyor)
+  static const adminProducts = '$_v1/products';
+  static String adminProductDetail(int id) => '$_v1/products/$id';
 
   // Profile
   static const profile = '$_v1/profile';

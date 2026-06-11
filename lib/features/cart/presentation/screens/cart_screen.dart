@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
+import 'package:nisa_ticaret/core/widgets/error_display_widget.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
 import 'package:nisa_ticaret/features/cart/data/models/cart_model.dart';
 import 'package:nisa_ticaret/features/cart/presentation/bloc/cart_provider.dart';
@@ -80,90 +81,117 @@ class CartScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.shopping_cart_outlined,
-              size: 80,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sepetiniz bos',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Urunleri inceleyerek baslayin',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.go(AppRoutes.productList),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textWhite,
-                minimumSize: const Size(200, 52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Urunlere Git',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return EmptyStateWidget(
+      icon: Icons.shopping_cart_outlined,
+      title: 'Sepetiniz boş',
+      subtitle: 'Ürünleri keşfetmek için ana sayfaya dön',
+      ctaLabel: 'Ürünleri Keşfet',
+      onCta: () => context.go(AppRoutes.home),
     );
   }
 
   void _showClearConfirmDialog(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Sepeti temizle?',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // İkon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_sweep_outlined,
+                  color: AppColors.error,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Başlık
+              const Text(
+                'Sepeti Temizle',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Açıklama
+              const Text(
+                'Sepetteki tüm ürünler kaldırılacak.\nBu işlem geri alınamaz.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Butonlar
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Vazgeç',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref.read(cartProvider.notifier).clear();
+                        Navigator.of(dialogContext).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Temizle',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: const Text(
-          'Sepetteki tum urunler kaldirilacak.',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Iptal'),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(cartProvider.notifier).clear();
-              Navigator.of(dialogContext).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text(
-              'Temizle',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -510,7 +538,7 @@ class _CartSummary extends ConsumerWidget {
               ),
             ),
             child: const Text(
-              'Siparisi Tamamla',
+              'Siparişi Tamamla',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
@@ -524,13 +552,18 @@ class _CartSummary extends ConsumerWidget {
     userAsync.when(
       data: (user) {
         if (user == null) {
+          // Login sonrası checkout'a dön
+          ref.read(postLoginRouteProvider.notifier).set(AppRoutes.checkout);
           context.push(AppRoutes.phoneAuth);
         } else {
           context.push(AppRoutes.checkout);
         }
       },
       loading: () {},
-      error: (_, __) => context.push(AppRoutes.phoneAuth),
+      error: (_, __) {
+        ref.read(postLoginRouteProvider.notifier).set(AppRoutes.checkout);
+        context.push(AppRoutes.phoneAuth);
+      },
     );
   }
 }

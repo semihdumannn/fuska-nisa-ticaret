@@ -14,6 +14,7 @@ abstract class IOrderRepository {
   Future<Either<Failure, OrderEntity>> createOrder({
     required List<Map<String, dynamic>> items,
     required int addressId,
+    String? paymentMethod,
     String? notes,
     String? couponCode,
   });

@@ -89,8 +89,13 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
           if (couponCode != null) 'coupon_code': couponCode,
         },
       );
-      return ApiOrderModel.fromJson(
-          response.data['data'] as Map<String, dynamic>);
+      final body = response.data as Map<String, dynamic>;
+      final json = body.containsKey('data')
+          ? body['data'] as Map<String, dynamic>
+          : body.containsKey('order')
+              ? body['order'] as Map<String, dynamic>
+              : body;
+      return ApiOrderModel.fromJson(json);
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
     }

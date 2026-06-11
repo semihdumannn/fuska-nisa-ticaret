@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
+import 'package:nisa_ticaret/features/products/data/models/variant_model.dart';
 
 class ProductEntity extends Equatable {
   final String id;
@@ -88,6 +90,32 @@ class ProductEntity extends Equatable {
     return [];
   }
 
+  ProductModel toProductModel() {
+    return ProductModel(
+      id: id,
+      brandId: brandId,
+      name: name,
+      description: description,
+      categoryIds: categoryIds,
+      imageUrl: imageUrl,
+      imageUrls: imageUrls,
+      tags: tags,
+      isActive: isActive,
+      isFeatured: isFeatured,
+      order: order,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      primaryPrice: primaryPrice,
+      primarySalePrice: primarySalePrice,
+      primaryStock: primaryStock,
+      koliVariantId: koliVariantId,
+      koliPrice: koliPrice,
+      koliSalePrice: koliSalePrice,
+      koliStock: koliStock,
+      koliPackageQty: koliPackageQty,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -140,6 +168,27 @@ class ProductVariantEntity extends Equatable {
   }
 
   bool get inStock => stock > 0;
+
+  VariantModel toVariantModel() {
+    final now = DateTime.now();
+    return VariantModel(
+      id: id,
+      productId: productId,
+      name: name,
+      sku: sku,
+      barcode: barcode,
+      price: price,
+      salePrice: salePrice,
+      unit: unit,
+      stock: stock,
+      minOrderQty: minOrderQty,
+      maxOrderQty: maxOrderQty,
+      packageQty: packageQty,
+      isActive: isActive,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
 
   @override
   List<Object?> get props => [id, productId, name, price, salePrice, stock, isActive];

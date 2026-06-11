@@ -146,7 +146,7 @@ class _ImagePickerWidgetState extends ConsumerState<ImagePickerWidget> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Gorsel yuklenemedi: $message',
+          'Görsel yüklenemedi: $message',
           style: const TextStyle(fontFamily: 'Poppins'),
         ),
         backgroundColor: AppColors.error,

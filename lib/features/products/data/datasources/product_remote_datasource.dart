@@ -91,7 +91,9 @@ class ProductRemoteDatasource implements IProductRemoteDatasource {
       final rawData = response.data;
       final Map<String, dynamic> json;
 
-      if (rawData is Map && rawData.containsKey('data')) {
+      if (rawData is Map && rawData.containsKey('product')) {
+        json = rawData['product'] as Map<String, dynamic>;
+      } else if (rawData is Map && rawData.containsKey('data')) {
         json = rawData['data'] as Map<String, dynamic>;
       } else {
         json = rawData as Map<String, dynamic>;
@@ -183,10 +185,12 @@ class ProductRemoteDatasource implements IProductRemoteDatasource {
 
   @override
   Future<List<ApiProductModel>> getFeaturedProducts() async {
+    // Backend'de is_featured=1 filtresi Redis paginator deserialization hatası veriyor (500).
+    // Workaround: geniş sayfa çek, isFeatured olanları client-side filtrele.
     try {
       final response = await _dio.get(
         ApiEndpoints.products,
-        queryParameters: {'featured': 1, 'per_page': 10},
+        queryParameters: {'per_page': 50},
       );
 
       final rawData = response.data;
@@ -201,8 +205,9 @@ class ProductRemoteDatasource implements IProductRemoteDatasource {
       }
 
       return data
-          .map((json) =>
-              ApiProductModel.fromJson(json as Map<String, dynamic>))
+          .map((json) => ApiProductModel.fromJson(json as Map<String, dynamic>))
+          .where((p) => p.isFeatured)
+          .take(10)
           .toList();
     } on DioException catch (e) {
       throw ExceptionHandler.handleException(e);
