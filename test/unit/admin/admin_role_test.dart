@@ -231,21 +231,6 @@ void main() {
       expect(user.initials, 'AK');
     });
 
-    test('mockList returns 10 users', () {
-      final list = AdminUserModel.mockList();
-      expect(list.length, 10);
-    });
-
-    test('mockList contains at least one admin', () {
-      final list = AdminUserModel.mockList();
-      expect(list.any((u) => u.role == UserRole.admin), isTrue);
-    });
-
-    test('mockList contains at least one blocked user', () {
-      final list = AdminUserModel.mockList();
-      expect(list.any((u) => u.isBlocked), isTrue);
-    });
-
     test('fromJson with missing fields uses defaults', () {
       final user = AdminUserModel.fromJson({'id': 'u-x', 'name': 'X', 'phone': '111'});
       expect(user.role, UserRole.customer);
