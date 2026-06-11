@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class BrandModel extends Equatable {
@@ -23,66 +22,6 @@ class BrandModel extends Equatable {
     required this.createdAt,
     required this.updatedAt,
   });
-
-  factory BrandModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return BrandModel(
-      id: doc.id,
-      name: data['name'] as String? ?? '',
-      slug: data['slug'] as String? ?? '',
-      logoUrl: data['logoUrl'] as String?,
-      description: data['description'] as String?,
-      isActive: data['isActive'] as bool? ?? true,
-      order: (data['order'] as num? ?? 0).toInt(),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
-
-  factory BrandModel.fromJson(Map<String, dynamic> json) {
-    return BrandModel(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
-      logoUrl: json['logoUrl'] as String?,
-      description: json['description'] as String?,
-      isActive: json['isActive'] as bool? ?? true,
-      order: (json['order'] as num? ?? 0).toInt(),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'slug': slug,
-      'logoUrl': logoUrl,
-      'description': description,
-      'isActive': isActive,
-      'order': order,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'name': name,
-      'slug': slug,
-      'logoUrl': logoUrl,
-      'description': description,
-      'isActive': isActive,
-      'order': order,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
 
   BrandModel copyWith({
     String? id,

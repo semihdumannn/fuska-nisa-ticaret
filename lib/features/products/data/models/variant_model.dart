@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class VariantModel extends Equatable {
@@ -53,100 +52,6 @@ class VariantModel extends Equatable {
   }
 
   bool get inStock => stock > 0;
-
-  // ─── Factory constructors ──────────────────────────────────────────────────
-
-  factory VariantModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return VariantModel(
-      id: doc.id,
-      productId: data['productId'] as String? ?? '',
-      name: data['name'] as String? ?? '',
-      sku: data['sku'] as String?,
-      barcode: data['barcode'] as String?,
-      price: (data['price'] as num? ?? 0).toDouble(),
-      salePrice: (data['salePrice'] as num?)?.toDouble(),
-      unit: data['unit'] as String? ?? 'adet',
-      stock: (data['stock'] as num? ?? 0).toInt(),
-      minOrderQty: (data['minOrderQty'] as num? ?? 1).toInt(),
-      maxOrderQty: (data['maxOrderQty'] as num? ?? 999).toInt(),
-      packageQty: (data['packageQty'] as num?)?.toInt(),
-      palletPackageQty: (data['palletPackageQty'] as num?)?.toInt(),
-      palletWeight: (data['palletWeight'] as num?)?.toDouble(),
-      isActive: data['isActive'] as bool? ?? true,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
-
-  factory VariantModel.fromJson(Map<String, dynamic> json) {
-    return VariantModel(
-      id: json['id'] as String? ?? '',
-      productId: json['productId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      sku: json['sku'] as String?,
-      barcode: json['barcode'] as String?,
-      price: (json['price'] as num? ?? 0).toDouble(),
-      salePrice: (json['salePrice'] as num?)?.toDouble(),
-      unit: json['unit'] as String? ?? 'adet',
-      stock: (json['stock'] as num? ?? 0).toInt(),
-      minOrderQty: (json['minOrderQty'] as num? ?? 1).toInt(),
-      maxOrderQty: (json['maxOrderQty'] as num? ?? 999).toInt(),
-      packageQty: (json['packageQty'] as num?)?.toInt(),
-      palletPackageQty: (json['palletPackageQty'] as num?)?.toInt(),
-      palletWeight: (json['palletWeight'] as num?)?.toDouble(),
-      isActive: json['isActive'] as bool? ?? true,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'productId': productId,
-      'name': name,
-      'sku': sku,
-      'barcode': barcode,
-      'price': price,
-      'salePrice': salePrice,
-      'unit': unit,
-      'stock': stock,
-      'minOrderQty': minOrderQty,
-      'maxOrderQty': maxOrderQty,
-      'packageQty': packageQty,
-      'palletPackageQty': palletPackageQty,
-      'palletWeight': palletWeight,
-      'isActive': isActive,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'productId': productId,
-      'name': name,
-      'sku': sku,
-      'barcode': barcode,
-      'price': price,
-      'salePrice': salePrice,
-      'unit': unit,
-      'stock': stock,
-      'minOrderQty': minOrderQty,
-      'maxOrderQty': maxOrderQty,
-      'packageQty': packageQty,
-      'palletPackageQty': palletPackageQty,
-      'palletWeight': palletWeight,
-      'isActive': isActive,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
 
   VariantModel copyWith({
     String? id,

@@ -4,14 +4,6 @@ import 'package:nisa_ticaret/features/products/data/models/category_model.dart';
 import 'package:nisa_ticaret/features/products/data/providers/product_data_providers.dart';
 import 'package:nisa_ticaret/features/products/domain/entities/category_entity.dart';
 
-class RepositoryException implements Exception {
-  final String message;
-  final Object? cause;
-  const RepositoryException(this.message, {this.cause});
-  @override
-  String toString() => 'RepositoryException: $message';
-}
-
 // ────────────────────────────────────────────────────────────
 // Riverpod Providers
 // ────────────────────────────────────────────────────────────
