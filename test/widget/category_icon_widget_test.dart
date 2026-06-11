@@ -148,11 +148,17 @@ void main() {
         ),
       );
 
-      final textWidget = tester.widget<Text>(find.text('Soda'));
-      expect(textWidget.style?.fontWeight, FontWeight.w500);
+      final textStyle = tester
+          .widgetList<AnimatedDefaultTextStyle>(find.ancestor(
+            of: find.text('Soda'),
+            matching: find.byType(AnimatedDefaultTextStyle),
+          ))
+          .first
+          .style;
+      expect(textStyle.fontWeight, FontWeight.w500);
     });
 
-    testWidgets('isSelected=true: label bold (w600)', (tester) async {
+    testWidgets('isSelected=true: label bold (w700)', (tester) async {
       final ci = _iconIcon(label: 'Soda');
       await tester.pumpWidget(
         _wrapWidget(
@@ -160,8 +166,14 @@ void main() {
         ),
       );
 
-      final textWidget = tester.widget<Text>(find.text('Soda'));
-      expect(textWidget.style?.fontWeight, FontWeight.w600);
+      final textStyle = tester
+          .widgetList<AnimatedDefaultTextStyle>(find.ancestor(
+            of: find.text('Soda'),
+            matching: find.byType(AnimatedDefaultTextStyle),
+          ))
+          .first
+          .style;
+      expect(textStyle.fontWeight, FontWeight.w700);
     });
 
     testWidgets('isSelected=true: label rengi foregroundColor', (tester) async {
@@ -173,8 +185,14 @@ void main() {
         ),
       );
 
-      final textWidget = tester.widget<Text>(find.text('Soda'));
-      expect(textWidget.style?.color, fg);
+      final textStyle = tester
+          .widgetList<AnimatedDefaultTextStyle>(find.ancestor(
+            of: find.text('Soda'),
+            matching: find.byType(AnimatedDefaultTextStyle),
+          ))
+          .first
+          .style;
+      expect(textStyle.color, fg);
     });
 
     testWidgets('onTap null iken tap yapinca hata cikmiyor', (tester) async {

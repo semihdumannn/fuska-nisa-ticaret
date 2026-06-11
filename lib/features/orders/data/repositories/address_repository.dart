@@ -21,52 +21,6 @@ class AddressRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection(AppConstants.addressesCollection);
 
-  /// Kullanicinin adreslerini gercek zamanli dinle.
-  /// orderBy Firestore'da composite index gerektirir; sıralama Dart'ta yapılır.
-  Stream<List<AddressModel>> watchAddresses() {
-    return _collection
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snap) {
-      final list = snap.docs
-          .map((doc) => AddressModel.fromFirestore(doc))
-          .toList();
-      list.sort((a, b) {
-        if (a.isDefault && !b.isDefault) return -1;
-        if (!a.isDefault && b.isDefault) return 1;
-        return 0;
-      });
-      return list;
-    });
-  }
-
-  /// Adres listesini tek seferlik cek
-  Future<List<AddressModel>> getAddresses() async {
-    final snap = await _collection
-        .where('userId', isEqualTo: userId)
-        .get();
-    final list = snap.docs
-        .map((doc) => AddressModel.fromFirestore(doc))
-        .toList();
-    list.sort((a, b) {
-      if (a.isDefault && !b.isDefault) return -1;
-      if (!a.isDefault && b.isDefault) return 1;
-      return 0;
-    });
-    return list;
-  }
-
-  /// Yeni adres ekle (auto-ID)
-  Future<void> addAddress(AddressModel address) async {
-    final safe = address.copyWith(userId: userId);
-    await _collection.add(safe.toFirestore());
-  }
-
-  /// Adres guncelle
-  Future<void> updateAddress(AddressModel address) async {
-    await _collection.doc(address.id).update(address.toFirestore());
-  }
-
   /// Adres sil
   Future<void> deleteAddress(String addressId) async {
     await _collection.doc(addressId).delete();

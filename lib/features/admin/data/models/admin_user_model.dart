@@ -86,6 +86,7 @@ class AdminUserModel {
 
   factory AdminUserModel.fromJson(Map<String, dynamic> json) {
     final isActive = json['is_active'] as bool? ?? json['isActive'] as bool? ?? true;
+    final isBlocked = json['isBlocked'] as bool? ?? !isActive;
     final createdAtRaw = json['created_at'] as String? ?? json['createdAt'] as String?;
     final lastLoginRaw = json['last_login_at'] as String? ?? json['lastLoginAt'] as String?;
     return AdminUserModel(
@@ -94,7 +95,7 @@ class AdminUserModel {
       phone: json['phone'] as String? ?? '',
       email: json['email'] as String?,
       role: UserRole.fromString(json['role'] as String? ?? 'customer'),
-      isBlocked: !isActive,
+      isBlocked: isBlocked,
       createdAt: createdAtRaw != null ? DateTime.parse(createdAtRaw) : DateTime.now(),
       lastLoginAt: lastLoginRaw != null ? DateTime.parse(lastLoginRaw) : null,
       totalOrders: (json['total_orders'] as num? ?? json['totalOrders'] as num? ?? 0).toInt(),

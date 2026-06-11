@@ -30,102 +30,38 @@ CategoryModel makeCategory({
 }
 
 void main() {
-  group('CategoryModel — fromJson / toJson round-trip', () {
-    test('tum alanlar dogru parse edilir', () {
-      final now = DateTime(2026, 2, 10, 8, 30);
-      final json = {
-        'id': 'cat-su',
-        'name': 'Su',
-        'slug': 'su',
-        'iconName': 'water_drop',
-        'iconAsset': 'assets/icons/ic_cat_water.svg',
-        'color': '#00A6AB',
-        'sortOrder': 1,
-        'isActive': true,
-        'createdAt': now.toIso8601String(),
-        'updatedAt': now.toIso8601String(),
-      };
+  group('CategoryModel — toFirestore', () {
+    test('beklenen anahtarlari iceriyor', () {
+      final cat = makeCategory();
+      final map = cat.toFirestore();
 
-      final cat = CategoryModel.fromJson(json);
-
-      expect(cat.id, 'cat-su');
-      expect(cat.name, 'Su');
-      expect(cat.slug, 'su');
-      expect(cat.iconName, 'water_drop');
-      expect(cat.iconAsset, 'assets/icons/ic_cat_water.svg');
-      expect(cat.color, '#00A6AB');
-      expect(cat.sortOrder, 1);
-      expect(cat.isActive, true);
-      expect(cat.createdAt, now);
+      expect(map.containsKey('name'), true);
+      expect(map.containsKey('slug'), true);
+      expect(map.containsKey('iconName'), true);
+      expect(map.containsKey('iconAsset'), true);
+      expect(map.containsKey('color'), true);
+      expect(map.containsKey('sortOrder'), true);
+      expect(map.containsKey('isActive'), true);
+      expect(map.containsKey('createdAt'), true);
+      expect(map.containsKey('updatedAt'), true);
     });
 
-    test('fromJson -> toJson round-trip esit model uretir', () {
-      final now = DateTime(2026, 1, 15);
-      final json = {
-        'id': 'cat-gazli',
-        'name': 'Gazli Icecek',
-        'slug': 'gazli',
-        'iconName': 'bubble_chart',
-        'iconAsset': null,
-        'color': '#E73A99',
-        'sortOrder': 2,
-        'isActive': true,
-        'createdAt': now.toIso8601String(),
-        'updatedAt': now.toIso8601String(),
-      };
-
-      final cat = CategoryModel.fromJson(json);
-      final reEncoded = cat.toJson();
-      final rebuilt = CategoryModel.fromJson(reEncoded);
-
-      expect(rebuilt.id, cat.id);
-      expect(rebuilt.name, cat.name);
-      expect(rebuilt.slug, cat.slug);
-      expect(rebuilt.iconName, cat.iconName);
-      expect(rebuilt.iconAsset, cat.iconAsset);
-      expect(rebuilt.color, cat.color);
-      expect(rebuilt.sortOrder, cat.sortOrder);
-      expect(rebuilt.isActive, cat.isActive);
-    });
-
-    test('eksik alanlar default degerlerle doldurulur', () {
-      final cat = CategoryModel.fromJson({'id': 'x'});
-
-      expect(cat.name, '');
-      expect(cat.slug, '');
-      expect(cat.iconName, '');
-      expect(cat.iconAsset, null);
-      expect(cat.color, '#000000');
-      expect(cat.sortOrder, 0);
-      expect(cat.isActive, false);
-    });
-  });
-
-  group('CategoryModel — iconAsset nullable', () {
-    test('iconAsset null oldugunda toJson da null gelir', () {
+    test('iconAsset null oldugunda map da null gelir', () {
       final cat = makeCategory(iconAsset: null);
-      final json = cat.toJson();
-      expect(json.containsKey('iconAsset'), true);
-      expect(json['iconAsset'], null);
+      final map = cat.toFirestore();
+      expect(map['iconAsset'], null);
     });
 
-    test('iconAsset dolu oldugunda toJson da string gelir', () {
+    test('iconAsset dolu oldugunda map da string gelir', () {
       final cat = makeCategory(iconAsset: 'assets/icons/ic_cat_water.svg');
-      final json = cat.toJson();
-      expect(json['iconAsset'], 'assets/icons/ic_cat_water.svg');
+      final map = cat.toFirestore();
+      expect(map['iconAsset'], 'assets/icons/ic_cat_water.svg');
     });
 
-    test('fromJson: iconAsset null key varsa null parse edilir', () {
-      final cat = CategoryModel.fromJson({
-        'id': 'c1',
-        'iconAsset': null,
-      });
-      expect(cat.iconAsset, null);
-    });
-
-    test('fromJson: iconAsset key yoksa null gelir', () {
-      final cat = CategoryModel.fromJson({'id': 'c1'});
-      expect(cat.iconAsset, null);
+    test('parentId null ise map e dahil edilmez', () {
+      final cat = makeCategory();
+      final map = cat.toFirestore();
+      expect(map.containsKey('parentId'), false);
     });
   });
 
@@ -204,24 +140,6 @@ void main() {
       final original = makeCategory(isActive: true);
       final copy = original.copyWith(isActive: false);
       expect(copy.isActive, false);
-    });
-  });
-
-  group('CategoryModel — toJson anahtarlari', () {
-    test('toJson beklenen anahtarlari iceriyor', () {
-      final cat = makeCategory();
-      final json = cat.toJson();
-
-      expect(json.containsKey('id'), true);
-      expect(json.containsKey('name'), true);
-      expect(json.containsKey('slug'), true);
-      expect(json.containsKey('iconName'), true);
-      expect(json.containsKey('iconAsset'), true);
-      expect(json.containsKey('color'), true);
-      expect(json.containsKey('sortOrder'), true);
-      expect(json.containsKey('isActive'), true);
-      expect(json.containsKey('createdAt'), true);
-      expect(json.containsKey('updatedAt'), true);
     });
   });
 }

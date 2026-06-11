@@ -29,43 +29,6 @@ class CategoryModel {
 
   bool get isRoot => parentId == null || parentId!.isEmpty;
 
-  factory CategoryModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return CategoryModel(
-      id: doc.id,
-      name: data['name'] as String? ?? '',
-      slug: data['slug'] as String? ?? '',
-      iconName: data['iconName'] as String? ?? '',
-      iconAsset: data['iconAsset'] as String?,
-      color: data['color'] as String? ?? '#000000',
-      sortOrder: data['sortOrder'] as int? ?? 0,
-      isActive: data['isActive'] as bool? ?? false,
-      parentId: data['parentId'] as String?,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
-
-  factory CategoryModel.fromJson(Map<String, dynamic> json) {
-    return CategoryModel(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
-      iconName: json['iconName'] as String? ?? '',
-      iconAsset: json['iconAsset'] as String?,
-      color: json['color'] as String? ?? '#000000',
-      sortOrder: json['sortOrder'] as int? ?? 0,
-      isActive: json['isActive'] as bool? ?? false,
-      parentId: json['parentId'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
-    );
-  }
-
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
@@ -78,22 +41,6 @@ class CategoryModel {
       if (parentId != null) 'parentId': parentId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'slug': slug,
-      'iconName': iconName,
-      'iconAsset': iconAsset,
-      'color': color,
-      'sortOrder': sortOrder,
-      'isActive': isActive,
-      'parentId': parentId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 

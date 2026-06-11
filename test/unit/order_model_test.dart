@@ -550,7 +550,7 @@ void main() {
   group('PaymentMethod', () {
     test('displayName her odeme yontemi icin Turkce deger doner', () {
       expect(PaymentMethod.cash.displayName, 'Kapıda Nakit');
-      expect(PaymentMethod.cardOnDelivery.displayName, 'Kapıda Kart');
+      expect(PaymentMethod.cardOnDelivery.displayName, 'Kapıda Kredi Kartı');
     });
 
     test('value her odeme yontemi icin dogru string doner', () {

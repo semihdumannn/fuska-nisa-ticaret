@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
@@ -54,75 +53,6 @@ class OrderRepository {
     return orderNo;
   }
 
-  /// Siparis durumu guncelle — admin/staff/delivery icin.
-  /// statusHistory'ye yeni giris ekler, status ve updatedAt gunceller.
-  Future<void> updateOrderStatus({
-    required String orderId,
-    required OrderStatus newStatus,
-    required String updatedBy,
-    DateTime? estimatedDelivery,
-  }) async {
-    final newHistoryEntry = StatusHistory(
-      status: newStatus,
-      timestamp: DateTime.now(),
-      by: updatedBy,
-    ).toMap();
-
-    final update = <String, dynamic>{
-      'status': newStatus.value,
-      'updatedAt': FieldValue.serverTimestamp(),
-      'statusHistory': FieldValue.arrayUnion([newHistoryEntry]),
-    };
-
-    if (newStatus == OrderStatus.delivered) {
-      update['deliveredAt'] = FieldValue.serverTimestamp();
-    }
-    if (estimatedDelivery != null) {
-      update['estimatedDelivery'] = Timestamp.fromDate(estimatedDelivery);
-    }
-
-    await _firestore
-        .collection(AppConstants.ordersCollection)
-        .doc(orderId)
-        .update(update);
-  }
-
-  /// Teslimat personeli ata — admin/staff icin
-  Future<void> assignDelivery({
-    required String orderId,
-    required String deliveryUserId,
-  }) async {
-    await _firestore
-        .collection(AppConstants.ordersCollection)
-        .doc(orderId)
-        .update({
-      'assignedTo': deliveryUserId,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  /// FCM bildirim tetikleyici — Cloud Functions Firestore trigger ile otomatik calisir.
-  Future<void> triggerNotification({
-    required String orderId,
-    required OrderStatus status,
-  }) async {
-    debugPrint('[FCM] Order $orderId status → ${status.value}');
-  }
-
-  // =========================================================================
-  // Tek seferlik okumalar (Future)
-  // =========================================================================
-
-  /// Tek siparis — Future (stream degil, tek seferlik okuma)
-  Future<OrderModel?> getOrderById(String orderId) async {
-    final doc = await _firestore
-        .collection(AppConstants.ordersCollection)
-        .doc(orderId)
-        .get();
-    if (!doc.exists) return null;
-    return OrderModel.fromFirestore(doc);
-  }
-
   /// Kullanicinin siparislerini tek seferlik cek — Future
   Future<List<OrderModel>> getUserOrders(String userId) async {
     final snap = await _firestore
@@ -131,46 +61,6 @@ class OrderRepository {
         .orderBy('createdAt', descending: true)
         .get();
     return snap.docs.map((d) => OrderModel.fromFirestore(d)).toList();
-  }
-
-  // =========================================================================
-  // Gercek-zamanli stream'ler (cache yok — CLAUDE.md)
-  // =========================================================================
-
-  /// Kullanicinin siparislerini gercek zamanli dinle
-  Stream<List<OrderModel>> watchUserOrders(String userId) {
-    return _firestore
-        .collection(AppConstants.ordersCollection)
-        .where('customerId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => OrderModel.fromFirestore(d)).toList());
-  }
-
-  /// Tek siparis detayini gercek zamanli dinle
-  Stream<OrderModel?> watchOrder(String orderId) {
-    return _firestore
-        .collection(AppConstants.ordersCollection)
-        .doc(orderId)
-        .snapshots()
-        .map((doc) => doc.exists ? OrderModel.fromFirestore(doc) : null);
-  }
-
-  /// Staff/admin icin aktif siparisler — pending, confirmed, preparing, on_the_way
-  Stream<List<OrderModel>> watchActiveOrders() {
-    return _firestore
-        .collection(AppConstants.ordersCollection)
-        .where('status', whereIn: [
-          OrderStatus.pending.value,
-          OrderStatus.confirmed.value,
-          OrderStatus.preparing.value,
-          OrderStatus.onTheWay.value,
-        ])
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => OrderModel.fromFirestore(d)).toList());
   }
 
   // =========================================================================
