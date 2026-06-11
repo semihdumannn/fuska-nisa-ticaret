@@ -12,7 +12,12 @@ abstract class AnalyticsRepository {
   Future<List<AnalyticsDailySalesData>> getDailySales(DateTimeRange dateRange);
 
   /// En cok satan [limit] adet urunu getirir.
-  Future<List<AnalyticsTopProductData>> getTopProducts({int limit = 10});
+  /// [dateRange] verilirse o araliga gore filtrelenir (API implementasyonu);
+  /// verilmezse implementasyona gore varsayilan (orn. son 30 gun) kullanilir.
+  Future<List<AnalyticsTopProductData>> getTopProducts({
+    int limit = 10,
+    DateTimeRange? dateRange,
+  });
 
   /// Son [months] aya ait müşteri buyume verisini getirir.
   Future<List<CustomerGrowthData>> getCustomerGrowth({int months = 6});
@@ -64,8 +69,10 @@ class MockAnalyticsRepository implements AnalyticsRepository {
   }
 
   @override
-  Future<List<AnalyticsTopProductData>> getTopProducts(
-      {int limit = 10}) async {
+  Future<List<AnalyticsTopProductData>> getTopProducts({
+    int limit = 10,
+    DateTimeRange? dateRange,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 200));
 
     // Nisa Ticaret urun katalogundan olusturulmus gercekci mock veri
@@ -360,13 +367,16 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
   }
 
   @override
-  Future<List<AnalyticsTopProductData>> getTopProducts(
-      {int limit = 10}) async {
+  Future<List<AnalyticsTopProductData>> getTopProducts({
+    int limit = 10,
+    DateTimeRange? dateRange,
+  }) async {
     final now = DateTime.now();
-    final snap = await _queryOrders(DateTimeRange(
-      start: now.subtract(const Duration(days: 29)),
-      end: now,
-    ));
+    final snap = await _queryOrders(dateRange ??
+        DateTimeRange(
+          start: now.subtract(const Duration(days: 29)),
+          end: now,
+        ));
 
     final map = <String, ({String name, int qty, double revenue})>{};
     double totalRevenue = 0;
@@ -631,8 +641,8 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
       final response = await _dio.get(
         ApiEndpoints.adminAnalyticsRevenue,
         queryParameters: {
-          'start_date': _fmt(dateRange.start),
-          'end_date': _fmt(dateRange.end),
+          'from': _fmt(dateRange.start),
+          'to': _fmt(dateRange.end),
         },
       );
       final rawList = _extractList(response.data);
@@ -645,16 +655,14 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
         } catch (_) {
           date = dateRange.start;
         }
+        // Backend (GetRevenueReportUseCase) 'revenue' ve 'orders' alanlarını dondurur.
         final revenue = (j['revenue'] as num? ?? 0).toDouble();
-        final orderCount = (j['order_count'] as num? ?? 0).toInt();
-        final avg = (j['average_order_value'] as num? ?? 0).toDouble();
+        final orderCount = (j['orders'] as num? ?? 0).toInt();
         return AnalyticsDailySalesData(
           date: date,
           revenue: revenue,
           orderCount: orderCount,
-          averageOrderValue: avg > 0
-              ? avg
-              : (orderCount > 0 ? revenue / orderCount : 0.0),
+          averageOrderValue: orderCount > 0 ? revenue / orderCount : 0.0,
         );
       }).toList();
     } on DioException {
@@ -664,14 +672,23 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
 
   @override
   Future<List<AnalyticsTopProductData>> getTopProducts(
-      {int limit = 10}) async {
+      {int limit = 10, DateTimeRange? dateRange}) async {
     try {
       final response = await _dio.get(
         ApiEndpoints.adminAnalyticsTopProducts,
-        queryParameters: {'limit': limit},
+        queryParameters: {
+          'limit': limit,
+          if (dateRange != null) ...{
+            'from': _fmt(dateRange.start),
+            'to': _fmt(dateRange.end),
+          },
+        },
       );
       final rawList = _extractList(response.data);
       double totalRevenue = 0;
+      // Backend (GetTopProductsUseCase) 'category_name' / 'revenue_share' dondurmuyor;
+      // bu nedenle revenueShare burada toplam uzerinden hesaplaniyor,
+      // categoryName bos birakiliyor (UI'da gosterilmiyorsa sorun degil).
       final parsed = rawList.map((raw) {
         final j = raw as Map<String, dynamic>;
         final rev = (j['total_revenue'] as num? ?? 0).toDouble();
@@ -759,21 +776,31 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
   @override
   Future<List<CategoryDistributionData>> getCategoryDistribution(
       DateTimeRange dateRange) async {
+    // NOT: Backend'de urun kategorisine gore satis dagilimi donduren bir
+    // endpoint yok. Gecici olarak siparis-durumu dagilimi (order-statuses)
+    // kullanilir; categoryId/categoryName alanlarina durum (status/label)
+    // yerlestirilir. 'revenue' alani backend'den gelmez, bu yuzden 0 doner.
     try {
-      final response = await _dio.get(ApiEndpoints.adminAnalyticsOrderStatuses);
+      final response = await _dio.get(
+        ApiEndpoints.adminAnalyticsOrderStatuses,
+        queryParameters: {
+          'from': _fmt(dateRange.start),
+          'to': _fmt(dateRange.end),
+        },
+      );
       final rawList = _extractList(response.data);
       if (rawList.isEmpty) return [];
 
-      double total = 0;
       final items = rawList.map((raw) {
         final j = raw as Map<String, dynamic>;
         final count = (j['count'] as num? ?? 0).toInt();
-        total += count;
+        final percentage = (j['percentage'] as num? ?? 0).toDouble();
         return _RawCategoryDist(
           id: j['status'] as String? ?? '',
-          name: j['status'] as String? ?? '',
+          name: j['label'] as String? ?? (j['status'] as String? ?? ''),
           count: count,
-          revenue: (j['revenue'] as num? ?? 0).toDouble(),
+          revenue: 0.0,
+          revenueShare: percentage / 100.0,
         );
       }).toList();
 
@@ -783,7 +810,7 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
                 categoryName: c.name,
                 orderCount: c.count,
                 revenue: c.revenue,
-                revenueShare: total > 0 ? c.count / total : 0.0,
+                revenueShare: c.revenueShare,
               ))
           .toList();
     } on DioException {
@@ -794,15 +821,19 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
   @override
   Future<List<FieldAgentPerformanceData>> getRevenueByFieldAgent(
       DateTimeRange dateRange) async {
-    // API'de saha personeli performans endpoint'i yok
-    return [];
+    // API'de saha personeli performans endpoint'i yok.
+    // Fallback: FirebaseAnalyticsRepository uzerinden Firestore'dan hesapla.
+    // Bu metod sadece admin "saha personeli performansi" raporu acildiginda
+    // cagrilir (sik kullanilmaz), bu yuzden Firestore okuma maliyeti kabul
+    // edilebilir seviyededir.
+    return FirebaseAnalyticsRepository().getRevenueByFieldAgent(dateRange);
   }
 
   @override
   Future<AnalyticsReport> getFullReport(DateTimeRange dateRange) async {
     final results = await Future.wait([
       getDailySales(dateRange),
-      getTopProducts(),
+      getTopProducts(dateRange: dateRange),
       getCustomerGrowth(),
       getFirebaseUsage(),
       getCategoryDistribution(dateRange),
@@ -855,10 +886,12 @@ class _RawCategoryDist {
   final String name;
   final int count;
   final double revenue;
+  final double revenueShare;
   const _RawCategoryDist({
     required this.id,
     required this.name,
     required this.count,
     required this.revenue,
+    this.revenueShare = 0.0,
   });
 }

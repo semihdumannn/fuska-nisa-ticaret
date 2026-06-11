@@ -8,6 +8,12 @@ class CacheKeys {
   static String productsByCategory(int categoryId) =>
       'products_category_$categoryId';
 
+  /// API tarafı kategori filtreli ürün listesi cache key'i.
+  /// `ApiProductRepositoryImpl.getProducts` ile aynı pattern'i kullanır
+  /// (sayfa-1, perPage'e göre).
+  static String apiProductsByCategory(String categoryId, int perPage) =>
+      '${products}_cat_${categoryId}_$perPage';
+
   // Categories & Brands
   static const categories = 'categories_list';
   static const brands = 'brands_list';

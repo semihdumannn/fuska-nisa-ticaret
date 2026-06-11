@@ -71,7 +71,7 @@ class ApiProductRepositoryImpl implements IProductRepository {
 
     String? catCacheKey;
     if (isCategoryFirstPage) {
-      catCacheKey = '${CacheKeys.products}_cat_${categoryId}_$perPage';
+      catCacheKey = CacheKeys.apiProductsByCategory(categoryId, perPage);
       final cached =
           _cacheManager.getCachedData<List<dynamic>>(catCacheKey);
       if (cached != null) {

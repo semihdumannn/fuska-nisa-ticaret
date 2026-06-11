@@ -40,32 +40,6 @@ class CategoryRepository {
     return _fetchAndCache();
   }
 
-  /// Real-time stream; her yeni snapshot'ta cache güncellenir.
-  Stream<List<CategoryModel>> watchCategories() {
-    return _firestore
-        .collection(AppConstants.categoriesCollection)
-        .where('isActive', isEqualTo: true)
-        .orderBy('sortOrder')
-        .snapshots()
-        .map((snap) {
-          final categories = snap.docs
-              .map((doc) => CategoryModel.fromFirestore(doc))
-              .toList();
-          // Arka planda cache'i güncelle — await gerekmez
-          _cache.setList(_cacheKey, categories).ignore();
-          return categories;
-        })
-        .handleError((Object error) {
-          if (error is FirebaseException) {
-            throw RepositoryException(
-              'Kategoriler alınamadı: ${error.message}',
-              cause: error,
-            );
-          }
-          throw error;
-        });
-  }
-
   /// Sadece kök kategorileri döndür (parentId == null veya boş).
   Future<List<CategoryModel>> getRootCategories() async {
     final all = await getCategories();
@@ -197,8 +171,4 @@ final subCategoriesProvider =
   final all = await ref.watch(categoriesProvider.future);
   return (all.where((c) => c.parentId == parentId).toList()
     ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)));
-});
-
-final categoriesStreamProvider = StreamProvider<List<CategoryModel>>((ref) {
-  return ref.watch(categoryRepositoryProvider).watchCategories();
 });
