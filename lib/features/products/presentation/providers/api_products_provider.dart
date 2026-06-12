@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers/product_data_providers.dart';
-import '../../domain/entities/category_entity.dart';
 import '../../domain/entities/product_entity.dart';
-import '../../domain/usecases/get_categories_usecase.dart';
 import '../../domain/usecases/get_products_usecase.dart';
 import '../../domain/usecases/search_products_usecase.dart';
 
@@ -33,17 +31,6 @@ final apiProductsByCategoryProvider =
   return result.fold(
     (failure) => throw Exception(failure.message),
     (products) => products,
-  );
-});
-
-/// Kategoriler (24 saat cache)
-final apiCategoriesProvider =
-    FutureProvider<List<CategoryEntity>>((ref) async {
-  final repo = ref.watch(apiProductRepositoryProvider);
-  final result = await GetCategoriesUsecase(repo)();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (categories) => categories,
   );
 });
 

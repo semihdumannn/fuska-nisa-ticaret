@@ -64,11 +64,6 @@ class ApiEndpoints {
   // Campaigns
   static const campaigns = '$_v1/campaigns';
 
-  // Cart (server-side)
-  static const cart = '$_v1/cart';
-  static const cartItems = '$cart/items';
-  static String cartItem(int id) => '$cartItems/$id';
-
   // Delivery
   static const deliveryOrders = '$_v1/delivery/orders';
   static String deliveryOrder(int id) => '$deliveryOrders/$id';

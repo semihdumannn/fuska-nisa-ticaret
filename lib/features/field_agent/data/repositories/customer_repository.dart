@@ -47,29 +47,6 @@ class CustomerRepository {
   // Listeleme ve Arama
   // =========================================================================
 
-  /// Paginated müşteri listesi -- role:'customer', name'e gore sirali.
-  /// [lastDoc]: bir onceki sayfanin son dokumani (cursor-based pagination).
-  Future<CustomerPage> getCustomers({DocumentSnapshot? lastDoc}) async {
-    var query = _customers
-        .where('role', isEqualTo: UserRole.customer.value)
-        .orderBy('name')
-        .limit(AppConstants.pageSize);
-
-    if (lastDoc != null) query = query.startAfterDocument(lastDoc);
-
-    final snap = await query.get();
-    final customers =
-        snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
-    final hasMore = snap.docs.length == AppConstants.pageSize;
-    final nextCursor = hasMore ? snap.docs.last : null;
-
-    return CustomerPage(
-      customers: customers,
-      hasMore: hasMore,
-      lastDoc: nextCursor,
-    );
-  }
-
   /// Telefon prefix arama -- tek alan range query (composite index gerektirmez).
   /// Role filtresi client-side yapılır.
   Future<List<UserModel>> searchByPhone(String phone) async {
@@ -197,12 +174,6 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
   return CustomerRepository(
     orderRepository: ref.watch(orderRepositoryProvider),
   );
-});
-
-/// Ilk sayfa müşteriler -- FutureProvider.
-/// Sonraki sayfa icin [CustomerRepository.getCustomers(lastDoc: ...)] kullan.
-final customersProvider = FutureProvider<CustomerPage>((ref) {
-  return ref.watch(customerRepositoryProvider).getCustomers();
 });
 
 /// Müşteri siparis gecmisi -- uid ile.

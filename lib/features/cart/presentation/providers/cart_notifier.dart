@@ -182,22 +182,3 @@ class CartNotifier extends Notifier<CartEntity> {
 // ---------------------------------------------------------------------------
 final cartNotifierProvider =
     NotifierProvider<CartNotifier, CartEntity>(CartNotifier.new);
-
-// ---------------------------------------------------------------------------
-// Convenience providers — gereksiz rebuild'leri önlemek için ayrı provider
-// ---------------------------------------------------------------------------
-
-/// Sepetteki toplam ürün adedi (quantity toplamı).
-final cartItemCountProvider = Provider<int>((ref) {
-  return ref.watch(cartNotifierProvider).totalItems;
-});
-
-/// Sepet toplam tutarı (indirim düşüldükten sonra).
-final cartTotalProvider = Provider<double>((ref) {
-  return ref.watch(cartNotifierProvider).total;
-});
-
-/// Sepet boş mu?
-final cartIsEmptyProvider = Provider<bool>((ref) {
-  return ref.watch(cartNotifierProvider).isEmpty;
-});
