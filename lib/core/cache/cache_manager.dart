@@ -82,13 +82,4 @@ class CacheManager {
     await _dataBox.deleteAll(keysToDelete);
   }
 
-  /// Eski adi clearCache — geri uyumluluk icin korunuyor.
-  Future<void> clearCache(String key) async {
-    await invalidate(key);
-  }
-
-  Future<void> clearAll() async {
-    await _tokenBox.clear();
-    await _dataBox.clear();
-  }
 }
