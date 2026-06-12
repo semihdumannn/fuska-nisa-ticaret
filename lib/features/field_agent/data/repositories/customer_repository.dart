@@ -70,16 +70,6 @@ class CustomerRepository {
     );
   }
 
-  /// Tek müşteri -- uid ile getir.
-  /// role != customer ise null dondurur (guvenligi repository katmaninda korur).
-  Future<UserModel?> getCustomerById(String uid) async {
-    final doc = await _customers.doc(uid).get();
-    if (!doc.exists) return null;
-    final user = UserModel.fromFirestore(doc);
-    if (user.role != UserRole.customer) return null;
-    return user;
-  }
-
   /// Telefon prefix arama -- tek alan range query (composite index gerektirmez).
   /// Role filtresi client-side yapılır.
   Future<List<UserModel>> searchByPhone(String phone) async {
@@ -213,13 +203,6 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
 /// Sonraki sayfa icin [CustomerRepository.getCustomers(lastDoc: ...)] kullan.
 final customersProvider = FutureProvider<CustomerPage>((ref) {
   return ref.watch(customerRepositoryProvider).getCustomers();
-});
-
-/// Tek müşteri -- uid ile.
-final customerByIdProvider =
-    FutureProvider.family<UserModel?, String>((ref, uid) {
-  if (uid.isEmpty) return Future.value(null);
-  return ref.watch(customerRepositoryProvider).getCustomerById(uid);
 });
 
 /// Müşteri siparis gecmisi -- uid ile.

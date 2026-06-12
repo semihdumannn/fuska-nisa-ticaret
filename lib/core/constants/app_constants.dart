@@ -8,10 +8,6 @@ class AppConstants {
   static const String appName = 'Nisa Ticaret';
   static const String appSlogan = 'Su ve Meşrubat Dağıtımı';
   static const String serviceArea = 'Balıkesir';  // Hizmet bölgesi
-  // AppConfig.instance.whatsappNumber kullan — Firebase Remote Config'den gelir.
-  // ignore: deprecated_member_use_from_same_package
-  @Deprecated('AppConfig.instance.whatsappNumber kullan')
-  static const String whatsappNumberLegacy = '+905551234567';
 
   /// WhatsApp numarasi Firebase Remote Config'den gelir.
   /// Kullanim: AppConfig.instance.whatsappNumber

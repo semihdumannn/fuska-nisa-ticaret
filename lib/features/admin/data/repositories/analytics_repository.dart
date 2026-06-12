@@ -22,19 +22,9 @@ abstract class AnalyticsRepository {
   /// Son [months] aya ait müşteri buyume verisini getirir.
   Future<List<CustomerGrowthData>> getCustomerGrowth({int months = 6});
 
-  /// Firebase kullanim istatistiklerini getirir.
-  Future<FirebaseUsageData> getFirebaseUsage();
-
-  /// Verilen tarih araligina ait kategori bazli satis dagilimini getirir.
-  Future<List<CategoryDistributionData>> getCategoryDistribution(
-      DateTimeRange dateRange);
-
   /// Verilen tarih araligina ait saha personeli performansini getirir.
   Future<List<FieldAgentPerformanceData>> getRevenueByFieldAgent(
       DateTimeRange dateRange);
-
-  /// Tum analytics verilerini paralel olarak cekmek icin kolaylik metodu.
-  Future<AnalyticsReport> getFullReport(DateTimeRange dateRange);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,99 +171,6 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
   }
 
   @override
-  Future<FirebaseUsageData> getFirebaseUsage() async {
-    final key = _dateKey(DateTime.now());
-    final doc = await _firestore.collection('_usage').doc(key).get();
-    if (!doc.exists) {
-      return const FirebaseUsageData(
-        totalReads: 0, totalWrites: 0,
-        dailyReads: 0, dailyWrites: 0,
-        monthlyReads: 0, monthlyWrites: 0,
-        readLimitPercent: 0, writeLimitPercent: 0,
-      );
-    }
-    final d = doc.data()!;
-    final r = (d['reads'] as num? ?? 0).toInt();
-    final w = (d['writes'] as num? ?? 0).toInt();
-    return FirebaseUsageData(
-      totalReads: r, totalWrites: w,
-      dailyReads: r, dailyWrites: w,
-      monthlyReads: r, monthlyWrites: w,
-      readLimitPercent: (r / 50000).clamp(0.0, 1.0),
-      writeLimitPercent: (w / 20000).clamp(0.0, 1.0),
-    );
-  }
-
-  @override
-  Future<List<CategoryDistributionData>> getCategoryDistribution(
-      DateTimeRange dateRange) async {
-    final orderSnap = await _queryOrders(dateRange);
-
-    final productIds = <String>{};
-    final allItems = <Map<String, dynamic>>[];
-    for (final doc in orderSnap.docs) {
-      for (final raw in doc.data()['items'] as List<dynamic>? ?? []) {
-        final item = raw as Map<String, dynamic>;
-        allItems.add(item);
-        final pid = item['productId'] as String?;
-        if (pid != null && pid.isNotEmpty) productIds.add(pid);
-      }
-    }
-
-    // productId → categoryId eşlemesi
-    final pidCatMap = <String, String>{};
-    final pidList = productIds.toList();
-    for (int i = 0; i < pidList.length; i += 30) {
-      final chunk =
-          pidList.sublist(i, (i + 30).clamp(0, pidList.length));
-      final snap = await _firestore
-          .collection('products')
-          .where(FieldPath.documentId, whereIn: chunk)
-          .get();
-      for (final doc in snap.docs) {
-        pidCatMap[doc.id] =
-            doc.data()['categoryId'] as String? ?? 'other';
-      }
-    }
-
-    // Kategori isimlerini çek
-    final catSnap = await _firestore
-        .collection('categories')
-        .where('isActive', isEqualTo: true)
-        .get();
-    final catNames = <String, String>{
-      for (final doc in catSnap.docs)
-        doc.id: doc.data()['name'] as String? ?? doc.id,
-    };
-
-    final catMap = <String, ({String name, int count, double revenue})>{};
-    double totalRevenue = 0;
-    for (final item in allItems) {
-      final pid = item['productId'] as String? ?? '';
-      final catId = pidCatMap[pid] ?? 'other';
-      final catName = catNames[catId] ?? catId;
-      final rev = (item['totalPrice'] as num? ?? 0).toDouble();
-      final prev = catMap[catId];
-      catMap[catId] = (
-        name: catName,
-        count: (prev?.count ?? 0) + 1,
-        revenue: (prev?.revenue ?? 0) + rev,
-      );
-      totalRevenue += rev;
-    }
-
-    return (catMap.entries.map((e) => CategoryDistributionData(
-          categoryId: e.key,
-          categoryName: e.value.name,
-          orderCount: e.value.count,
-          revenue: e.value.revenue,
-          revenueShare:
-              totalRevenue > 0 ? e.value.revenue / totalRevenue : 0,
-        )).toList()
-      ..sort((a, b) => b.revenue.compareTo(a.revenue)));
-  }
-
-  @override
   Future<List<FieldAgentPerformanceData>> getRevenueByFieldAgent(
       DateTimeRange dateRange) async {
     final snap = await _firestore
@@ -330,27 +227,6 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
       );
     }).toList()
       ..sort((a, b) => b.totalRevenue.compareTo(a.totalRevenue)));
-  }
-
-  @override
-  Future<AnalyticsReport> getFullReport(DateTimeRange dateRange) async {
-    final results = await Future.wait([
-      getDailySales(dateRange),
-      getTopProducts(),
-      getCustomerGrowth(),
-      getFirebaseUsage(),
-      getCategoryDistribution(dateRange),
-      getRevenueByFieldAgent(dateRange),
-    ]);
-    return AnalyticsReport(
-      dateRange: dateRange,
-      dailySales: results[0] as List<AnalyticsDailySalesData>,
-      topProducts: results[1] as List<AnalyticsTopProductData>,
-      customerGrowth: results[2] as List<CustomerGrowthData>,
-      firebaseUsage: results[3] as FirebaseUsageData,
-      categoryDistribution: results[4] as List<CategoryDistributionData>,
-      fieldAgentPerformance: results[5] as List<FieldAgentPerformanceData>,
-    );
   }
 }
 
@@ -490,66 +366,6 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
   }
 
   @override
-  Future<FirebaseUsageData> getFirebaseUsage() async {
-    // Firebase kullanım istatistiği API'de yok — const sıfır döndür
-    return const FirebaseUsageData(
-      totalReads: 0,
-      totalWrites: 0,
-      dailyReads: 0,
-      dailyWrites: 0,
-      monthlyReads: 0,
-      monthlyWrites: 0,
-      readLimitPercent: 0.0,
-      writeLimitPercent: 0.0,
-    );
-  }
-
-  @override
-  Future<List<CategoryDistributionData>> getCategoryDistribution(
-      DateTimeRange dateRange) async {
-    // NOT: Backend'de urun kategorisine gore satis dagilimi donduren bir
-    // endpoint yok. Gecici olarak siparis-durumu dagilimi (order-statuses)
-    // kullanilir; categoryId/categoryName alanlarina durum (status/label)
-    // yerlestirilir. 'revenue' alani backend'den gelmez, bu yuzden 0 doner.
-    try {
-      final response = await _dio.get(
-        ApiEndpoints.adminAnalyticsOrderStatuses,
-        queryParameters: {
-          'from': _fmt(dateRange.start),
-          'to': _fmt(dateRange.end),
-        },
-      );
-      final rawList = _extractList(response.data);
-      if (rawList.isEmpty) return [];
-
-      final items = rawList.map((raw) {
-        final j = raw as Map<String, dynamic>;
-        final count = (j['count'] as num? ?? 0).toInt();
-        final percentage = (j['percentage'] as num? ?? 0).toDouble();
-        return _RawCategoryDist(
-          id: j['status'] as String? ?? '',
-          name: j['label'] as String? ?? (j['status'] as String? ?? ''),
-          count: count,
-          revenue: 0.0,
-          revenueShare: percentage / 100.0,
-        );
-      }).toList();
-
-      return items
-          .map((c) => CategoryDistributionData(
-                categoryId: c.id,
-                categoryName: c.name,
-                orderCount: c.count,
-                revenue: c.revenue,
-                revenueShare: c.revenueShare,
-              ))
-          .toList();
-    } on DioException {
-      return [];
-    }
-  }
-
-  @override
   Future<List<FieldAgentPerformanceData>> getRevenueByFieldAgent(
       DateTimeRange dateRange) async {
     // API'de saha personeli performans endpoint'i yok.
@@ -558,28 +374,6 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
     // cagrilir (sik kullanilmaz), bu yuzden Firestore okuma maliyeti kabul
     // edilebilir seviyededir.
     return FirebaseAnalyticsRepository().getRevenueByFieldAgent(dateRange);
-  }
-
-  @override
-  Future<AnalyticsReport> getFullReport(DateTimeRange dateRange) async {
-    final results = await Future.wait([
-      getDailySales(dateRange),
-      getTopProducts(dateRange: dateRange),
-      getCustomerGrowth(),
-      getFirebaseUsage(),
-      getCategoryDistribution(dateRange),
-      getRevenueByFieldAgent(dateRange),
-    ]);
-
-    return AnalyticsReport(
-      dateRange: dateRange,
-      dailySales: results[0] as List<AnalyticsDailySalesData>,
-      topProducts: results[1] as List<AnalyticsTopProductData>,
-      customerGrowth: results[2] as List<CustomerGrowthData>,
-      firebaseUsage: results[3] as FirebaseUsageData,
-      categoryDistribution: results[4] as List<CategoryDistributionData>,
-      fieldAgentPerformance: results[5] as List<FieldAgentPerformanceData>,
-    );
   }
 
   /// API yanıtından `data` listesini çıkar (Laravel Resource Collection veya düz list).
@@ -609,20 +403,5 @@ class _RawTopProduct {
     required this.totalQuantity,
     required this.totalRevenue,
     required this.revenueShare,
-  });
-}
-
-class _RawCategoryDist {
-  final String id;
-  final String name;
-  final int count;
-  final double revenue;
-  final double revenueShare;
-  const _RawCategoryDist({
-    required this.id,
-    required this.name,
-    required this.count,
-    required this.revenue,
-    this.revenueShare = 0.0,
   });
 }

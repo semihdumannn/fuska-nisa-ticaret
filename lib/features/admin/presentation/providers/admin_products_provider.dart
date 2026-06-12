@@ -284,14 +284,3 @@ final totalProductPagesProvider = Provider<int>((ref) {
   final filtered = ref.watch(filteredProductsProvider);
   return (filtered.length / kProductsPerPage).ceil().clamp(1, 9999);
 });
-
-/// Her ürünün ilk aktif varyantını döner — ApiProductModel.variants'tan.
-/// Ekstra Firestore/API çağrısı yapmaz.
-final adminVariantProvider =
-    Provider.family<ApiProductVariantModel?, int>((ref, productId) {
-  final products = ref.watch(adminProductsProvider).value ?? [];
-  final product = products.where((p) => p.id == productId).firstOrNull;
-  if (product == null) return null;
-  final active = product.variants.where((v) => v.isActive).toList();
-  return active.isNotEmpty ? active.first : product.variants.firstOrNull;
-});

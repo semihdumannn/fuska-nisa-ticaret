@@ -3,7 +3,6 @@ import '../../data/providers/order_data_providers.dart';
 import '../../domain/entities/order_entity.dart';
 import '../../domain/usecases/cancel_order_usecase.dart';
 import '../../domain/usecases/create_order_usecase.dart';
-import '../../domain/usecases/get_order_detail_usecase.dart';
 import '../../domain/usecases/get_orders_usecase.dart';
 import '../../domain/usecases/update_order_status_usecase.dart';
 
@@ -191,14 +190,3 @@ class ApiOrdersNotifier extends Notifier<OrdersState> {
 // ---------------------------------------------------------------------------
 final apiOrdersNotifierProvider =
     NotifierProvider<ApiOrdersNotifier, OrdersState>(ApiOrdersNotifier.new);
-
-/// Tekil siparis detayi — family provider
-final apiOrderDetailProvider =
-    FutureProvider.family<OrderEntity, int>((ref, orderId) async {
-  final repo = ref.watch(apiOrderRepositoryProvider);
-  final result = await GetOrderDetailUsecase(repo)(orderId);
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (order) => order,
-  );
-});

@@ -55,32 +55,6 @@ final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// Tam rapor provider — tum veri kumelerini paralel ceker
-// Tarih araligı veya rapor tipi degisince otomatik yenilenir.
-// ---------------------------------------------------------------------------
-final analyticsReportProvider = FutureProvider<AnalyticsReport>((ref) async {
-  final repo = ref.watch(analyticsRepositoryProvider);
-  final dateRange = ref.watch(reportDateRangeProvider);
-  return repo.getFullReport(dateRange);
-});
-
-// ---------------------------------------------------------------------------
-// Firebase kullanim istatistikleri — Spark plan limiti takibi
-// ---------------------------------------------------------------------------
-final firebaseUsageProvider = FutureProvider<FirebaseUsageData>((ref) async {
-  return ref.watch(analyticsRepositoryProvider).getFirebaseUsage();
-});
-
-/// Firebase okuma limiti %80'in ustune cikti mi? (admin uyarisi icin)
-final isFirebaseReadNearLimitProvider = Provider<bool>((ref) {
-  return ref.watch(firebaseUsageProvider).when(
-        data: (usage) => usage.isReadNearLimit,
-        loading: () => false,
-        error: (_, __) => false,
-      );
-});
-
-// ---------------------------------------------------------------------------
 // Excel export loading state
 // ---------------------------------------------------------------------------
 class _BoolNotifier extends Notifier<bool> {
@@ -142,50 +116,3 @@ final reportFieldAgentPerformanceProvider =
   final range = ref.watch(reportDateRangeProvider);
   return ref.watch(analyticsRepositoryProvider).getRevenueByFieldAgent(range);
 });
-
-// ---------------------------------------------------------------------------
-// Kategori dagilimi — orders + products + categories koleksiyonlarindan
-// ---------------------------------------------------------------------------
-final reportCategoryDistributionProvider =
-    FutureProvider<List<CategoryDistributionData>>((ref) {
-  final range = ref.watch(reportDateRangeProvider);
-  return ref
-      .watch(analyticsRepositoryProvider)
-      .getCategoryDistribution(range);
-});
-
-// ---------------------------------------------------------------------------
-// Ozet istatistikler (reportDailySalesProvider'dan turetilir)
-// ---------------------------------------------------------------------------
-final reportSummaryProvider = Provider<_ReportSummary?>((ref) {
-  final salesAsync = ref.watch(reportDailySalesProvider);
-  return salesAsync.whenOrNull(
-    data: (sales) {
-      if (sales.isEmpty) return null;
-      final totalRevenue = sales.fold(0.0, (s, d) => s + d.revenue);
-      final totalOrders = sales.fold(0, (s, d) => s + d.orderCount);
-      final avgDaily = totalRevenue / sales.length;
-      final bestDay = sales.reduce((a, b) => a.revenue > b.revenue ? a : b);
-      return _ReportSummary(
-        totalRevenue: totalRevenue,
-        totalOrders: totalOrders,
-        averageDaily: avgDaily,
-        bestDay: bestDay,
-      );
-    },
-  );
-});
-
-class _ReportSummary {
-  final double totalRevenue;
-  final int totalOrders;
-  final double averageDaily;
-  final AnalyticsDailySalesData bestDay;
-
-  const _ReportSummary({
-    required this.totalRevenue,
-    required this.totalOrders,
-    required this.averageDaily,
-    required this.bestDay,
-  });
-}

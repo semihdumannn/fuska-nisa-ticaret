@@ -87,8 +87,6 @@ class ApiEndpoints {
 
   // Analytics (admin)
   static const adminAnalyticsDashboard = '$_v1/admin/analytics/dashboard';
-  static const adminAnalyticsOrderStatuses =
-      '$_v1/admin/analytics/order-statuses';
   static const adminAnalyticsRevenue = '$_v1/admin/analytics/revenue';
   static const adminAnalyticsTopCustomers =
       '$_v1/admin/analytics/top-customers';
