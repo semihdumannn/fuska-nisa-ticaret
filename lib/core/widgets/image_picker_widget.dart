@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -79,17 +80,17 @@ class _ImagePickerWidgetState extends ConsumerState<ImagePickerWidget> {
 
       final file = File(picked.path);
 
-      // Compress: dart:io ile boyutu daralt (flutter_image_compress optional)
-      // Burada direkt dosyayi kullaniyoruz; paket eklenirse asagidaki blok aktif edilir.
-      // TODO: flutter_image_compress paketini ekleyince:
-      // final compressed = await FlutterImageCompress.compressAndGetFile(
-      //   file.absolute.path,
-      //   '${file.parent.path}/compressed_${basename(file.path)}',
-      //   quality: 85,
-      //   minWidth: 800,
-      //   minHeight: 800,
-      // );
-      // final uploadFile = compressed != null ? File(compressed.path) : file;
+      // Upload öncesi sıkıştır: max 800px, %85 kalite → ~70-80% boyut tasarrufu
+      final compressedPath =
+          '${file.parent.path}/compressed_${file.uri.pathSegments.last}';
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
+        compressedPath,
+        quality: 85,
+        minWidth: 800,
+        minHeight: 800,
+      );
+      final uploadFile = compressed != null ? File(compressed.path) : file;
 
       setState(() {
         _localFile = file;
@@ -97,7 +98,7 @@ class _ImagePickerWidgetState extends ConsumerState<ImagePickerWidget> {
         _uploadProgress = 0;
       });
 
-      final url = await _uploadToStorage(file);
+      final url = await _uploadToStorage(uploadFile);
 
       if (mounted) {
         setState(() {
