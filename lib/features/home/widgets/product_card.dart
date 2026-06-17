@@ -21,10 +21,12 @@ class ProductCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final koliVariant = product.koliVariant;
-    final cart = ref.watch(cartProvider);
-    final qty = cart.containsProduct(product.id, variantId: koliVariant?.id)
-        ? cart.quantityOf(product.id, variantId: koliVariant?.id)
-        : 0;
+    // select(): sadece bu ürünün miktarı değişince rebuild — liste N kart içeriyor.
+    final qty = ref.watch(
+      cartProvider.select(
+        (c) => c.quantityOf(product.id, variantId: koliVariant?.id),
+      ),
+    );
 
     // Gösterilecek fiyat: koli varsa koli fiyatı, yoksa product fallback
     final displayPrice =

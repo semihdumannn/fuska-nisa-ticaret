@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/profile_data_providers.dart';
@@ -51,6 +53,9 @@ class ProfileState {
 class ApiProfileNotifier extends Notifier<ProfileState> {
   @override
   ProfileState build() {
+    // 5 dk sonra dispose: tab geçişlerinde gereksiz refetch önlenir.
+    final link = ref.keepAlive();
+    Timer(const Duration(minutes: 5), link.close);
     Future.microtask(loadProfile);
     return const ProfileState(isLoading: true);
   }
@@ -148,6 +153,8 @@ class AddressesState {
 class ApiAddressesNotifier extends Notifier<AddressesState> {
   @override
   AddressesState build() {
+    final link = ref.keepAlive();
+    Timer(const Duration(minutes: 5), link.close);
     Future.microtask(loadAddresses);
     return const AddressesState(isLoading: true);
   }

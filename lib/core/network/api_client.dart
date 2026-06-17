@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'interceptors/auth_interceptor.dart';
+import 'interceptors/retry_interceptor.dart';
 import '../cache/cache_manager.dart';
 import '../config/app_config.dart';
 
@@ -25,6 +26,7 @@ class ApiClient {
       ),
     );
 
+    _dio.interceptors.add(RetryInterceptor(dio: _dio));
     _dio.interceptors.add(AuthInterceptor(cacheManager));
 
     // PrettyDioLogger sadece debug modda — production'da request/response body loglanmaz

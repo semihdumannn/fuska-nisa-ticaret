@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/order_data_providers.dart';
 import '../../domain/entities/order_entity.dart';
@@ -71,13 +73,16 @@ class ApiOrdersNotifier extends Notifier<OrdersState> {
 
   @override
   OrdersState build() {
+    // 2 dk keepAlive: sipariş listesi sık değişebilir, fazla tutma.
+    final link = ref.keepAlive();
+    Timer(const Duration(minutes: 2), link.close);
+
     final repository = ref.watch(apiOrderRepositoryProvider);
     _getOrdersUsecase = GetOrdersUsecase(repository);
     _cancelOrderUsecase = CancelOrderUsecase(repository);
     _createOrderUsecase = CreateOrderUsecase(repository);
     _updateStatusUsecase = UpdateOrderStatusUsecase(repository);
 
-    // Ilk yuklemeyi baslatiyoruz; build() sync olmali, async ile tetikliyoruz.
     Future.microtask(loadOrders);
 
     return const OrdersState();

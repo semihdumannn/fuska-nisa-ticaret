@@ -64,7 +64,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cart = ref.watch(cartProvider);
+    final cartItemCount =
+        ref.watch(cartProvider.select((c) => c.totalItems));
     final userAsync = ref.watch(authStateProvider);
     final user = userAsync.asData?.value;
     final userId = user?.uid;
@@ -164,7 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: const Icon(Icons.shopping_cart_outlined),
                     onPressed: () => context.go(AppRoutes.cart),
                   ),
-                  if (cart.totalItems > 0)
+                  if (cartItemCount > 0)
                     Positioned(
                       right: 6,
                       top: 6,
@@ -175,7 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           shape: BoxShape.circle,
                         ),
                         child: Text(
-                          cart.totalItems.toString(),
+                          cartItemCount.toString(),
                           style: const TextStyle(
                             fontSize: 10,
                             color: Colors.white,

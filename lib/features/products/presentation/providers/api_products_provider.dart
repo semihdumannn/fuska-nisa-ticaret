@@ -34,10 +34,12 @@ final apiProductsByCategoryProvider =
   );
 });
 
-/// Arama sonuçları
+/// Arama sonuçları — 3 dk keepAlive: aynı sorgu tekrar girilince anında yanıt.
 final apiSearchResultsProvider =
     FutureProvider.family<List<ProductEntity>, String>((ref, query) async {
   if (query.trim().isEmpty) return [];
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 3), link.close);
   final repo = ref.watch(apiProductRepositoryProvider);
   final result = await SearchProductsUsecase(repo)(query.trim());
   return result.fold(
