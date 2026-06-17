@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../data/models/admin_order_model.dart';
 import '../../data/models/dashboard_stats_model.dart';
 import '../providers/admin_dashboard_provider.dart';
+import '../providers/admin_orders_provider.dart'
+    hide ordersPageProvider, totalOrderPagesProvider;
 
 class RecentOrdersTable extends ConsumerWidget {
   const RecentOrdersTable({super.key});
@@ -217,14 +222,14 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-class _OrderRow extends StatelessWidget {
+class _OrderRow extends ConsumerWidget {
   final RecentOrderSummary order;
   final bool isWide;
 
   const _OrderRow({required this.order, required this.isWide});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: const BoxDecoration(
@@ -299,17 +304,38 @@ class _OrderRow extends StatelessWidget {
               children: [
                 _ActionButton(
                   icon: Icons.visibility_outlined,
-                  tooltip: 'Goruntule',
-                  onTap: () {
-                    // TODO: context.push('/admin/orders/${order.id}')
-                  },
+                  tooltip: 'Görüntüle',
+                  onTap: () => context.push(
+                    AppRoutes.adminOrderDetail.replaceFirst(':id', order.id),
+                  ),
                 ),
                 const SizedBox(width: 4),
-                _ActionButton(
-                  icon: Icons.edit_outlined,
-                  tooltip: 'Düzenle',
-                  onTap: () {
-                    // TODO: siparis durum güncelleme
+                PopupMenuButton<AdminOrderStatus>(
+                  icon: const Icon(Icons.edit_outlined,
+                      size: 16, color: AppColors.textSecondary),
+                  tooltip: 'Durum Güncelle',
+                  itemBuilder: (_) => AdminOrderStatus.values
+                      .map((s) => PopupMenuItem(
+                            value: s,
+                            child: Text(s.displayName,
+                                style: const TextStyle(
+                                    fontSize: 13, fontFamily: 'Poppins')),
+                          ))
+                      .toList(),
+                  onSelected: (newStatus) async {
+                    await ref
+                        .read(adminOrdersProvider.notifier)
+                        .updateStatus(order.id, newStatus);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              '${order.orderNo} → ${newStatus.displayName}'),
+                          backgroundColor: newStatus.color,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                 ),
               ],

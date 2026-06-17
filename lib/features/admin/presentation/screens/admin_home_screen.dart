@@ -265,15 +265,7 @@ class _ExportButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
-      onPressed: () {
-        // TODO: CSV / Excel export
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Disa aktarma yakinda...'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
+      onPressed: () => context.push(AppRoutes.adminReports),
       icon: const Icon(Icons.download_outlined, size: 16),
       label: Text(isDesktop ? 'Disa Aktar' : ''),
       style: ElevatedButton.styleFrom(

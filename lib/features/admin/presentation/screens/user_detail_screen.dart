@@ -843,11 +843,7 @@ class _OrderSummaryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        context.push(
-          AppRoutes.orderManagement,
-          // TODO: Navigate to specific order detail when route is available
-          // context.push(AppRoutes.adminOrderDetail.replaceFirst(':id', order.id));
-        );
+        context.push(AppRoutes.adminOrderDetail.replaceFirst(':id', order.id));
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
