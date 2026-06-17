@@ -68,7 +68,6 @@ class AppRoutes {
 
   // Customer
   static const String home = '/';
-  static const String productList = '/products';
   static const String productDetail = '/products/:id';
   static const String cart = '/cart';
   static const String checkout = '/checkout';

@@ -20,10 +20,6 @@ class NetworkFailure extends Failure {
   const NetworkFailure(super.message);
 }
 
-class CacheFailure extends Failure {
-  const CacheFailure(super.message);
-}
-
 class ValidationFailure extends Failure {
   final Map<String, List<String>> errors;
   const ValidationFailure(this.errors) : super('Dogrulama hatasi');
