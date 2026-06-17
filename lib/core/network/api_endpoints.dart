@@ -21,17 +21,14 @@ class ApiEndpoints {
 
   // Categories
   static const categories = '$_v1/categories';
-  static String categoryProducts(int id) => '$categories/$id/products';
 
   // Brands
   static const brands = '$_v1/brands';
-  static String brandProducts(int id) => '$brands/$id/products';
 
   // Orders
   static const orders = '$_v1/orders';
   static String orderDetail(int id) => '$orders/$id';
   static String orderCancel(int id) => '$orders/$id/cancel';
-  static String orderPay(int id) => '$orders/$id/pay';
 
   // Admin orders
   static const adminOrders = '$_v1/admin/orders';
@@ -47,19 +44,11 @@ class ApiEndpoints {
 
   // Profile
   static const profile = '$_v1/profile';
-  static const profileAvatar = '$profile/avatar';
 
   // Addresses
   static const addresses = '$_v1/addresses';
   static String addressDetail(int id) => '$addresses/$id';
   static String addressSetDefault(int id) => '$addresses/$id/set-default';
-
-  // Config
-  static const config = '$_v1/config';
-
-  // Coupons
-  static const coupons = '$_v1/coupons';
-  static const validateCoupon = '$coupons/validate';
 
   // Campaigns
   static const campaigns = '$_v1/campaigns';
@@ -86,21 +75,4 @@ class ApiEndpoints {
   static const adminAnalyticsTopCustomers =
       '$_v1/admin/analytics/top-customers';
   static const adminAnalyticsTopProducts = '$_v1/admin/analytics/top-products';
-
-  // Inventory
-  static const inventoryWarehouses = '$_v1/inventory/warehouses';
-  static String inventoryStock(int productId) =>
-      '$_v1/inventory/stock/$productId';
-  static const inventoryMovements = '$_v1/inventory/movements';
-  static const inventoryLowStock = '$_v1/inventory/low-stock';
-  static const inventoryReceive = '$_v1/inventory/receive';
-  static const inventoryDispatch = '$_v1/inventory/dispatch';
-  static const inventoryAdjust = '$_v1/inventory/adjust';
-  static const inventoryTransfer = '$_v1/inventory/transfer';
-
-  // Payment
-  static const paymentCallback = '$_v1/payment/callback';
-
-  // Health
-  static const health = '$_v1/health';
 }

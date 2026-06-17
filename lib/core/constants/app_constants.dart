@@ -6,8 +6,6 @@ export 'package:nisa_ticaret/features/orders/domain/entities/order_entity.dart'
 class AppConstants {
   // App Info
   static const String appName = 'Nisa Ticaret';
-  static const String appSlogan = 'Su ve Meşrubat Dağıtımı';
-  static const String serviceArea = 'Balıkesir';  // Hizmet bölgesi
 
   /// WhatsApp numarasi Firebase Remote Config'den gelir.
   /// Kullanim: AppConfig.instance.whatsappNumber
@@ -21,36 +19,15 @@ class AppConstants {
   static const String customerAddressesSubcollection = 'addresses';
   static const String productsCollection = 'products';
   static const String variantsCollection = 'variants';
-  static const String brandsCollection = 'brands';
   static const String categoriesCollection = 'categories';
   static const String ordersCollection = 'orders';
   static const String addressesCollection = 'addresses';
-  static const String notificationsCollection = 'notifications';
-  static const String cartsCollection = 'carts';
-  static const String settingsCollection = 'settings';
-  static const String appSettingsDoc = 'app';
 
-  // Storage Paths
-  static const String productsStoragePath = 'products';
-  static const String categoriesStoragePath = 'categories';
-  static const String bannersStoragePath = 'banners';
-
-  // Shared Preferences Keys
+  // SharedPreferences Keys
   static const String keyOnboardingSeen = 'onboarding_seen';
-  static const String keyUserId = 'user_id';
-  static const String keyUserRole = 'user_role';
-  static const String keyFcmToken = 'fcm_token';
 
   // Pagination
   static const int pageSize = 20;
-
-  // Timeouts
-  static const int connectionTimeout = 30000;
-
-  // Map
-  static const double defaultLat = 39.6484; // Balıkesir
-  static const double defaultLng = 27.8826;
-  static const double defaultZoom = 13.0;
 
   // Defaults
   static const String defaultCity = 'Balıkesir';

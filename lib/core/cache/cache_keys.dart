@@ -14,9 +14,8 @@ class CacheKeys {
   static String apiProductsByCategory(String categoryId, int perPage) =>
       '${products}_cat_${categoryId}_$perPage';
 
-  // Categories & Brands
+  // Categories
   static const categories = 'categories_list';
-  static const brands = 'brands_list';
 
   // Auth
   static const userProfile = 'user_profile';
@@ -38,22 +37,15 @@ class CacheKeys {
   // Delivery
   static const deliveryOrders = 'delivery_orders_list';
 
-  // Config (Remote API config)
-  static const appConfig = 'app_config';
-
   // TTL - AppConfig'den dinamik, fallback sabit
   static Duration get productsTtl => AppConfig.instance.productsCacheDuration;
 
   static Duration get categoriesTtl =>
       AppConfig.instance.categoriesCacheDuration;
 
-  static Duration get brandsTtl => const Duration(hours: 24);
-
   static Duration get addressesTtl => const Duration(hours: 24);
 
   static Duration get userProfileTtl => const Duration(hours: 1);
-
-  static Duration get configTtl => const Duration(hours: 12);
 
   static Duration get ordersTtl => AppConfig.instance.ordersCacheDuration;
 
