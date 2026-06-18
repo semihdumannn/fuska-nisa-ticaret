@@ -107,7 +107,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Text('Tumunu Oku'),
+              child: const Text('Tümünü Oku'),
             ),
           const SizedBox(width: 4),
         ],
@@ -175,7 +175,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  /// Bildirimleri: Bugün / Bu Hafta / Daha Once olarak grupla
+  /// Bildirimleri: Bugün / Bu Hafta / Daha Önce olarak grupla
   Map<String, List<NotificationModel>> _groupNotifications(
       List<NotificationModel> notifications) {
     final now = DateTime.now();
@@ -185,7 +185,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final Map<String, List<NotificationModel>> groups = {
       'Bugun': [],
       'Bu Hafta': [],
-      'Daha Once': [],
+      'Daha Önce': [],
     };
 
     for (final n in notifications) {
@@ -194,7 +194,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       } else if (n.createdAt.isAfter(weekStart)) {
         groups['Bu Hafta']!.add(n);
       } else {
-        groups['Daha Once']!.add(n);
+        groups['Daha Önce']!.add(n);
       }
     }
 
@@ -400,7 +400,7 @@ class _FilterChips extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _SectionHeader — Bugun / Bu Hafta / Daha Once
+// _SectionHeader — Bugun / Bu Hafta / Daha Önce
 // ---------------------------------------------------------------------------
 class _SectionHeader extends StatelessWidget {
   final String label;
@@ -491,8 +491,9 @@ class _NotificationCard extends StatelessWidget {
                             fontWeight: isUnread
                                 ? FontWeight.w700
                                 : FontWeight.w600,
+                            // Okunmamış: secondary (lacivert) — açık pembe arka planda WCAG AA kontrast sağlar
                             color: isUnread
-                                ? AppColors.primary
+                                ? AppColors.secondary
                                 : AppColors.textPrimary,
                           ),
                         ),

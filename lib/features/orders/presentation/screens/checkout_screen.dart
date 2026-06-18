@@ -134,43 +134,49 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
-            ...changes.map(
-              (c) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${c.productName} — ${c.variantName}',
-                        style: const TextStyle(
-                            fontSize: 13, color: AppColors.textPrimary),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: changes.map((c) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
                       children: [
-                        Text(
-                          '${c.oldPrice.toStringAsFixed(2)} TL',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textHint,
-                            decoration: TextDecoration.lineThrough,
+                        Expanded(
+                          child: Text(
+                            '${c.productName} — ${c.variantName}',
+                            style: const TextStyle(
+                                fontSize: 13, color: AppColors.textPrimary),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(
-                          '${c.newPrice.toStringAsFixed(2)} TL',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${c.oldPrice.toStringAsFixed(2)} TL',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textHint,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            Text(
+                              '${c.newPrice.toStringAsFixed(2)} TL',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  )).toList(),
                 ),
               ),
             ),
@@ -381,7 +387,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           setState(() => _selectedAddress = result);
                         }
                       },
-                      child: const Text('Degistir'),
+                      child: const Text('Değiştir'),
                     ),
                     child: _selectedAddress != null
                         ? _AddressDisplay(address: _selectedAddress!)

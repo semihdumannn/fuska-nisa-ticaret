@@ -379,13 +379,16 @@ class _HeaderCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  displayName,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Tooltip(
+                  message: displayName,
+                  child: Text(
+                    displayName,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 if (phone.isNotEmpty) ...[
                   const SizedBox(height: 4),

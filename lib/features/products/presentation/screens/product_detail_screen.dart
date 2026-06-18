@@ -414,7 +414,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ),
                   label: Text(
                     !isProductInStock
-                        ? 'Stok Tukendi'
+                        ? 'Stok Tükendi'
                         : (hasVariants && _selectedVariant == null)
                             ? 'Varyant Secin'
                             : 'Sepete Ekle',
@@ -992,48 +992,62 @@ class _VariantChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: variant.inStock ? onTap : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
+    final bool isDisabled = !variant.inStock;
+    return Opacity(
+      opacity: isDisabled ? 0.45 : 1.0,
+      child: GestureDetector(
+        onTap: isDisabled ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDisabled
+                ? AppColors.background
+                : isSelected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDisabled
+                  ? AppColors.border
+                  : isSelected
+                      ? AppColors.primary
+                      : AppColors.border,
+              width: isSelected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              variant.name,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                variant.name,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '${variant.effectivePrice.toStringAsFixed(2)} TL',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              const SizedBox(height: 2),
+              Text(
+                '${variant.effectivePrice.toStringAsFixed(2)} TL',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  decoration:
+                      isDisabled ? TextDecoration.lineThrough : null,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                ),
               ),
-            ),
-            if (!variant.inStock)
-              const Text(
-                'Stok yok',
-                style: TextStyle(fontSize: 10, color: AppColors.error),
-              ),
-          ],
+              if (isDisabled)
+                const Text(
+                  'Stok yok',
+                  style: TextStyle(fontSize: 10, color: AppColors.error),
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -406,8 +406,41 @@ class _QtyControl extends ConsumerWidget {
         children: [
           // Azalt veya sil
           _QtyButton(
-            onPressed: () =>
-                notifier.decreaseItem(product.id, variantId: variantId),
+            onPressed: () async {
+              if (qty == 1) {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    title: const Text('Ürünü Kaldır',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+                    content: Text(
+                      '${product.name} sepetten kaldırılsın mı?',
+                      style: const TextStyle(
+                          fontSize: 14, color: AppColors.textSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('İptal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Kaldır',
+                            style: TextStyle(color: AppColors.error)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  notifier.decreaseItem(product.id, variantId: variantId);
+                }
+              } else {
+                notifier.decreaseItem(product.id, variantId: variantId);
+              }
+            },
             child: Icon(
               qty == 1 ? Icons.delete_outline : Icons.remove,
               size: 16,
