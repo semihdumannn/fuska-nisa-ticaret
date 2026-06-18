@@ -700,7 +700,7 @@ class _SearchPickerSheetState extends State<_SearchPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height * 0.75;
+    final height = MediaQuery.sizeOf(context).height * 0.75;
     return Container(
       height: height,
       decoration: const BoxDecoration(

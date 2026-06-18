@@ -92,6 +92,7 @@ class _ImagePickerWidgetState extends ConsumerState<ImagePickerWidget> {
       );
       final uploadFile = compressed != null ? File(compressed.path) : file;
 
+      if (!mounted) return;
       setState(() {
         _localFile = file;
         _isUploading = true;

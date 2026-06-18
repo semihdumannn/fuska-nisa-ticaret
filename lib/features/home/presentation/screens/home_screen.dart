@@ -788,7 +788,7 @@ class _AllProductsGrid extends ConsumerWidget {
   }
 
   Widget _buildGrid(BuildContext context, List<ProductModel> products) {
-    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isTablet = MediaQuery.sizeOf(context).width >= 600;
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -860,7 +860,7 @@ class _AllProductsGrid extends ConsumerWidget {
   }
 
   Widget _buildShimmer(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isTablet = MediaQuery.sizeOf(context).width >= 600;
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

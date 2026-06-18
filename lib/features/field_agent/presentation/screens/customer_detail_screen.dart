@@ -456,7 +456,7 @@ class _QuickOrderBar extends StatelessWidget {
         16,
         12,
         16,
-        12 + MediaQuery.of(context).padding.bottom,
+        12 + MediaQuery.paddingOf(context).bottom,
       ),
       decoration: const BoxDecoration(
         color: AppColors.surface,

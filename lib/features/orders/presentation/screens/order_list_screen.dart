@@ -104,7 +104,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.6,
+                        height: MediaQuery.sizeOf(context).height * 0.6,
                         child: _EmptyState(isFiltered: _filter != null),
                       ),
                     ),

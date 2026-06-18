@@ -22,7 +22,7 @@ class FieldAgentHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(authStateProvider);
-    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isTablet = MediaQuery.sizeOf(context).width >= 600;
 
     return Scaffold(
       backgroundColor: AppColors.background,

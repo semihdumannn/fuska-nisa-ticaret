@@ -163,7 +163,7 @@ class _DeliveryHomeScreenState extends ConsumerState<DeliveryHomeScreen> {
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(deliveryOrdersProvider);
     final user = ref.watch(authStateProvider).value;
-    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isTablet = MediaQuery.sizeOf(context).width >= 600;
 
     return Scaffold(
       backgroundColor: AppColors.background,
