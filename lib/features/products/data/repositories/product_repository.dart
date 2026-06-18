@@ -10,6 +10,7 @@ import 'package:nisa_ticaret/features/products/domain/entities/product_entity.da
 
 /// Tüm ürünleri sayfalayarak çeker — 100'lük batch'lerle tüm sayfalara gider.
 final allProductsProvider = FutureProvider<List<ProductModel>>((ref) async {
+  ref.keepAlive();
   ref.watch(dataVersionProvider);
   final repo = ref.watch(apiProductRepositoryProvider);
 
@@ -98,6 +99,7 @@ final productsPageProvider =
 );
 
 final featuredProductsProvider = FutureProvider<List<ProductModel>>((ref) async {
+  ref.keepAlive();
   ref.watch(dataVersionProvider);
   final repo = ref.watch(apiProductRepositoryProvider);
   final result = await repo.getFeaturedProducts();

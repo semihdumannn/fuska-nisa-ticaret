@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/api_campaign_model.dart';
 import '../../data/providers/campaign_data_providers.dart';
 
-/// Aktif kampanya listesi (6 saat cache)
+/// Aktif kampanya listesi (30 dakika bellekte tutulur)
 final campaignsProvider =
     FutureProvider<List<ApiCampaignModel>>((ref) async {
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 30), link.close);
   final repo = ref.watch(campaignRepositoryProvider);
   return repo.getCampaigns();
 });

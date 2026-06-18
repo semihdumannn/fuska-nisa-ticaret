@@ -27,6 +27,12 @@ class CartScreen extends ConsumerWidget {
   AppBar _buildAppBar(BuildContext context, WidgetRef ref, CartModel cart) {
     return AppBar(
       backgroundColor: AppColors.surface,
+      leading: context.canPop()
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => context.pop(),
+            )
+          : null,
       title: Row(
         children: [
           const Text('Sepetim'),

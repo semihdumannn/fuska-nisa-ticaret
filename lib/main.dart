@@ -20,23 +20,21 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2. Locale data (intl - DateFormat icin)
-  await initializeDateFormatting('tr_TR');
+  // 2+3. Locale ve Remote Config bağımsız → paralel
+  await Future.wait([
+    initializeDateFormatting('tr_TR'),
+    appConfig.init(),
+  ]);
 
-  // 3. App Config (Remote Config)
-  await appConfig.init();
-
-  // 4. Cache Service (Local - Firestore cache icin)
+  // 4. Hive.initFlutter() — tek sıralı çalışması gereken adım
   await cacheService.init();
 
-  // 5. Hive + CacheManager (API token ve API data cache icin)
-  // Not: cacheService.init() zaten Hive.initFlutter() cagiriyor,
-  // CacheManager yalnizca box'larini aciyor.
+  // 5+6. CacheManager (Hive box açma) ve FCM bağımsız → paralel
   final cacheManager = CacheManager();
-  await cacheManager.init();
-
-  // 6. FCM — izin iste, token al, handler'lari baslat
-  await notificationService.initialize();
+  await Future.wait([
+    cacheManager.init(),
+    notificationService.initialize(),
+  ]);
 
   runApp(
     ProviderScope(

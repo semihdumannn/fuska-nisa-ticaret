@@ -342,6 +342,8 @@ final orderDetailProvider =
 // Saha/teslimat gorevlileri — Firestore users (sadece user listesi, order değil)
 final fieldAgentsProvider =
     FutureProvider<List<({String id, String name})>>((ref) async {
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 30), link.close);
   final snap = await FirebaseFirestore.instance
       .collection(AppConstants.usersCollection)
       .where('role', isEqualTo: 'field_agent')
@@ -356,6 +358,8 @@ final fieldAgentsProvider =
 
 final deliveryPersonsProvider =
     FutureProvider<List<({String id, String name})>>((ref) async {
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 30), link.close);
   final snap = await FirebaseFirestore.instance
       .collection(AppConstants.usersCollection)
       .where('role', isEqualTo: 'delivery')

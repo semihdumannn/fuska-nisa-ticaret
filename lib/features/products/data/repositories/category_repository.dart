@@ -9,6 +9,7 @@ import 'package:nisa_ticaret/features/products/domain/entities/category_entity.d
 // ────────────────────────────────────────────────────────────
 
 final categoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
+  ref.keepAlive();
   ref.watch(dataVersionProvider);
 
   // Önce dedicated endpoint'i dene
@@ -65,6 +66,7 @@ final categoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
 });
 
 final rootCategoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
+  ref.keepAlive();
   ref.watch(dataVersionProvider);
   final all = await ref.watch(categoriesProvider.future);
   return (all.where((c) => c.isRoot).toList()

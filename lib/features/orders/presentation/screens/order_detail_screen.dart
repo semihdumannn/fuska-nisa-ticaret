@@ -951,7 +951,7 @@ class _ReorderButton extends ConsumerWidget {
               action: SnackBarAction(
                 label: 'Sepete Git',
                 textColor: AppColors.textWhite,
-                onPressed: () => context.go(AppRoutes.cart),
+                onPressed: () => context.push(AppRoutes.cart),
               ),
             ),
           );
