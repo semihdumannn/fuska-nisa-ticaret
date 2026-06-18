@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -24,6 +25,10 @@ class NotificationService {
 
   Dio? _dio;
   RemoteMessage? _pendingMessage;
+
+  // Bildirime tıklanınca route yayınlar (foreground tap + background→foreground)
+  final _tapRouteController = StreamController<String>.broadcast();
+  Stream<String> get onTap => _tapRouteController.stream;
 
   void setDio(Dio dio) => _dio = dio;
 
@@ -67,6 +72,9 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       debugPrint('[FCM] onMessageOpenedApp: ${message.data}');
       _pendingMessage = message;
+      // Uygulama arka plandayken bildirime tıklanınca route yayınla
+      final route = routeFromMessage(message);
+      if (route != null) _tapRouteController.add(route);
     });
 
     final initialMessage = await _messaging.getInitialMessage();
@@ -91,7 +99,9 @@ class NotificationService {
       settings: const InitializationSettings(
           android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (response) {
-        debugPrint('[LocalNotif] tıklandı: ${response.payload}');
+        final route = response.payload;
+        debugPrint('[LocalNotif] tıklandı: $route');
+        if (route != null) _tapRouteController.add(route);
       },
     );
 

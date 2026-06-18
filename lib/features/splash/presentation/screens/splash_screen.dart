@@ -12,6 +12,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/presentation/bloc/auth_provider.dart';
 import '../../../auth/presentation/providers/auth_datasource_providers.dart';
+import '../../../../core/services/notification_service.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -208,10 +209,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   void _navigate(dynamic user) {
     if (!mounted) return;
-    if (user == null) {
-      context.go(AppRoutes.home);
-    } else {
-      context.go(_roleHome(user.role));
+    context.go(user == null ? AppRoutes.home : _roleHome(user.role));
+
+    // Uygulama kapalıyken bildirime tıklanmışsa (getInitialMessage),
+    // role home üstüne notification route'unu push et
+    final pending = notificationService.consumePendingMessage();
+    if (pending != null) {
+      final notifRoute = notificationService.routeFromMessage(pending);
+      if (notifRoute != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.push(notifRoute);
+        });
+      }
     }
   }
 

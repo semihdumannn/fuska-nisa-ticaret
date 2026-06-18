@@ -53,6 +53,11 @@ class NisaTicaretApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
+    // Bildirime tıklanınca ilgili route'a yönlendir
+    ref.listen(notificationTapProvider, (_, next) {
+      next.whenData((route) => router.push(route));
+    });
+
     return MaterialApp.router(
       title: 'Nisa Ticaret',
       debugShowCheckedModeBanner: false,
