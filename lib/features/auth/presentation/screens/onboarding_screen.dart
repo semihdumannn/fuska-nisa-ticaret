@@ -12,33 +12,57 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with TickerProviderStateMixin {
   final PageController _pageController = PageController();
+  late AnimationController _iconController;
+  late Animation<double> _iconScale;
   int _currentPage = 0;
 
   static const List<_OnboardingSlide> _slides = [
     _OnboardingSlide(
       icon: Icons.water_drop_rounded,
-      title: 'Fuska Kalitesi Kapınızda',
+      color: AppColors.primary,
+      bgColor: Color(0xFFFDE8F4),
+      title: 'Fuska Kalitesi\nKapınızda',
       subtitle: 'Doğal kaynak suyu ve meşrubatlarımızı aynı gün teslimat ile sipariş edin.',
+      bullets: ['Aynı gün teslimat', 'Güvenilir kalite', 'Geniş ürün yelpazesi'],
     ),
     _OnboardingSlide(
       icon: Icons.shopping_bag_outlined,
-      title: 'Saniyeler İçinde Sipariş',
-      subtitle: 'Ürünlere göz atın, sepete ekleyin. Teslimat durumunu anlık olarak takip edin.',
+      color: AppColors.secondary,
+      bgColor: Color(0xFFE8EDF5),
+      title: 'Saniyeler İçinde\nSipariş',
+      subtitle: 'Ürünlere göz atın, sepete ekleyin. Teslimat durumunu anlık takip edin.',
+      bullets: ['Kolay sepet yönetimi', 'Anlık sipariş takibi', 'Adrese teslimat'],
     ),
     _OnboardingSlide(
       icon: Icons.phone_iphone_rounded,
-      title: 'Üyelik? 30 Saniye!',
+      color: AppColors.accent,
+      bgColor: Color(0xFFDFF5F5),
+      title: 'Üyelik?\n30 Saniye!',
       subtitle: 'Sadece telefon numaranızla üye olun. Şifre yok, uzun form yok.',
+      bullets: ['Sadece telefon numarası', 'Şifre gerekmez', 'Anlık aktivasyon'],
     ),
   ];
 
   bool get _isLastPage => _currentPage == _slides.length - 1;
 
   @override
+  void initState() {
+    super.initState();
+    _iconController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _iconScale = CurvedAnimation(parent: _iconController, curve: Curves.elasticOut);
+    _iconController.forward();
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
+    _iconController.dispose();
     super.dispose();
   }
 
@@ -55,133 +79,129 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     _pageController.nextPage(
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
   }
 
+  void _onPageChanged(int index) {
+    setState(() => _currentPage = index);
+    _iconController.reset();
+    _iconController.forward();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.softPinkBackground,
-      body: SafeArea(
-        child: Stack(
+    final slide = _slides[_currentPage];
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      color: slide.bgColor,
+      child: SafeArea(
+        child: Column(
           children: [
-            // PageView — slides
-            Column(
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) =>
-                        setState(() => _currentPage = index),
-                    itemCount: _slides.length,
-                    itemBuilder: (context, index) =>
-                        _SlideContent(slide: _slides[index]),
-                  ),
-                ),
-
-                // Dot indicator
-                _DotIndicator(
-                  count: _slides.length,
-                  currentIndex: _currentPage,
-                ),
-                const SizedBox(height: 32),
-
-                // Ana buton
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    child: _isLastPage
-                        ? ElevatedButton(
-                            key: const ValueKey('login_btn'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 52),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            onPressed: () =>
-                                _markSeenAndNavigate(goToAuth: true),
-                            child: const Text(
-                              'Giriş Yap / Kaydol',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          )
-                        : ElevatedButton(
-                            key: const ValueKey('next_btn'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 52),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            onPressed: _nextPage,
-                            child: const Text(
-                              'Devam',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Alt link: son sayfada "Giriş Yap" yerine yoktur, diğer sayfalarda "Atla"
-                SizedBox(
-                  height: 40,
-                  child: _isLastPage
-                      ? const SizedBox.shrink()
-                      : TextButton(
-                          onPressed: () =>
-                              _markSeenAndNavigate(goToAuth: false),
-                          child: const Text(
-                            'Atla',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-
-            // "Atla" — sağ üst köşe (son sayfa hariç)
-            if (!_isLastPage)
-              Positioned(
-                top: 8,
-                right: 8,
+            // Üst: Atla butonu
+            Align(
+              alignment: Alignment.topRight,
+              child: AnimatedOpacity(
+                opacity: _isLastPage ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 200),
                 child: TextButton(
-                  onPressed: () => _markSeenAndNavigate(goToAuth: false),
-                  child: const Text(
+                  onPressed: _isLastPage
+                      ? null
+                      : () => _markSeenAndNavigate(goToAuth: false),
+                  child: Text(
                     'Atla',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      color: AppColors.textSecondary,
+                      color: slide.color.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
                     ),
                   ),
                 ),
               ),
+            ),
+
+            // Slides
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                itemCount: _slides.length,
+                itemBuilder: (context, index) => _SlideContent(
+                  slide: _slides[index],
+                  iconScale: _iconScale,
+                  isActive: index == _currentPage,
+                ),
+              ),
+            ),
+
+            // Dot indicator
+            _DotIndicator(
+              count: _slides.length,
+              currentIndex: _currentPage,
+              activeColor: slide.color,
+            ),
+            const SizedBox(height: 28),
+
+            // Ana buton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: _isLastPage
+                    ? ElevatedButton(
+                        key: const ValueKey('login_btn'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: slide.color,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () => _markSeenAndNavigate(goToAuth: true),
+                        child: const Text(
+                          'Giriş Yap / Kaydol',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      )
+                    : ElevatedButton(
+                        key: const ValueKey('next_btn'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: slide.color,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: _nextPage,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Text(
+                              'Devam Et',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            Icon(Icons.arrow_forward_rounded, size: 20),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 28),
           ],
         ),
       ),
@@ -192,70 +212,137 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 // ---------------------------------------------------------------------------
 // Veri sınıfı
 // ---------------------------------------------------------------------------
-
 class _OnboardingSlide {
   final IconData icon;
+  final Color color;
+  final Color bgColor;
   final String title;
   final String subtitle;
+  final List<String> bullets;
 
   const _OnboardingSlide({
     required this.icon,
+    required this.color,
+    required this.bgColor,
     required this.title,
     required this.subtitle,
+    required this.bullets,
   });
 }
 
 // ---------------------------------------------------------------------------
-// Tek bir slide içeriği
+// Slide içeriği
 // ---------------------------------------------------------------------------
-
 class _SlideContent extends StatelessWidget {
   final _OnboardingSlide slide;
+  final Animation<double> iconScale;
+  final bool isActive;
 
-  const _SlideContent({required this.slide});
+  const _SlideContent({
+    required this.slide,
+    required this.iconScale,
+    required this.isActive,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              slide.icon,
-              size: 60,
-              color: AppColors.primary,
+          // İllüstrasyon alanı
+          ScaleTransition(
+            scale: isActive ? iconScale : const AlwaysStoppedAnimation(1.0),
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: slide.color.withValues(alpha: 0.12),
+                boxShadow: [
+                  BoxShadow(
+                    color: slide.color.withValues(alpha: 0.18),
+                    blurRadius: 32,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Halka efekti
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: slide.color.withValues(alpha: 0.10),
+                    ),
+                  ),
+                  Icon(slide.icon, size: 72, color: slide.color),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 36),
+
+          // Başlık
           Text(
             slide.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 22,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
-              color: AppColors.secondary,
+              color: slide.color == AppColors.primary
+                  ? AppColors.secondary
+                  : slide.color,
+              height: 1.2,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+
+          // Alt başlık
           Text(
             slide.subtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
               color: AppColors.textSecondary,
-              height: 1.6,
+              height: 1.65,
             ),
+          ),
+          const SizedBox(height: 24),
+
+          // Özellik noktaları
+          Column(
+            children: slide.bullets
+                .map((b) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded,
+                              size: 16, color: slide.color),
+                          const SizedBox(width: 8),
+                          Text(
+                            b,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: slide.color == AppColors.primary
+                                  ? AppColors.secondary
+                                  : slide.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
           ),
         ],
       ),
@@ -264,14 +351,18 @@ class _SlideContent extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Nokta indikatörü (animated)
+// Nokta indikatörü
 // ---------------------------------------------------------------------------
-
 class _DotIndicator extends StatelessWidget {
   final int count;
   final int currentIndex;
+  final Color activeColor;
 
-  const _DotIndicator({required this.count, required this.currentIndex});
+  const _DotIndicator({
+    required this.count,
+    required this.currentIndex,
+    required this.activeColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -283,11 +374,12 @@ class _DotIndicator extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: isActive ? 24 : 8,
+          width: isActive ? 28 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color:
-                isActive ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3),
+            color: isActive
+                ? activeColor
+                : activeColor.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(4),
           ),
         );

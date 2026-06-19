@@ -43,6 +43,7 @@ import '../../features/admin/presentation/screens/admin_order_detail_screen.dart
 import '../../features/admin/presentation/screens/admin_users_screen.dart';
 import '../../features/admin/presentation/screens/user_detail_screen.dart';
 import '../../features/admin/presentation/screens/admin_reports_screen.dart';
+import '../../features/admin/presentation/screens/admin_terminal_screen.dart';
 import '../../features/admin/presentation/screens/category_management_screen.dart';
 
 // Screens - Notifications
@@ -357,7 +358,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.adminTerminal,
-        builder: (context, state) => const FieldAgentHomeScreen(),
+        builder: (context, state) => const AdminTerminalScreen(),
       ),
 
       // Notifications — ShellRoute içinden push edilir
