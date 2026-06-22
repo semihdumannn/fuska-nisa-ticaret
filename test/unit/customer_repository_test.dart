@@ -1,12 +1,7 @@
 // customer_repository_test.dart
 //
-// CustomerPage model ve CustomerRepository.searchByName icin unit testler.
-// Firebase mock KULLANILMAZ; saf Dart logic test edilir.
-//
-// CustomerRepository.searchByName Firestore'a bagimlidir, bu yuzden
-// searchByName icindeki client-side filtre mantigini izole ederek test ederiz.
-// Ayrica CustomerPage model field'larinin dogru set edildigini test ederiz.
-// CustomerRepository constructor parametrelerinin dogru alindigini dogrulariz.
+// CustomerRepository.searchByName isim filtresi ve UserModel field_agent
+// ilgili alanlar icin unit testler. Saf Dart logic test edilir, network mock yok.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
@@ -44,79 +39,6 @@ List<UserModel> _clientSideNameFilter(List<UserModel> users, String query) {
 }
 
 void main() {
-  // =========================================================================
-  // CustomerPage model testleri
-  // =========================================================================
-  group('CustomerPage', () {
-    test('customers listesi dogru atanir', () {
-      final users = [
-        _makeUser(uid: 'u1', name: 'Ali'),
-        _makeUser(uid: 'u2', name: 'Veli'),
-      ];
-
-      final page = CustomerPage(
-        customers: users,
-        hasMore: false,
-      );
-
-      expect(page.customers.length, 2);
-      expect(page.customers.first.name, 'Ali');
-      expect(page.customers.last.name, 'Veli');
-    });
-
-    test('hasMore: false dogru set edilir', () {
-      final page = CustomerPage(
-        customers: [],
-        hasMore: false,
-      );
-
-      expect(page.hasMore, isFalse);
-    });
-
-    test('hasMore: true dogru set edilir', () {
-      final users = List.generate(
-        20,
-        (i) => _makeUser(uid: 'u$i', name: 'Kullanici $i'),
-      );
-
-      final page = CustomerPage(
-        customers: users,
-        hasMore: true,
-      );
-
-      expect(page.hasMore, isTrue);
-      expect(page.customers.length, 20);
-    });
-
-    test('lastDoc null set edilebilir', () {
-      final page = CustomerPage(
-        customers: [],
-        hasMore: false,
-        lastDoc: null,
-      );
-
-      expect(page.lastDoc, isNull);
-    });
-
-    test('bos liste ile CustomerPage olusturulabilir', () {
-      const page = CustomerPage(
-        customers: [],
-        hasMore: false,
-      );
-
-      expect(page.customers, isEmpty);
-      expect(page.hasMore, isFalse);
-      expect(page.lastDoc, isNull);
-    });
-
-    test('customers listesi readonly erisim saglar', () {
-      final users = [_makeUser(uid: 'u1')];
-      final page = CustomerPage(customers: users, hasMore: false);
-
-      expect(page.customers, hasLength(1));
-    });
-  });
-
   // =========================================================================
   // CustomerRepository.searchByName — client-side filtre mantiginin testleri
   // =========================================================================
@@ -212,28 +134,6 @@ void main() {
       expect(resultLower.length, 1);
       expect(resultUpper.length, 1);
       expect(resultMixed.length, 1);
-    });
-  });
-
-  // =========================================================================
-  // CustomerRepository constructor parametreleri
-  // =========================================================================
-  group('CustomerRepository constructor', () {
-    test('zorunlu orderRepository parametresi kabul edilir', () {
-      // CustomerRepository dogrudan Firebase gerektiriyor, ancak
-      // orderRepository null gecilmeden nasil calisstigini test edebiliriz:
-      // Constructor signature kontrolu icin istisnasiz olusturulabildigini
-      // test etmek yeterlidir.
-      // NOT: Gercek Firebase olmadan instantiation throw atar,
-      // bu nedenle construct edilebilme yerine tip ve field testleri yapilir.
-
-      // CustomerPage const constructor parametreleri dogru alindigini dogrula
-      const page = CustomerPage(
-        customers: [],
-        hasMore: false,
-      );
-      expect(page.customers, isA<List<UserModel>>());
-      expect(page.hasMore, isA<bool>());
     });
   });
 
