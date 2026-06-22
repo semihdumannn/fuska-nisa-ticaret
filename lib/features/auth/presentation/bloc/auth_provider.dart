@@ -62,7 +62,7 @@ final authStateProvider = StreamProvider<UserModel?>((ref) {
     }
     return Stream.value(user);
   } catch (e) {
-    debugPrint('[authStateProvider] cache parse hatası: $e');
+    if (kDebugMode) debugPrint('[authStateProvider] cache parse hatası: $e');
     return Stream.value(null);
   }
 });
@@ -157,7 +157,7 @@ class AuthNotifier extends Notifier<AuthState> {
       try {
         final freshUser = await remote.getCurrentUser();
         await local.saveUser(freshUser);
-        debugPrint('[Auth] Register sonrası rol: ${freshUser.role}');
+        if (kDebugMode) debugPrint('[Auth] Register sonrası rol: ${freshUser.role}');
       } catch (_) {
         // /me başarısız olursa eski cache'i name ile güncelle
         final existing = local.getUser();

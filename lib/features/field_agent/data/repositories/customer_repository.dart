@@ -1,167 +1,129 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
+import 'package:nisa_ticaret/core/network/api_endpoints.dart';
+import 'package:nisa_ticaret/core/providers/core_providers.dart';
+import 'package:nisa_ticaret/features/auth/data/models/api_user_model.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
 import 'package:nisa_ticaret/features/orders/data/models/order_model.dart';
-import 'package:nisa_ticaret/features/orders/data/repositories/order_repository.dart';
 
 // ---------------------------------------------------------------------------
-// CustomerPage -- paginated sorgu sonucu
-// ---------------------------------------------------------------------------
-
-class CustomerPage {
-  final List<UserModel> customers;
-  final bool hasMore;
-  final DocumentSnapshot? lastDoc;
-
-  const CustomerPage({
-    required this.customers,
-    required this.hasMore,
-    this.lastDoc,
-  });
-}
-
-// ---------------------------------------------------------------------------
-// CustomerRepository
+// CustomerRepository — API tabanlı (HF Space REST)
+//
+// Önceki Firestore implementasyonu kaldırıldı.
+// Müşteri okuma/yazma işlemleri ApiEndpoints.adminUsers üzerinden yapılır.
 // ---------------------------------------------------------------------------
 
 class CustomerRepository {
-  final FirebaseFirestore _firestore;
-  final OrderRepository _orderRepository;
+  final Dio _dio;
 
-  // U+F8FF: Unicode Private Use Area son karakteri.
-  // Firestore prefix search trick: field >= prefix && field <= prefix + suffix
-  // String.fromCharCode garantili encode -- literal karakterden daha guvenli.
-  static final String _kUnicodeSuffix = String.fromCharCode(0xF8FF);
-
-  CustomerRepository({
-    FirebaseFirestore? firestore,
-    required OrderRepository orderRepository,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _orderRepository = orderRepository;
-
-  CollectionReference<Map<String, dynamic>> get _customers =>
-      _firestore.collection(AppConstants.customersCollection);
+  CustomerRepository({required Dio dio}) : _dio = dio;
 
   // =========================================================================
   // Listeleme ve Arama
   // =========================================================================
 
-  /// Telefon prefix arama -- tek alan range query (composite index gerektirmez).
-  /// Role filtresi client-side yapılır.
+  /// Telefon numarasına göre müşteri arama — admin/users?search=phone
   Future<List<UserModel>> searchByPhone(String phone) async {
     if (phone.isEmpty) return [];
-
-    final snap = await _customers
-        .where('phone', isGreaterThanOrEqualTo: phone)
-        .where('phone', isLessThanOrEqualTo: phone + _kUnicodeSuffix)
-        .limit(AppConstants.pageSize)
-        .get();
-
-    return snap.docs
-        .map((d) => UserModel.fromFirestore(d))
-        .where((u) => u.role == UserRole.customer)
-        .toList();
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.adminUsers,
+        queryParameters: {'search': phone, 'role': 'customer', 'per_page': 20},
+      );
+      return _parseUserList(response.data);
+    } on DioException {
+      return [];
+    }
   }
 
-  /// Isim arama -- tek alan where (composite index gerektirmez).
-  /// Client-side contains kontrolü yapılır.
+  /// İsme göre müşteri arama — admin/users?search=name
   Future<List<UserModel>> searchByName(String name) async {
     if (name.isEmpty) return [];
-
-    final snap = await _customers
-        .where('role', isEqualTo: UserRole.customer.value)
-        .limit(100)
-        .get();
-
-    final q = name.toLowerCase();
-    return snap.docs
-        .map((d) => UserModel.fromFirestore(d))
-        .where((u) => u.name.toLowerCase().contains(q))
-        .toList();
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.adminUsers,
+        queryParameters: {'search': name, 'role': 'customer', 'per_page': 50},
+      );
+      return _parseUserList(response.data);
+    } on DioException {
+      return [];
+    }
   }
 
   // =========================================================================
   // Müşteri Yazma
   // =========================================================================
 
-  /// Yeni müşteri olustur -- auto-ID, role zorunlu olarak 'customer'.
-  /// Saha personeli terminal modunda kullanir.
+  /// Yeni müşteri oluştur — API üzerinden.
+  /// Bu işlem desteklenmiyor: API'de müşteri oluşturma endpoint'i yok.
+  /// Field agent terminal modunda müşteri kaydı için backend endpoint gereklidir.
   Future<UserModel> createCustomer({
     required String name,
     required String phone,
   }) async {
-    final now = DateTime.now();
-    final docRef = _customers.doc(); // Firestore auto-ID
-
-    final user = UserModel(
-      uid: docRef.id,
-      name: name,
-      phone: phone,
-      role: UserRole.customer,
-      createdAt: now,
+    throw UnsupportedError(
+      'Müşteri oluşturma API endpoint\'i mevcut değil. '
+      'Backend eklendiğinde bu metod güncellenmeli.',
     );
-
-    await docRef.set(user.toFirestore());
-    return user;
   }
 
-  /// Mevcut müşteri bilgilerini guncelle.
-  /// role alani guncellenmez -- guvenligi repository katmaninda zorla.
+  /// Mevcut müşteri bilgilerini güncelle — API üzerinden.
+  /// Bu işlem desteklenmiyor: API'de müşteri güncelleme endpoint'i yok.
   Future<void> updateCustomer(UserModel customer) async {
-    await _customers.doc(customer.uid).update({
-      'name': customer.name,
-      'phone': customer.phone,
-      // role degistirilemez -- guvenligi repository katmaninda korur.
-      // Admin rol degisikligi icin auth_repository kullanilmali.
-    });
+    throw UnsupportedError(
+      'Müşteri güncelleme API endpoint\'i mevcut değil.',
+    );
   }
 
   // =========================================================================
   // Siparis gecmisi
   // =========================================================================
 
-  /// Müşterinin siparis gecmisini getir -- OrderRepository'e delege et.
-  Future<List<OrderModel>> getCustomerOrders(String customerId) {
-    return _orderRepository.getUserOrders(customerId);
+  /// Müşterinin sipariş geçmişi — API'den orders?customer_id=x ile çekilebilir.
+  /// Şu an OrderRepository (Firestore tabanlı) refactor edilmediğinden boş döndürülür.
+  /// İleride API sipariş endpoint'i buraya entegre edilmeli.
+  Future<List<OrderModel>> getCustomerOrders(String customerId) async {
+    return [];
   }
 
   // =========================================================================
-  // Adres yonetimi -- users/{uid}/addresses subcollection
+  // Adres yönetimi — API'deki addresses endpoint'i üzerinden
   // =========================================================================
 
-  /// Müşterinin adreslerini getir.
-  /// isDefault:true adresler liste basinda gelir (descending order).
-  /// Mevcut top-level addresses koleksiyonu korunmakta -- bu subcollection
-  /// field_agent terminal modunda yeni adres eklemek icin kullanilir.
+  /// Müşterinin adreslerini getir — /v1/addresses (kendi token'ı üzerinden).
+  /// Field agent başka müşteri adreslerini göremez — bu endpoint desteklenmiyor.
   Future<List<Map<String, dynamic>>> getCustomerAddresses(
     String customerId,
   ) async {
-    final snap = await _customers
-        .doc(customerId)
-        .collection(AppConstants.customerAddressesSubcollection)
-        .orderBy('isDefault', descending: true)
-        .get();
-
-    return snap.docs
-        .map((d) => <String, dynamic>{'id': d.id, ...d.data()})
-        .toList();
+    return [];
   }
 
-  /// Müşteriye yeni adres ekle -- subcollection.
-  /// userId ve createdAt sunucu tarafindan eklenir.
+  /// Müşteriye yeni adres ekle — şu an desteklenmiyor.
   Future<void> addCustomerAddress(
     String customerId,
     Map<String, dynamic> address,
   ) async {
-    await _customers
-        .doc(customerId)
-        .collection(AppConstants.customerAddressesSubcollection)
-        .add({
-      ...address,
-      'userId': customerId,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    throw UnsupportedError(
+      'Başka müşteri adına adres ekleme endpoint\'i mevcut değil.',
+    );
+  }
+
+  // =========================================================================
+  // Private Helpers
+  // =========================================================================
+
+  List<UserModel> _parseUserList(dynamic body) {
+    List<dynamic> rawList = [];
+    if (body is List) {
+      rawList = body;
+    } else if (body is Map) {
+      final data = body['data'];
+      if (data is List) rawList = data;
+    }
+    return rawList.map((j) {
+      final apiUser = ApiUserModel.fromJson(j as Map<String, dynamic>);
+      return UserModel.fromApiUser(apiUser);
+    }).toList();
   }
 }
 
@@ -169,16 +131,16 @@ class CustomerRepository {
 // Providers
 // ---------------------------------------------------------------------------
 
-/// Singleton CustomerRepository -- OrderRepository'e bagimli.
+/// Singleton CustomerRepository — Dio tabanlı.
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
-  return CustomerRepository(
-    orderRepository: ref.watch(orderRepositoryProvider),
-  );
+  final dio = ref.watch(apiClientProvider).dio;
+  return CustomerRepository(dio: dio);
 });
 
-/// Müşteri siparis gecmisi -- uid ile.
-final customerOrdersProvider =
-    FutureProvider.family<List<OrderModel>, String>((ref, uid) {
+/// Müşteri sipariş geçmişi — şu an boş döndürülür.
+/// autoDispose: müşteri detay ekranı kapanınca bellek serbest bırakılır.
+final customerOrdersFromRepoProvider =
+    FutureProvider.autoDispose.family<List<OrderModel>, String>((ref, uid) {
   if (uid.isEmpty) return Future.value([]);
   return ref.watch(customerRepositoryProvider).getCustomerOrders(uid);
 });

@@ -93,7 +93,7 @@ class AuthInterceptor extends Interceptor {
       await _localDatasource.saveUser(loginResponse.user);
       return true;
     } catch (e) {
-      debugPrint('AuthInterceptor.refreshToken hata: $e');
+      if (kDebugMode) debugPrint('AuthInterceptor.refreshToken hata: $e');
       return false;
     } finally {
       _isRefreshing = false;

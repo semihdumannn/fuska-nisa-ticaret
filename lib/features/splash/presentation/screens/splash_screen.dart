@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -203,7 +204,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       await local.saveUser(freshUser);
       ref.invalidate(authStateProvider);
     } catch (e) {
-      debugPrint('SplashScreen._verifySession hata: $e');
+      if (kDebugMode) debugPrint('SplashScreen._verifySession hata: $e');
     }
   }
 

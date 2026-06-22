@@ -53,10 +53,10 @@ class AppConfig {
 
     try {
       await _remoteConfig.fetchAndActivate();
-      debugPrint('✅ Remote Config loaded');
+      if (kDebugMode) debugPrint('✅ Remote Config loaded');
     } catch (e) {
-      debugPrint('⚠️ Remote Config fetch failed: $e');
-      debugPrint('   Using default values from setDefaults()');
+      if (kDebugMode) debugPrint('⚠️ Remote Config fetch failed: $e');
+      if (kDebugMode) debugPrint('   Using default values from setDefaults()');
     }
   }
 

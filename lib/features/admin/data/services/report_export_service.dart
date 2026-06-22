@@ -94,13 +94,15 @@ class ReportExportService {
     final file = File('${tempDir.path}/$fileName');
     await file.writeAsString(buffer.toString(), flush: true);
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Nisa Ticaret Raporu',
-      text:
-          'Nisa Ticaret Satis Raporu\n'
-          'Donem: ${_dateFmt.format(dateRange.start)} - '
-          '${_dateFmt.format(dateRange.end)}',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Nisa Ticaret Raporu',
+        text:
+            'Nisa Ticaret Satis Raporu\n'
+            'Donem: ${_dateFmt.format(dateRange.start)} - '
+            '${_dateFmt.format(dateRange.end)}',
+      ),
     );
   }
 
@@ -153,9 +155,11 @@ class ReportExportService {
     final file = File('${tempDir.path}/$fileName');
     await file.writeAsString(buffer.toString(), flush: true);
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Nisa Ticaret Raporu',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Nisa Ticaret Raporu',
+      ),
     );
   }
 

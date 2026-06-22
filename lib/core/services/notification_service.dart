@@ -8,10 +8,12 @@ import 'package:nisa_ticaret/core/network/api_endpoints.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint(
-    '[FCM Background] title: ${message.notification?.title} | '
-    'type: ${message.data['type']}',
-  );
+  if (kDebugMode) {
+    debugPrint(
+      '[FCM Background] title: ${message.notification?.title} | '
+      'type: ${message.data['type']}',
+    );
+  }
 }
 
 class NotificationService {
@@ -49,28 +51,28 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
-      debugPrint('[FCM] Bildirim izni reddedildi.');
+      if (kDebugMode) debugPrint('[FCM] Bildirim izni reddedildi.');
       return;
     }
 
-    debugPrint('[FCM] Bildirim izni: ${settings.authorizationStatus.name}');
+    if (kDebugMode) debugPrint('[FCM] Bildirim izni: ${settings.authorizationStatus.name}');
 
     await _initLocalNotifications();
 
     // Startup'ta token al ama backend'e henüz Dio yok — login'de kaydedilecek
     final token = await _getToken();
-    debugPrint('[FCM] Token (FULL): $token');
+    if (kDebugMode) debugPrint('[FCM] Token (FULL): $token');
 
     // Token yenilenince backend'e kaydet
     _messaging.onTokenRefresh.listen((newToken) {
-      debugPrint('[FCM] Token yenilendi.');
+      if (kDebugMode) debugPrint('[FCM] Token yenilendi.');
       _registerTokenWithBackend(newToken);
     });
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      debugPrint('[FCM] onMessageOpenedApp: ${message.data}');
+      if (kDebugMode) debugPrint('[FCM] onMessageOpenedApp: ${message.data}');
       _pendingMessage = message;
       // Uygulama arka plandayken bildirime tıklanınca route yayınla
       final route = routeFromMessage(message);
@@ -79,11 +81,11 @@ class NotificationService {
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      debugPrint('[FCM] getInitialMessage: ${initialMessage.data}');
+      if (kDebugMode) debugPrint('[FCM] getInitialMessage: ${initialMessage.data}');
       _pendingMessage = initialMessage;
     }
 
-    debugPrint('[FCM] NotificationService initialized.');
+    if (kDebugMode) debugPrint('[FCM] NotificationService initialized.');
   }
 
   Future<void> _initLocalNotifications() async {
@@ -100,7 +102,7 @@ class NotificationService {
           android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (response) {
         final route = response.payload;
-        debugPrint('[LocalNotif] tıklandı: $route');
+        if (kDebugMode) debugPrint('[LocalNotif] tıklandı: $route');
         if (route != null) _tapRouteController.add(route);
       },
     );
@@ -124,22 +126,22 @@ class NotificationService {
       try {
         final token = await _messaging.getToken();
         if (token != null) return token;
-        debugPrint('[FCM] getToken() null döndü (deneme ${i + 1}/3)');
+        if (kDebugMode) debugPrint('[FCM] getToken() null döndü (deneme ${i + 1}/3)');
       } catch (e) {
-        debugPrint('[FCM] getToken() HATA (deneme ${i + 1}/3): $e');
+        if (kDebugMode) debugPrint('[FCM] getToken() HATA (deneme ${i + 1}/3): $e');
         if (i < 2) await Future.delayed(Duration(seconds: 2 + i * 2));
       }
     }
-    debugPrint('[FCM] Token alınamadı (3 deneme).');
+    if (kDebugMode) debugPrint('[FCM] Token alınamadı (3 deneme).');
     return null;
   }
 
   Future<void> _registerTokenWithBackend(String token) async {
     if (_dio == null) {
-      debugPrint('[FCM] ❌ Dio null — token gönderilemedi. onUserSignedIn çağrıldı mı?');
+      if (kDebugMode) debugPrint('[FCM] ❌ Dio null — token gönderilemedi. onUserSignedIn çağrıldı mı?');
       return;
     }
-    debugPrint('[FCM] → POST /v1/devices gönderiliyor...');
+    if (kDebugMode) debugPrint('[FCM] → POST /v1/devices gönderiliyor...');
     try {
       final response = await _dio!.post(
         ApiEndpoints.devices,
@@ -148,17 +150,19 @@ class NotificationService {
           'platform': Platform.isIOS ? 'ios' : 'android',
         },
       );
-      debugPrint('[FCM] ✅ Token kaydedildi. Status: ${response.statusCode}');
+      if (kDebugMode) debugPrint('[FCM] ✅ Token kaydedildi. Status: ${response.statusCode}');
     } catch (e) {
-      debugPrint('[FCM] ❌ Token kayıt HATASI: $e');
+      if (kDebugMode) debugPrint('[FCM] ❌ Token kayıt HATASI: $e');
     }
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint(
-      '[FCM Foreground] title: ${message.notification?.title} | '
-      'type: ${message.data['type']}',
-    );
+    if (kDebugMode) {
+      debugPrint(
+        '[FCM Foreground] title: ${message.notification?.title} | '
+        'type: ${message.data['type']}',
+      );
+    }
 
     final notification = message.notification;
     if (notification == null) return;
@@ -205,9 +209,9 @@ class NotificationService {
   /// Login sonrası çağrılır — Dio set edilir, token backend'e kaydedilir.
   Future<void> onUserSignedIn({Dio? dio}) async {
     if (dio != null) _dio = dio;
-    debugPrint('[FCM] onUserSignedIn çağrıldı. Dio: ${_dio != null ? "✅" : "❌ null"}');
+    if (kDebugMode) debugPrint('[FCM] onUserSignedIn çağrıldı. Dio: ${_dio != null ? "✅" : "❌ null"}');
     final token = await _getToken();
-    debugPrint('[FCM] Token: ${token != null ? "${token.substring(0, 20)}..." : "❌ null"}');
+    if (kDebugMode) debugPrint('[FCM] Token: ${token != null ? "${token.substring(0, 20)}..." : "❌ null"}');
     if (token != null) await _registerTokenWithBackend(token);
   }
 
@@ -217,10 +221,10 @@ class NotificationService {
       final token = await _messaging.getToken();
       if (token != null && _dio != null) {
         await _dio!.delete(ApiEndpoints.devices, data: {'token': token});
-        debugPrint('[FCM] Token backend\'den silindi.');
+        if (kDebugMode) debugPrint('[FCM] Token backend\'den silindi.');
       }
     } catch (e) {
-      debugPrint('[FCM] Backend token silme hatası: $e');
+      if (kDebugMode) debugPrint('[FCM] Backend token silme hatası: $e');
     }
     _dio = null;
   }

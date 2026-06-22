@@ -42,7 +42,7 @@ class ApiNotificationRepository implements NotificationRepository {
       final notifications = await _datasource.getNotifications();
       yield notifications;
     } catch (e) {
-      debugPrint('NotificationRepository.watchNotifications: $e');
+      if (kDebugMode) debugPrint('NotificationRepository.watchNotifications: $e');
       rethrow;
     }
   }
@@ -56,7 +56,7 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       await _datasource.markSingleRead(notificationId);
     } catch (e) {
-      debugPrint('NotificationRepository.markAsRead: $e');
+      if (kDebugMode) debugPrint('NotificationRepository.markAsRead: $e');
     }
   }
 
@@ -65,7 +65,7 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       await _datasource.markRead(const []);
     } catch (e) {
-      debugPrint('NotificationRepository.markAllAsRead: $e');
+      if (kDebugMode) debugPrint('NotificationRepository.markAllAsRead: $e');
     }
   }
 }

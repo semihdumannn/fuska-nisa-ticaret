@@ -30,10 +30,12 @@ class RetryInterceptor extends Interceptor {
     }
 
     err.requestOptions.extra['retryCount'] = attempt + 1;
-    debugPrint(
-      '🔄 Retry ${attempt + 1}/$maxRetries — '
-      '${err.requestOptions.path} (${err.type.name})',
-    );
+    if (kDebugMode) {
+      debugPrint(
+        '🔄 Retry ${attempt + 1}/$maxRetries — '
+        '${err.requestOptions.path} (${err.type.name})',
+      );
+    }
 
     await Future<void>.delayed(retryDelay * (attempt + 1));
 

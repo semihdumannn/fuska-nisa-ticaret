@@ -15,8 +15,9 @@ import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
 // Providers — Firestore yok, tümü API tabanlı
 // ---------------------------------------------------------------------------
 
+/// autoDispose: müşteri detay ekranı kapanınca bellek serbest bırakılır.
 final customerOrdersProvider =
-    FutureProvider.family<List<OrderSummaryModel>, String>((ref, uid) async {
+    FutureProvider.autoDispose.family<List<OrderSummaryModel>, String>((ref, uid) async {
   final dio = ref.watch(apiClientProvider).dio;
   final response = await dio.get(
     ApiEndpoints.adminOrders,
@@ -41,8 +42,9 @@ final customerOrdersProvider =
 });
 
 // Adres API endpoint'i henüz mevcut değil — boş liste döner
+/// autoDispose: müşteri detay ekranı kapanınca bellek serbest bırakılır.
 final customerAddressesProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>(
+    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
         (ref, uid) async => []);
 
 // ---------------------------------------------------------------------------

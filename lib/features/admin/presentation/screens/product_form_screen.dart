@@ -1,14 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/image_picker_widget.dart';
 import '../../../../features/products/data/repositories/category_repository.dart';
+import '../../data/repositories/admin_variant_repository.dart';
 import '../providers/admin_products_provider.dart';
 import '../widgets/admin_sidebar.dart';
 
@@ -110,17 +109,15 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }
 
   Future<void> _loadVariants() async {
-    final varSnap = await FirebaseFirestore.instance
-        .collection(AppConstants.variantsCollection)
-        .where('productId', isEqualTo: widget.productId)
-        .get();
+    final repo = ref.read(adminVariantRepositoryProvider);
+    final rawList =
+        await repo.getVariantsByProduct(widget.productId!);
 
     if (!mounted) return;
 
-    final loaded = varSnap.docs.map((d) {
-      final data = d.data();
+    final loaded = rawList.map((data) {
       return _VariantEntry(
-        firestoreId: d.id,
+        firestoreId: data['_firestoreId'] as String?,
         name: data['name'] as String? ?? '',
         price: (data['price'] as num?)?.toDouble() ?? 0,
         salePrice: (data['salePrice'] as num?)?.toDouble() ?? 0,
@@ -169,15 +166,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     }
 
     try {
-      final fs = FirebaseFirestore.instance;
-      final variantsRef = fs.collection(AppConstants.variantsCollection);
-      final productsRef = fs.collection(AppConstants.productsCollection);
+      final variantRepo = ref.read(adminVariantRepositoryProvider);
 
       // 1. Yeni varyantlara client-side ID ata
       for (final entry in _variants) {
         if (entry.firestoreId == null &&
             entry.nameCtrl.text.trim().isNotEmpty) {
-          entry.firestoreId = variantsRef.doc().id;
+          entry.firestoreId = variantRepo.allocateVariantId();
         }
       }
 
@@ -235,27 +230,26 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       final productDocId =
           _isEditing ? widget.productId! : const Uuid().v4();
 
-      // 5. Mevcut varyantlarin snapshot'ini al (batch'ten once)
-      final allVarSnap = await variantsRef
-          .where('productId', isEqualTo: productDocId)
-          .get();
+      // 5. Mevcut varyantlari al (silinecekleri belirlemek icin)
+      final existingRaw =
+          await variantRepo.getVariantsByProduct(productDocId);
       final keepIds = validEntries.map((v) => v.firestoreId!).toSet();
-      final existingVarIds = allVarSnap.docs.map((d) => d.id).toSet();
+      final existingVarIds =
+          existingRaw.map((m) => m['_firestoreId'] as String).toSet();
+      final idsToDelete = existingVarIds.difference(keepIds).toList();
 
-      // 6. Batch olustur
-      final batch = fs.batch();
-      final productRef = productsRef.doc(productDocId);
-
-      // 6a. Urun dokumani — tum alanlar + denormalized
+      // 6. Urun dokumani — tum alanlar + denormalized
       final productData = <String, dynamic>{
         'name': _nameCtrl.text.trim(),
         'description': _descCtrl.text.trim(),
         'categoryIds': _selectedCategoryIds,
-        'categoryId': _selectedCategoryIds.isNotEmpty ? _selectedCategoryIds.first : '',
+        'categoryId': _selectedCategoryIds.isNotEmpty
+            ? _selectedCategoryIds.first
+            : '',
         'imageUrl': _imageUrl,
         'imageUrls': _imageUrl != null ? [_imageUrl!] : <String>[],
         'isActive': _isActive,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': DateTime.now().toIso8601String(),
         // Denormalized — urun kartinda N+1 okuma olmadan gosterilir
         'price': primaryPrice,
         'salePrice': primarySalePrice,
@@ -267,73 +261,48 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         'koliPackageQty': koliPackageQty > 0 ? koliPackageQty : null,
       };
 
-      if (_isEditing) {
-        batch.update(productRef, productData);
-      } else {
-        // Yeni urun: mevcut listede olmayan alanlar eklenir
-        final existing = ref.read(adminProductsProvider).value;
-        final isFeatured = false;
-        const order = 0;
-        const brandId = '';
-        const tags = <String>[];
-
-        batch.set(productRef, {
-          ...productData,
-          'isFeatured': isFeatured,
-          'order': order,
-          'brandId': brandId,
-          'tags': tags,
-          'createdAt': FieldValue.serverTimestamp(),
+      if (!_isEditing) {
+        // Yeni urun: ek sabit alanlar eklenir
+        productData.addAll({
+          'isFeatured': false,
+          'order': 0,
+          'brandId': '',
+          'tags': <String>[],
         });
-
-        // existing kullanimini sustur (lint)
-        existing;
       }
 
-      // 6b. Silinecek varyantlar
-      for (final doc in allVarSnap.docs) {
-        if (!keepIds.contains(doc.id)) batch.delete(doc.reference);
-      }
-
-      // 6c. Eklenecek / guncellenecek varyantlar
-      for (final entry in validEntries) {
+      // 7. Varyant yazma entry'leri oluştur
+      final variantWriteEntries = validEntries.map((entry) {
         final price = double.tryParse(entry.priceCtrl.text) ?? 0.0;
         final sp = double.tryParse(entry.salePriceCtrl.text);
         final validSp = (sp != null && sp > 0 && sp < price) ? sp : null;
         final pqty = int.tryParse(entry.packageQtyCtrl.text) ?? 0;
 
-        final varData = <String, dynamic>{
-          'productId': productDocId,
-          'name': entry.nameCtrl.text.trim(),
-          'price': price,
-          'salePrice': validSp,
-          'stock': int.tryParse(entry.stockCtrl.text) ?? 0,
-          'unit': entry.isKoli ? 'koli' : 'adet',
-          'packageQty': pqty > 0 ? pqty : null,
-          'isActive': true,
-          'updatedAt': FieldValue.serverTimestamp(),
-        };
+        return VariantWriteEntry(
+          firestoreId: entry.firestoreId!,
+          isExisting: existingVarIds.contains(entry.firestoreId),
+          data: {
+            'productId': productDocId,
+            'name': entry.nameCtrl.text.trim(),
+            'price': price,
+            'salePrice': validSp,
+            'stock': int.tryParse(entry.stockCtrl.text) ?? 0,
+            'unit': entry.isKoli ? 'koli' : 'adet',
+            'packageQty': pqty > 0 ? pqty : null,
+            'isActive': true,
+            'updatedAt': DateTime.now().toIso8601String(),
+          },
+        );
+      }).toList();
 
-        if (existingVarIds.contains(entry.firestoreId)) {
-          batch.update(variantsRef.doc(entry.firestoreId), varData);
-        } else {
-          batch.set(
-            variantsRef.doc(entry.firestoreId),
-            {...varData, 'createdAt': FieldValue.serverTimestamp()},
-          );
-        }
-      }
-
-      // 6d. Cache invalidation
-      batch.update(
-        fs.collection('settings').doc('data_versions'),
-        {
-          'productsUpdatedAt': FieldValue.serverTimestamp(),
-          'variantsUpdatedAt': FieldValue.serverTimestamp(),
-        },
+      // 8. Repository üzerinden atomik batch commit
+      await variantRepo.saveProductWithVariants(
+        productDocId: productDocId,
+        productData: productData,
+        isNewProduct: !_isEditing,
+        variantEntries: variantWriteEntries,
+        variantIdsToDelete: idsToDelete,
       );
-
-      await batch.commit();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

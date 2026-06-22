@@ -3,8 +3,9 @@ import 'package:nisa_ticaret/features/products/data/models/product_model.dart';
 import 'package:nisa_ticaret/features/products/data/providers/product_data_providers.dart';
 import 'package:nisa_ticaret/features/products/data/repositories/product_repository.dart';
 
+/// autoDispose: ProductDetailScreen kapanınca belleği serbest bırak.
 final productDetailProvider =
-    FutureProvider.family<ProductModel?, String>((ref, id) async {
+    FutureProvider.autoDispose.family<ProductModel?, String>((ref, id) async {
   // Önce bellekteki ürün listesinden bul — ekstra network isteği önler
   final productsAsync = ref.watch(allProductsProvider);
   if (productsAsync.hasValue) {

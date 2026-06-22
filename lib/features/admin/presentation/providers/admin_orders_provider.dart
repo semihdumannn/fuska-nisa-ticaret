@@ -1,13 +1,12 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/models/admin_order_model.dart';
+import '../../data/repositories/admin_staff_repository.dart';
 
 /// Backend'in döndürdüğü 403 hatasını anlamlı mesaja çevirir.
 class AdminRoleException implements Exception {
@@ -339,37 +338,21 @@ final orderDetailProvider =
   throw Exception('Siparis bulunamadı: $id');
 });
 
-// Saha/teslimat gorevlileri — Firestore users (sadece user listesi, order değil)
+// Saha/teslimat gorevlileri — AdminStaffRepository üzerinden (repository pattern)
 final fieldAgentsProvider =
     FutureProvider<List<({String id, String name})>>((ref) async {
   final link = ref.keepAlive();
   Timer(const Duration(minutes: 30), link.close);
-  final snap = await FirebaseFirestore.instance
-      .collection(AppConstants.usersCollection)
-      .where('role', isEqualTo: 'field_agent')
-      .where('isActive', isEqualTo: true)
-      .orderBy('name')
-      .get();
-  return snap.docs.map((doc) {
-    final data = doc.data();
-    return (id: doc.id, name: data['name'] as String? ?? '');
-  }).toList();
+  final repo = ref.read(adminStaffRepositoryProvider);
+  return repo.getFieldAgents();
 });
 
 final deliveryPersonsProvider =
     FutureProvider<List<({String id, String name})>>((ref) async {
   final link = ref.keepAlive();
   Timer(const Duration(minutes: 30), link.close);
-  final snap = await FirebaseFirestore.instance
-      .collection(AppConstants.usersCollection)
-      .where('role', isEqualTo: 'delivery')
-      .where('isActive', isEqualTo: true)
-      .orderBy('name')
-      .get();
-  return snap.docs.map((doc) {
-    final data = doc.data();
-    return (id: doc.id, name: data['name'] as String? ?? '');
-  }).toList();
+  final repo = ref.read(adminStaffRepositoryProvider);
+  return repo.getDeliveryPersons();
 });
 
 final orderStatsProvider = Provider<({

@@ -57,7 +57,7 @@ class WhatsappService {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      debugPrint('[WhatsApp] Açılamadı: $uriStr');
+      if (kDebugMode) debugPrint('[WhatsApp] Açılamadı: $uriStr');
     }
   }
 }

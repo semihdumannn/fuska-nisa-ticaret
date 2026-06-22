@@ -82,9 +82,11 @@ final orderRepositoryProvider = Provider<OrderRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// Kullanicinin siparisleri — API (FutureProvider)
+// Kullanicinin siparisleri — API (FutureProvider.autoDispose)
+// autoDispose: OrderListScreen kapatılınca belleği serbest bırak.
 // ---------------------------------------------------------------------------
-final userOrdersProvider = FutureProvider<List<OrderEntity>>((ref) async {
+final userOrdersProvider =
+    FutureProvider.autoDispose<List<OrderEntity>>((ref) async {
   final repo = ref.watch(apiOrderRepositoryProvider);
   final result = await repo.getOrders(page: 1, perPage: 50);
   return result.fold(
@@ -95,9 +97,10 @@ final userOrdersProvider = FutureProvider<List<OrderEntity>>((ref) async {
 
 // ---------------------------------------------------------------------------
 // Tekil siparis detayi — API (FutureProvider.family)
+// autoDispose: OrderDetailScreen kapanınca belleği serbest bırak.
 // ---------------------------------------------------------------------------
 final orderStreamProvider =
-    FutureProvider.family<OrderEntity, String>((ref, orderId) async {
+    FutureProvider.autoDispose.family<OrderEntity, String>((ref, orderId) async {
   final id = int.tryParse(orderId) ?? 0;
   final repo = ref.watch(apiOrderRepositoryProvider);
   final result = await GetOrderDetailUsecase(repo)(id);
@@ -109,8 +112,10 @@ final orderStreamProvider =
 
 // ---------------------------------------------------------------------------
 // Aktif siparisler — API (pending/confirmed/preparing/on_the_way)
+// autoDispose: widget ağacından ayrılınca belleği serbest bırak.
 // ---------------------------------------------------------------------------
-final activeOrdersProvider = FutureProvider<List<OrderEntity>>((ref) async {
+final activeOrdersProvider =
+    FutureProvider.autoDispose<List<OrderEntity>>((ref) async {
   final repo = ref.watch(apiOrderRepositoryProvider);
   final result = await repo.getOrders(page: 1, perPage: 100);
   return result.fold(

@@ -1,13 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/network/api_endpoints.dart';
 import 'package:nisa_ticaret/core/providers/core_providers.dart';
-import 'package:nisa_ticaret/core/services/cache_service.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
+import 'package:nisa_ticaret/features/admin/data/repositories/admin_category_repository.dart';
 import 'package:nisa_ticaret/features/admin/presentation/widgets/admin_sidebar.dart';
 import 'package:nisa_ticaret/features/products/data/models/api_category_model.dart';
 import 'package:nisa_ticaret/features/products/data/models/category_model.dart';
@@ -186,7 +184,7 @@ class _CategoryList extends ConsumerWidget {
               category: firestoreCat,
               onEdit: () =>
                   _showCategoryForm(context, category: firestoreCat),
-              onDelete: () => _confirmDelete(context, firestoreCat),
+              onDelete: () => _confirmDelete(context, ref, firestoreCat),
             );
           },
         );
@@ -421,31 +419,25 @@ class _CategoryListItem extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// isActive Toggle — Firestore'u direk gunceller
+// isActive Toggle — AdminCategoryRepository üzerinden günceller
 // ─────────────────────────────────────────────
-class _ActiveToggle extends StatefulWidget {
+class _ActiveToggle extends ConsumerStatefulWidget {
   final CategoryModel category;
   const _ActiveToggle({required this.category});
 
   @override
-  State<_ActiveToggle> createState() => _ActiveToggleState();
+  ConsumerState<_ActiveToggle> createState() => _ActiveToggleState();
 }
 
-class _ActiveToggleState extends State<_ActiveToggle> {
+class _ActiveToggleState extends ConsumerState<_ActiveToggle> {
   bool _loading = false;
 
   Future<void> _toggle() async {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      await FirebaseFirestore.instance
-          .collection(AppConstants.categoriesCollection)
-          .doc(widget.category.id)
-          .update({
-        'isActive': !widget.category.isActive,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      await _invalidateCache();
+      final repo = ref.read(adminCategoryRepositoryProvider);
+      await repo.toggleActive(widget.category);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -485,10 +477,10 @@ class _ActiveToggleState extends State<_ActiveToggle> {
 }
 
 // ─────────────────────────────────────────────
-// Silme Onay Dialogu
+// Silme Onay Dialogu — AdminCategoryRepository üzerinden siler
 // ─────────────────────────────────────────────
 Future<void> _confirmDelete(
-    BuildContext context, CategoryModel category) async {
+    BuildContext context, WidgetRef ref, CategoryModel category) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -531,11 +523,8 @@ Future<void> _confirmDelete(
   if (confirmed != true) return;
 
   try {
-    await FirebaseFirestore.instance
-        .collection(AppConstants.categoriesCollection)
-        .doc(category.id)
-        .delete();
-    await _invalidateCache();
+    final repo = ref.read(adminCategoryRepositoryProvider);
+    await repo.deleteCategory(category.id);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -558,23 +547,6 @@ Future<void> _confirmDelete(
 }
 
 // ─────────────────────────────────────────────
-// Cache Temizleme + data_versions Güncelleme
-// ─────────────────────────────────────────────
-Future<void> _invalidateCache() async {
-  // 1. Hive cache temizle
-  await cacheService.clear('categories_v2');
-
-  // 2. data_versions dokumani guncelle — uygulama 24h beklemeden yeniler
-  await FirebaseFirestore.instance
-      .collection('settings')
-      .doc('data_versions')
-      .set(
-        {'categoriesUpdatedAt': FieldValue.serverTimestamp()},
-        SetOptions(merge: true),
-      );
-}
-
-// ─────────────────────────────────────────────
 // BottomSheet Form (Ekle / Düzenle)
 // ─────────────────────────────────────────────
 void _showCategoryForm(BuildContext context,
@@ -587,15 +559,15 @@ void _showCategoryForm(BuildContext context,
   );
 }
 
-class _CategoryFormSheet extends StatefulWidget {
+class _CategoryFormSheet extends ConsumerStatefulWidget {
   final CategoryModel? category;
   const _CategoryFormSheet({required this.category});
 
   @override
-  State<_CategoryFormSheet> createState() => _CategoryFormSheetState();
+  ConsumerState<_CategoryFormSheet> createState() => _CategoryFormSheetState();
 }
 
-class _CategoryFormSheetState extends State<_CategoryFormSheet> {
+class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _iconCtrl;
@@ -641,6 +613,8 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
       final sortOrder = int.tryParse(_sortCtrl.text.trim()) ?? 0;
       final now = DateTime.now();
 
+      final repo = ref.read(adminCategoryRepositoryProvider);
+
       if (_isEdit) {
         // Güncelle
         final updated = widget.category!.copyWith(
@@ -652,35 +626,23 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
           isActive: _isActive,
           updatedAt: now,
         );
-
-        await FirebaseFirestore.instance
-            .collection(AppConstants.categoriesCollection)
-            .doc(updated.id)
-            .update({
-          ...updated.toFirestore(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        await repo.saveCategory(category: updated, isUpdate: true);
       } else {
-        // Yeni ekle
-        final data = <String, dynamic>{
-          'name': name,
-          'slug': slug,
-          'iconName': _iconCtrl.text.trim(),
-          'iconAsset': null,
-          'color': _selectedColorHex,
-          'sortOrder': sortOrder,
-          'isActive': _isActive,
-          'parentId': null,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        };
-        await FirebaseFirestore.instance
-            .collection(AppConstants.categoriesCollection)
-            .add(data);
+        // Yeni ekle — id boş geçilir, repository auto-ID kullanır
+        final newCategory = CategoryModel(
+          id: '',
+          name: name,
+          slug: slug,
+          iconName: _iconCtrl.text.trim(),
+          color: _selectedColorHex,
+          sortOrder: sortOrder,
+          isActive: _isActive,
+          parentId: null,
+          createdAt: now,
+          updatedAt: now,
+        );
+        await repo.saveCategory(category: newCategory, isUpdate: false);
       }
-
-      // Cache + data_versions guncelle
-      await _invalidateCache();
 
       if (mounted) {
         Navigator.of(context).pop();

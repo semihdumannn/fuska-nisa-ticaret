@@ -16,7 +16,7 @@ class CacheService {
     await Hive.initFlutter();
     _box = await Hive.openBox<String>('app_cache');
     _prefs = await SharedPreferences.getInstance();
-    debugPrint('✅ Cache Service initialized');
+    if (kDebugMode) debugPrint('✅ Cache Service initialized');
   }
   
   // ============ Read ============
@@ -24,7 +24,7 @@ class CacheService {
     try {
       return _box.get(key);
     } catch (e) {
-      debugPrint('❌ Cache read error ($key): $e');
+      if (kDebugMode) debugPrint('❌ Cache read error ($key): $e');
       return null;
     }
   }
@@ -35,7 +35,7 @@ class CacheService {
       await _box.delete(key);
       await _prefs.remove('${key}_time');
     } catch (e) {
-      debugPrint('❌ Cache clear error ($key): $e');
+      if (kDebugMode) debugPrint('❌ Cache clear error ($key): $e');
     }
   }
 
@@ -51,7 +51,7 @@ class CacheService {
         await _prefs.remove('${k}_time');
       }
     } catch (e) {
-      debugPrint('❌ Cache clearByPattern error ($prefix): $e');
+      if (kDebugMode) debugPrint('❌ Cache clearByPattern error ($prefix): $e');
     }
   }
 
