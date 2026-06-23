@@ -1279,7 +1279,7 @@ class _CartIconButton extends ConsumerWidget {
             borderRadius: BorderRadius.circular(20),
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () => context.push(AppRoutes.cart),
+              onTap: () => context.go(AppRoutes.cart),
               child: const SizedBox(
                 width: 40,
                 height: 40,
