@@ -237,7 +237,7 @@ class _CartItemCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: const [AppShadows.sm],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -398,7 +398,7 @@ class _QtyControl extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.primary, width: 1.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -586,19 +586,27 @@ class _CartSummary extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Siparis tamamla butonu
-              ElevatedButton(
-                onPressed: () => _onCheckout(ref, context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textWhite,
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.primary,
+                  borderRadius: BorderRadius.circular(46),
+                  boxShadow: const [AppShadows.primary],
                 ),
-                child: const Text(
-                  'Siparişi Tamamla',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                child: ElevatedButton(
+                  onPressed: () => _onCheckout(ref, context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: AppColors.textWhite,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(46),
+                    ),
+                  ),
+                  child: const Text(
+                    'Siparişi Tamamla',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],

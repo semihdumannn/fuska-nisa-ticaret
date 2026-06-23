@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
@@ -21,7 +22,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
   @override
   void initState() {
     super.initState();
-    // Önceki oturumun hata/step state'ini temizle
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authNotifierProvider.notifier).reset();
     });
@@ -33,7 +33,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
     super.dispose();
   }
 
-  // Telefon numarası validasyonu: 5 ile başlayan 10 hane
   bool get _isPhoneValid {
     final text = _controller.text.trim();
     return RegExp(r'^5\d{9}$').hasMatch(text);
@@ -56,9 +55,8 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(
+          style: GoogleFonts.plusJakartaSans(
             color: AppColors.textWhite,
-            fontFamily: 'Poppins',
             fontSize: 14,
           ),
         ),
@@ -74,7 +72,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // State listener — navigasyon ve hata yönetimi
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next.step == AuthStep.creatingUser) {
         context.push(AppRoutes.register);
@@ -97,22 +94,10 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
 
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.step == AuthStep.authenticating;
-
     final canPop = context.canPop();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: canPop
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: AppColors.secondary, size: 20),
-                onPressed: () => context.pop(),
-              ),
-            )
-          : null,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -121,7 +106,9 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: canPop ? 24 : 48),
+                SizedBox(height: canPop ? 16 : 48),
+                if (canPop) _BackButton(),
+                SizedBox(height: canPop ? 16 : 0),
                 _LogoSection(),
                 const SizedBox(height: 40),
                 _TitleSection(),
@@ -137,11 +124,39 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                   isEnabled: _isPhoneValid && !isLoading,
                   onPressed: _onSubmit,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 _GuestButton(),
                 const SizedBox(height: 32),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Geri butonu
+// ---------------------------------------------------------------------------
+class _BackButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => context.pop(),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.navBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: AppColors.textPrimary,
           ),
         ),
       ),
@@ -175,23 +190,23 @@ class _TitleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hoş Geldiniz',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.secondary,
-              ),
-          textAlign: TextAlign.center,
+          'Tekrar hoş geldin 👋',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Telefon numaranızı girin',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-          textAlign: TextAlign.center,
+          'Devam etmek için telefon numaranı gir',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: const Color(0xFF7E879A),
+          ),
         ),
       ],
     );
@@ -217,13 +232,6 @@ class _PhoneInputField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Telefon Numarası',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-        ),
-        const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: TextInputType.phone,
@@ -232,16 +240,47 @@ class _PhoneInputField extends StatelessWidget {
             LengthLimitingTextInputFormatter(10),
           ],
           onChanged: onChanged,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textPrimary,
+          ),
           decoration: InputDecoration(
+            fillColor: AppColors.inputBg,
+            filled: true,
             hintText: '5XX XXX XX XX',
-            prefixText: '+90 ',
-            prefixStyle: const TextStyle(
-              color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
+            hintStyle: GoogleFonts.plusJakartaSans(
+              color: AppColors.textHint,
               fontSize: 15,
-              fontWeight: FontWeight.w500,
             ),
             errorText: validationError,
+            errorStyle: GoogleFonts.plusJakartaSans(fontSize: 12),
+            prefixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(width: 16),
+                Text(
+                  '🇹🇷',
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '+90',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 1,
+                  height: 22,
+                  color: AppColors.border,
+                ),
+                const SizedBox(width: 10),
+              ],
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.border, width: 1),
@@ -266,7 +305,7 @@ class _PhoneInputField extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Devam Et butonu
+// Devam Et butonu — gradient + shadow
 // ---------------------------------------------------------------------------
 class _SubmitButton extends StatelessWidget {
   final bool isLoading;
@@ -281,34 +320,45 @@ class _SubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: isEnabled ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return AnimatedOpacity(
+      opacity: isEnabled ? 1.0 : 0.55,
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: AppGradients.primary,
+          borderRadius: BorderRadius.circular(46),
+          boxShadow: isEnabled ? const [AppShadows.primary] : null,
+        ),
+        child: ElevatedButton(
+          onPressed: isEnabled ? onPressed : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            disabledBackgroundColor: Colors.transparent,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(46),
+            ),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: AppColors.textWhite,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : Text(
+                  'Devam Et',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textWhite,
+                  ),
+                ),
         ),
       ),
-      child: isLoading
-          ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                color: AppColors.textWhite,
-                strokeWidth: 2.5,
-              ),
-            )
-          : const Text(
-              'Devam Et',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textWhite,
-              ),
-            ),
     );
   }
 }
@@ -319,29 +369,24 @@ class _SubmitButton extends StatelessWidget {
 class _GuestButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return OutlinedButton(
+    return TextButton(
       onPressed: () {
-        // Sepet ekranından push ile geldiyse geri dön, yoksa home'a git
         if (context.canPop()) {
           context.pop();
         } else {
           context.go(AppRoutes.home);
         }
       },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        minimumSize: const Size(double.infinity, 52),
-        side: const BorderSide(color: AppColors.primary, width: 1.5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        minimumSize: const Size(double.infinity, 48),
       ),
-      child: const Text(
-        'Misafir Olarak Devam',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+      child: Text(
+        'Misafir olarak devam et',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textSecondary,
         ),
       ),
     );

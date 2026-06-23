@@ -212,8 +212,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   child: Text(
                     product.name,
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -295,7 +295,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         : 'Fiyat yok',
                     style: TextStyle(
                       fontSize: 26,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: effectivePrice > 0
                           ? AppColors.primary
                           : AppColors.textSecondary,
@@ -387,39 +387,58 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.border,
-                    minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onPressed: (isProductInStock &&
-                          (_selectedVariant != null || !hasVariants))
-                      ? () => _addToCart(product)
-                      : null,
-                  icon: Icon(
-                    !isProductInStock
-                        ? Icons.block
-                        : Icons.shopping_cart_outlined,
-                    size: 20,
-                  ),
-                  label: Text(
-                    !isProductInStock
-                        ? 'Stok Tükendi'
-                        : (hasVariants && _selectedVariant == null)
-                            ? 'Varyant Secin'
-                            : 'Sepete Ekle',
-                  ),
-                ),
+                child: (isProductInStock && (_selectedVariant != null || !hasVariants))
+                    ? Container(
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.primary,
+                          borderRadius: BorderRadius.circular(46),
+                          boxShadow: const [AppShadows.primary],
+                        ),
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(46),
+                            ),
+                            textStyle: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onPressed: () => _addToCart(product),
+                          icon: const Icon(Icons.shopping_cart_outlined, size: 20),
+                          label: const Text('Sepete Ekle'),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.border,
+                          foregroundColor: AppColors.textSecondary,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(46),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onPressed: null,
+                        icon: Icon(
+                          !isProductInStock ? Icons.block : Icons.shopping_cart_outlined,
+                          size: 20,
+                        ),
+                        label: Text(
+                          !isProductInStock
+                              ? 'Stok Tükendi'
+                              : 'Varyant Secin',
+                        ),
+                      ),
               ),
             ],
           ),
@@ -1004,9 +1023,9 @@ class _VariantChip extends StatelessWidget {
             color: isDisabled
                 ? AppColors.background
                 : isSelected
-                    ? AppColors.primary.withValues(alpha: 0.1)
+                    ? AppColors.pinkLight
                     : AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDisabled
                   ? AppColors.border
@@ -1242,14 +1261,14 @@ class _CircleIconButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Material(
-        color: AppColors.surface.withValues(alpha: 0.85),
+        color: AppColors.navBg,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: onPressed,
           child: SizedBox(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             child: Icon(icon, size: 20, color: AppColors.textPrimary),
           ),
         ),

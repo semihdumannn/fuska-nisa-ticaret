@@ -74,10 +74,10 @@ class _ProfileContent extends ConsumerWidget {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.background,
           title: Text('Profilim',
               style: Theme.of(context).textTheme.headlineSmall),
-          scrolledUnderElevation: 1,
+          scrolledUnderElevation: 0,
         ),
         body: Center(
           child: Padding(
@@ -145,21 +145,27 @@ class _ProfileContent extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         title: Text('Profilim',
             style: Theme.of(context).textTheme.headlineSmall),
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: EdgeInsets.zero,
         children: [
           _HeaderCard(user: user),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           if (menuItems.isNotEmpty) ...[
-            _MenuSection(items: menuItems),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _MenuSection(items: menuItems),
+            ),
             const SizedBox(height: 24),
           ],
-          _SignOutButton(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _SignOutButton(),
+          ),
           const SizedBox(height: 32),
         ],
       ),
@@ -202,6 +208,21 @@ class _ProfileContent extends ConsumerWidget {
         onTap: () => context.push(AppRoutes.orders),
       ),
       _MenuItem(
+        icon: Icons.favorite_border,
+        title: 'Favorilerim',
+        onTap: () {},
+      ),
+      _MenuItem(
+        icon: Icons.autorenew,
+        title: 'Aboneliğim',
+        onTap: () {},
+      ),
+      _MenuItem(
+        icon: Icons.local_offer_outlined,
+        title: 'Kampanyalar',
+        onTap: () {},
+      ),
+      _MenuItem(
         icon: Icons.notifications_outlined,
         title: 'Bildirimler',
         onTap: () => context.push(AppRoutes.notifications),
@@ -212,6 +233,11 @@ class _ProfileContent extends ConsumerWidget {
         onTap: () => whatsappService.contactSupport(
           message: 'Merhaba! Uygulama hakkında yardım almak istiyorum.',
         ),
+      ),
+      _MenuItem(
+        icon: Icons.help_outline,
+        title: 'Yardım',
+        onTap: () {},
       ),
       _MenuItem(
         icon: Icons.info_outline,
@@ -365,45 +391,45 @@ class _HeaderCard extends StatelessWidget {
     final String phone = user?.phone ?? '';
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      decoration: const BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
           _Avatar(initials: initials),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Tooltip(
-                  message: displayName,
-                  child: Text(
-                    displayName,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (phone.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    phone,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                if (user != null) _RoleBadge(role: user!.role),
-              ],
+          const SizedBox(height: 12),
+          Tooltip(
+            message: displayName,
+            child: Text(
+              displayName,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ),
+          if (phone.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              phone,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          const SizedBox(height: 8),
+          if (user != null) _RoleBadge(role: user!.role),
         ],
       ),
     );
@@ -429,11 +455,12 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 64,
-      height: 64,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.25),
         shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2.5),
       ),
       alignment: Alignment.center,
       child: initials == '?'
@@ -507,7 +534,7 @@ class _RoleBadge extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _MenuSection — menü kalemlerinin listesi
+// _MenuSection — menü kalemlerinin listesi (her item ayrı kart)
 // ---------------------------------------------------------------------------
 class _MenuSection extends StatelessWidget {
   final List<_MenuItem> items;
@@ -515,37 +542,58 @@ class _MenuSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
-      ),
-      child: Column(
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          final isLast = index == items.length - 1;
-          return Column(
-            children: [
-              _MenuTile(item: item),
-              if (!isLast)
-                const Divider(
-                  height: 1,
-                  indent: 52,
-                  endIndent: 16,
-                  color: AppColors.divider,
-                ),
-            ],
-          );
-        }),
-      ),
+    return Column(
+      children: items.map((item) => _MenuCard(item: item)).toList(),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// _MenuTile — tekil menü kalemi
+// _MenuCard — tekil menü kalemi kartı
 // ---------------------------------------------------------------------------
+class _MenuCard extends StatelessWidget {
+  final _MenuItem item;
+  const _MenuCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [AppShadows.sm],
+      ),
+      child: ListTile(
+        onTap: item.onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.blueLight,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(item.icon, color: AppColors.waterBlue, size: 20),
+        ),
+        title: Text(
+          item.title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppColors.textHint,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // _AboutRow — Hakkında dialog'u için etiket/değer satırı
 // ---------------------------------------------------------------------------
@@ -588,39 +636,6 @@ class _AboutRow extends StatelessWidget {
   }
 }
 
-class _MenuTile extends StatelessWidget {
-  final _MenuItem item;
-  const _MenuTile({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: item.onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Icon(item.icon, color: AppColors.primary, size: 22),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                item.title,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // _SignOutButton — cikis butonu + onay dialog'u
 // ---------------------------------------------------------------------------
@@ -635,10 +650,10 @@ class _SignOutButton extends ConsumerWidget {
       child: OutlinedButton.icon(
         onPressed: () => _confirmSignOut(context, ref),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.secondary,
-          side: const BorderSide(color: AppColors.secondary, width: 1.5),
+          foregroundColor: AppColors.error,
+          side: const BorderSide(color: AppColors.error, width: 1.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(46),
           ),
           textStyle: const TextStyle(
             fontFamily: 'Poppins',

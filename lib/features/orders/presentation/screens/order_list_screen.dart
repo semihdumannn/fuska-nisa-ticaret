@@ -37,7 +37,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.background,
           title: const Text('Siparişlerim',
               style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
           iconTheme: const IconThemeData(color: AppColors.secondary),
@@ -70,7 +70,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         title: const Text(
           'Siparişlerim',
           style: TextStyle(
@@ -283,13 +283,10 @@ class _OrderCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
+          boxShadow: const [AppShadows.sm],
+          border: Border(
+            left: BorderSide(color: statusColor, width: 4),
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
@@ -297,11 +294,6 @@ class _OrderCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Sol kenar — status rengi
-                Container(
-                  width: 4,
-                  color: statusColor,
-                ),
                 // Kart içeriği
                 Expanded(
                   child: Padding(

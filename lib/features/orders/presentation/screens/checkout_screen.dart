@@ -481,10 +481,10 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+        boxShadow: [AppShadows.sm],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -673,7 +673,7 @@ class _PaymentOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.06)
+              ? AppColors.pinkLight
               : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -804,36 +804,62 @@ class _BottomBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed:
-                (isLoading || !isAddressSelected) ? null : onConfirm,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 52),
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.textWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              disabledBackgroundColor:
-                  AppColors.primary.withValues(alpha: 0.4),
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      color: AppColors.textWhite,
-                      strokeWidth: 2.5,
+          (isLoading || !isAddressSelected)
+              ? ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.4),
+                    foregroundColor: AppColors.textWhite,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(46),
                     ),
-                  )
-                : const Text(
-                    'Onayla ve Tamamla',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                    disabledBackgroundColor:
+                        AppColors.primary.withValues(alpha: 0.4),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: AppColors.textWhite,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Onayla ve Tamamla',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.primary,
+                    borderRadius: BorderRadius.circular(46),
+                    boxShadow: const [AppShadows.primary],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: onConfirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: AppColors.textWhite,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(46),
+                      ),
+                    ),
+                    child: const Text(
+                      'Onayla ve Tamamla',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-          ),
+                ),
           if (!isAddressSelected) ...[
             const SizedBox(height: 8),
             const Text(

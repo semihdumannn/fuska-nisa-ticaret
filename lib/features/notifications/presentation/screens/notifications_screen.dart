@@ -8,8 +8,8 @@ import '../../../auth/presentation/bloc/auth_provider.dart';
 import '../../data/models/notification_model.dart';
 import '../bloc/notification_provider.dart';
 
-// Unread card background — hafif pembe
-const Color _kUnreadBg = Color(0xFFFDE8F4);
+// Unread card background — AppColors.pinkLight
+const Color _kUnreadBg = Color(0xFFFCE3F1);
 
 // ---------------------------------------------------------------------------
 // Filter enum
@@ -462,13 +462,19 @@ class _NotificationCard extends StatelessWidget {
           children: [
             // Icon container
             Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: typeColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+                color: isUnread
+                    ? AppColors.pinkLight
+                    : AppColors.navBg,
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(typeIcon, size: 22, color: typeColor),
+              child: Icon(
+                typeIcon,
+                size: 20,
+                color: isUnread ? AppColors.primary : typeColor,
+              ),
             ),
 
             const SizedBox(width: 12),
@@ -499,12 +505,20 @@ class _NotificationCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        _formatTime(notification.createdAt),
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.navBg,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _formatTime(notification.createdAt),
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],

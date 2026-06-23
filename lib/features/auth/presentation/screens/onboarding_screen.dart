@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
@@ -25,7 +26,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       color: AppColors.primary,
       bgColor: Color(0xFFFDE8F4),
       title: 'Fuska Kalitesi\nKapınızda',
-      subtitle: 'Doğal kaynak suyu ve meşrubatlarımızı aynı gün teslimat ile sipariş edin.',
+      subtitle:
+          'Doğal kaynak suyu ve meşrubatlarımızı aynı gün teslimat ile sipariş edin.',
       bullets: ['Aynı gün teslimat', 'Güvenilir kalite', 'Geniş ürün yelpazesi'],
     ),
     _OnboardingSlide(
@@ -33,7 +35,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       color: AppColors.secondary,
       bgColor: Color(0xFFE8EDF5),
       title: 'Saniyeler İçinde\nSipariş',
-      subtitle: 'Ürünlere göz atın, sepete ekleyin. Teslimat durumunu anlık takip edin.',
+      subtitle:
+          'Ürünlere göz atın, sepete ekleyin. Teslimat durumunu anlık takip edin.',
       bullets: ['Kolay sepet yönetimi', 'Anlık sipariş takibi', 'Adrese teslimat'],
     ),
     _OnboardingSlide(
@@ -41,7 +44,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       color: AppColors.accent,
       bgColor: Color(0xFFDFF5F5),
       title: 'Üyelik?\n30 Saniye!',
-      subtitle: 'Sadece telefon numaranızla üye olun. Şifre yok, uzun form yok.',
+      subtitle:
+          'Sadece telefon numaranızla üye olun. Şifre yok, uzun form yok.',
       bullets: ['Sadece telefon numarası', 'Şifre gerekmez', 'Anlık aktivasyon'],
     ),
   ];
@@ -55,7 +59,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _iconScale = CurvedAnimation(parent: _iconController, curve: Curves.elasticOut);
+    _iconScale =
+        CurvedAnimation(parent: _iconController, curve: Curves.elasticOut);
     _iconController.forward();
   }
 
@@ -95,11 +100,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final slide = _slides[_currentPage];
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
-      color: slide.bgColor,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            slide.bgColor,
+            slide.bgColor.withValues(alpha: 0.6),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
       child: SafeArea(
         child: Column(
           children: [
-            // Üst: Atla butonu
+            // Ust: Atla butonu
             Align(
               alignment: Alignment.topRight,
               child: AnimatedOpacity(
@@ -111,8 +125,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       : () => _markSeenAndNavigate(goToAuth: false),
                   child: Text(
                     'Atla',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
+                    style: GoogleFonts.plusJakartaSans(
                       color: slide.color.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
@@ -150,58 +163,75 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: _isLastPage
-                    ? ElevatedButton(
+                    ? _GradientButton(
                         key: const ValueKey('login_btn'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: slide.color,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 0,
-                        ),
+                        label: 'Giriş Yap / Kaydol',
                         onPressed: () => _markSeenAndNavigate(goToAuth: true),
-                        child: const Text(
-                          'Giriş Yap / Kaydol',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
                       )
-                    : ElevatedButton(
+                    : _GradientButton(
                         key: const ValueKey('next_btn'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: slide.color,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 0,
-                        ),
+                        label: 'Devam Et',
+                        trailingIcon: Icons.arrow_forward_rounded,
                         onPressed: _nextPage,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text(
-                              'Devam Et',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            SizedBox(width: 6),
-                            Icon(Icons.arrow_forward_rounded, size: 20),
-                          ],
-                        ),
                       ),
               ),
             ),
             const SizedBox(height: 28),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Gradient pill butonu
+// ---------------------------------------------------------------------------
+class _GradientButton extends StatelessWidget {
+  final String label;
+  final IconData? trailingIcon;
+  final VoidCallback onPressed;
+
+  const _GradientButton({
+    super.key,
+    required this.label,
+    this.trailingIcon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.circular(46),
+        boxShadow: const [AppShadows.primary],
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(46),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: AppColors.textWhite,
+              ),
+            ),
+            if (trailingIcon != null) ...[
+              const SizedBox(width: 6),
+              Icon(trailingIcon, size: 20, color: AppColors.textWhite),
+            ],
           ],
         ),
       ),
@@ -251,7 +281,7 @@ class _SlideContent extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // İllüstrasyon alanı
+          // Illustrasyon alani
           ScaleTransition(
             scale: isActive ? iconScale : const AlwaysStoppedAnimation(1.0),
             child: Container(
@@ -259,7 +289,14 @@ class _SlideContent extends StatelessWidget {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: slide.color.withValues(alpha: 0.12),
+                gradient: LinearGradient(
+                  colors: [
+                    slide.color.withValues(alpha: 0.18),
+                    slide.color.withValues(alpha: 0.06),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: slide.color.withValues(alpha: 0.18),
@@ -271,7 +308,6 @@ class _SlideContent extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Halka efekti
                   Container(
                     width: 140,
                     height: 140,
@@ -287,14 +323,13 @@ class _SlideContent extends StatelessWidget {
           ),
           const SizedBox(height: 36),
 
-          // Başlık
+          // Baslik
           Text(
             slide.title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Poppins',
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 26,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: slide.color == AppColors.primary
                   ? AppColors.secondary
                   : slide.color,
@@ -303,12 +338,11 @@ class _SlideContent extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Alt başlık
+          // Alt baslik
           Text(
             slide.subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: AppColors.textSecondary,
@@ -317,31 +351,35 @@ class _SlideContent extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Özellik noktaları
+          // Özellik noktalari
           Column(
             children: slide.bullets
-                .map((b) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle_rounded,
-                              size: 16, color: slide.color),
-                          const SizedBox(width: 8),
-                          Text(
-                            b,
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: slide.color == AppColors.primary
-                                  ? AppColors.secondary
-                                  : slide.color,
-                            ),
+                .map(
+                  (b) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: slide.color,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          b,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: slide.color == AppColors.primary
+                                ? AppColors.secondary
+                                : slide.color,
                           ),
-                        ],
-                      ),
-                    ))
+                        ),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -351,7 +389,7 @@ class _SlideContent extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Nokta indikatörü
+// Nokta indikatoru
 // ---------------------------------------------------------------------------
 class _DotIndicator extends StatelessWidget {
   final int count;
@@ -377,9 +415,8 @@ class _DotIndicator extends StatelessWidget {
           width: isActive ? 28 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive
-                ? activeColor
-                : activeColor.withValues(alpha: 0.25),
+            gradient: isActive ? AppGradients.primary : null,
+            color: isActive ? null : activeColor.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(4),
           ),
         );

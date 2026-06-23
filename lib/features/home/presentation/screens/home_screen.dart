@@ -295,13 +295,13 @@ class _DeliveryAddressBar extends ConsumerWidget {
           await ref.read(cacheManagerProvider).invalidateByPrefix(CacheKeys.addresses);
           ref.invalidate(addressesProvider);
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
           height: 48,
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 1),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [AppShadows.sm],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -398,8 +398,8 @@ class _SectionHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
@@ -531,8 +531,9 @@ class _CampaignBannerPage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+      decoration: const BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.all(Radius.circular(16)),
       ),
       child: imageUrl != null
           ? CachedNetworkImage(
@@ -554,11 +555,7 @@ class _CampaignBannerPage extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.accent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppGradients.primary,
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -617,7 +614,7 @@ class _CategoriesRow extends ConsumerWidget {
     final selectedId = filterState.selectedCategoryId;
 
     return SizedBox(
-      height: 112,
+      height: 44,
       child: categoriesAsync.when(
         loading: () => _buildShimmer(),
         error: (error, _) => _ErrorRow(
@@ -627,13 +624,13 @@ class _CategoriesRow extends ConsumerWidget {
         data: (categories) => ListView.builder(
           scrollDirection: Axis.horizontal,
           clipBehavior: Clip.none,
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final category = categories[index];
             final isSelected = category.id == selectedId;
             return Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 8),
               child: CategoryCard(
                 category: category,
                 isSelected: isSelected,
@@ -665,15 +662,15 @@ class _CategoriesRow extends ConsumerWidget {
       highlightColor: AppColors.surface,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: 5,
         itemBuilder: (_, __) => Container(
-          width: 72,
-          height: 88,
-          margin: const EdgeInsets.only(right: 12),
+          width: 88,
+          height: 36,
+          margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
       ),

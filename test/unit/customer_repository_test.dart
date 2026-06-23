@@ -6,7 +6,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nisa_ticaret/core/constants/app_constants.dart';
 import 'package:nisa_ticaret/features/auth/data/models/user_model.dart';
-import 'package:nisa_ticaret/features/field_agent/data/repositories/customer_repository.dart';
+
 
 // ---------------------------------------------------------------------------
 // Yardimci: Minimal UserModel olusturur

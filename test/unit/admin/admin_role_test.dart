@@ -97,7 +97,7 @@ void main() {
   group('AdminUserModel', () {
     final baseDate = DateTime(2024, 1, 15);
 
-    AdminUserModel _makeUser({
+    AdminUserModel makeUser({
       String id = 'u-test',
       String name = 'Test Kullanici',
       String phone = '+905550001122',
@@ -119,45 +119,45 @@ void main() {
     }
 
     test('fromJson / toJson round-trip preserves id', () {
-      final user = _makeUser();
+      final user = makeUser();
       final restored = AdminUserModel.fromJson(user.toJson());
       expect(restored.id, user.id);
     });
 
     test('fromJson / toJson round-trip preserves name', () {
-      final user = _makeUser(name: 'Ayse Yildiz');
+      final user = makeUser(name: 'Ayse Yildiz');
       final restored = AdminUserModel.fromJson(user.toJson());
       expect(restored.name, user.name);
     });
 
     test('fromJson / toJson round-trip preserves phone', () {
-      final user = _makeUser(phone: '+905559998877');
+      final user = makeUser(phone: '+905559998877');
       final restored = AdminUserModel.fromJson(user.toJson());
       expect(restored.phone, user.phone);
     });
 
     test('fromJson / toJson round-trip preserves role', () {
       for (final role in UserRole.values) {
-        final user = _makeUser(role: role);
+        final user = makeUser(role: role);
         final restored = AdminUserModel.fromJson(user.toJson());
         expect(restored.role, role);
       }
     });
 
     test('fromJson / toJson round-trip preserves isBlocked true', () {
-      final user = _makeUser(isBlocked: true);
+      final user = makeUser(isBlocked: true);
       final restored = AdminUserModel.fromJson(user.toJson());
       expect(restored.isBlocked, isTrue);
     });
 
     test('fromJson / toJson round-trip preserves totalOrders', () {
-      final user = _makeUser(totalOrders: 42);
+      final user = makeUser(totalOrders: 42);
       final restored = AdminUserModel.fromJson(user.toJson());
       expect(restored.totalOrders, 42);
     });
 
     test('fromJson / toJson round-trip preserves totalSpent', () {
-      final user = _makeUser(totalSpent: 1234.50);
+      final user = makeUser(totalSpent: 1234.50);
       final restored = AdminUserModel.fromJson(user.toJson());
       expect(restored.totalSpent, 1234.50);
     });
@@ -196,38 +196,38 @@ void main() {
     });
 
     test('copyWith isBlocked flips correctly', () {
-      final user = _makeUser(isBlocked: false);
+      final user = makeUser(isBlocked: false);
       final blocked = user.copyWith(isBlocked: true);
       expect(blocked.isBlocked, isTrue);
       expect(blocked.id, user.id); // diger alanlar degismez
     });
 
     test('copyWith preserves unchanged fields', () {
-      final user = _makeUser(name: 'Orijinal Ad', totalOrders: 5);
+      final user = makeUser(name: 'Orijinal Ad', totalOrders: 5);
       final updated = user.copyWith(isBlocked: true);
       expect(updated.name, 'Orijinal Ad');
       expect(updated.totalOrders, 5);
     });
 
     test('copyWith role changes role', () {
-      final user = _makeUser(role: UserRole.customer);
+      final user = makeUser(role: UserRole.customer);
       final promoted = user.copyWith(role: UserRole.fieldAgent);
       expect(promoted.role, UserRole.fieldAgent);
       expect(user.role, UserRole.customer); // immutability
     });
 
     test('initials single word name returns first letter', () {
-      final user = _makeUser(name: 'Mehmet');
+      final user = makeUser(name: 'Mehmet');
       expect(user.initials, 'M');
     });
 
     test('initials two word name returns first letters of each', () {
-      final user = _makeUser(name: 'Ahmet Yilmaz');
+      final user = makeUser(name: 'Ahmet Yilmaz');
       expect(user.initials, 'AY');
     });
 
     test('initials multi word name uses first and last word', () {
-      final user = _makeUser(name: 'Ali Can Kaya');
+      final user = makeUser(name: 'Ali Can Kaya');
       expect(user.initials, 'AK');
     });
 

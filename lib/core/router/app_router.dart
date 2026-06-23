@@ -49,6 +49,13 @@ import '../../features/admin/presentation/screens/category_management_screen.dar
 // Screens - Notifications
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
+// Screens - FAZ 5
+import '../../features/products/presentation/screens/favorites_screen.dart';
+import '../../features/orders/presentation/screens/review_screen.dart';
+import '../../features/orders/presentation/screens/subscription_screen.dart';
+import '../../features/campaigns/presentation/screens/campaigns_screen.dart';
+import '../../features/profile/presentation/screens/help_screen.dart';
+
 // Screens - Address
 import '../../features/orders/presentation/screens/address_selection_screen.dart';
 import '../../features/orders/presentation/screens/address_form_screen.dart';
@@ -108,6 +115,13 @@ class AppRoutes {
   // Address
   static const String addressSelection = '/addresses';
   static const String addressForm = '/addresses/form';
+
+  // FAZ 5
+  static const String favorites = '/favorites';
+  static const String subscription = '/subscription';
+  static const String campaigns = '/campaigns';
+  static const String help = '/help';
+  static const String review = '/review';
 }
 
 // Root navigator key — ShellRoute içinden push yapılan route'lar için
@@ -386,6 +400,37 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AddressFormScreen(address: address);
         },
       ),
+
+      // FAZ 5 — tam sayfa, ShellRoute disinda
+      GoRoute(
+        parentNavigatorKey: _rootNavKey,
+        path: AppRoutes.favorites,
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavKey,
+        path: AppRoutes.subscription,
+        builder: (context, state) => const SubscriptionScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavKey,
+        path: AppRoutes.campaigns,
+        builder: (context, state) => const CampaignsScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavKey,
+        path: AppRoutes.help,
+        builder: (context, state) => const HelpScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavKey,
+        path: '${AppRoutes.review}/:orderId',
+        builder: (context, state) {
+          final orderId =
+              int.tryParse(state.pathParameters['orderId'] ?? '0') ?? 0;
+          return ReviewScreen(orderId: orderId);
+        },
+      ),
     ],
   );
 });
@@ -399,7 +444,28 @@ class CustomerShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
-      bottomNavigationBar: _BottomNav(),
+      bottomNavigationBar: const _BottomNavWrapper(),
+    );
+  }
+}
+
+class _BottomNavWrapper extends StatelessWidget {
+  const _BottomNavWrapper();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.navBg,
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(0, -4),
+            blurRadius: 20,
+            color: Color(0x0F141E3C),
+          ),
+        ],
+      ),
+      child: _BottomNav(),
     );
   }
 }
@@ -416,6 +482,10 @@ class _BottomNav extends ConsumerWidget {
 
     return BottomNavigationBar(
       currentIndex: currentIndex,
+      backgroundColor: AppColors.navBg,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.textHint,
+      elevation: 0,
       onTap: (index) {
         switch (index) {
           case 0: context.go(AppRoutes.home); break;

@@ -42,15 +42,9 @@ class ProductCard extends ConsumerWidget {
           context.safePush(AppRoutes.productDetail.replaceFirst(':id', product.id)),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.cardBg,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
+          boxShadow: const [AppShadows.sm],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,18 +96,18 @@ class ProductCard extends ConsumerWidget {
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.accent,
+                          color: AppColors.tealLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
                           'YENİ',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
+                            color: AppColors.accent,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -126,18 +120,18 @@ class ProductCard extends ConsumerWidget {
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.error,
+                          color: AppColors.pinkLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '%${discountPct.toInt()}',
+                          '%-${discountPct.toInt()}',
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
+                            color: AppColors.primary,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -195,7 +189,7 @@ class ProductCard extends ConsumerWidget {
                             Text(
                               '₺${originalPrice.toStringAsFixed(2)}',
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: AppColors.textHint,
                                 decoration: TextDecoration.lineThrough,
                               ),
@@ -205,8 +199,8 @@ class ProductCard extends ConsumerWidget {
                                 ? '₺${displayPrice.toStringAsFixed(2)}'
                                 : 'Fiyat yok',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
                               color: displayPrice > 0
                                   ? AppColors.primary
                                   : AppColors.textHint,
@@ -245,37 +239,57 @@ class _AddButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      onTap: () {
-        final koliVariant = product.koliVariant;
-        if (koliVariant != null) {
-          ref
-              .read(cartProvider.notifier)
-              .addItem(product, variant: koliVariant);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${product.name} sepete eklendi'),
-              duration: const Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              backgroundColor: AppColors.success,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.circular(46),
+        boxShadow: const [AppShadows.primary],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(46),
+          onTap: () {
+            final koliVariant = product.koliVariant;
+            if (koliVariant != null) {
+              ref
+                  .read(cartProvider.notifier)
+                  .addItem(product, variant: koliVariant);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${product.name} sepete eklendi'),
+                  duration: const Duration(seconds: 1),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            } else {
+              // Koli varyantı yok → detay sayfasına git
+              context.push(
+                  AppRoutes.productDetail.replaceFirst(':id', product.id));
+            }
+          },
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, color: Colors.white, size: 16),
+                SizedBox(width: 4),
+                Text(
+                  'Ekle',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
-          );
-        } else {
-          // Koli varyantı yok → detay sayfasına git
-          context.push(
-              AppRoutes.productDetail.replaceFirst(':id', product.id));
-        }
-      },
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        child: const Icon(Icons.add, color: Colors.white, size: 18),
       ),
     );
   }
@@ -296,7 +310,7 @@ class _QtyControl extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.secondary, width: 1.5),
+        border: Border.all(color: AppColors.primary, width: 1.5),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -309,7 +323,7 @@ class _QtyControl extends ConsumerWidget {
             child: const SizedBox(
               width: 32,
               height: 32,
-              child: Icon(Icons.remove, size: 16, color: AppColors.secondary),
+              child: Icon(Icons.remove, size: 16, color: AppColors.primary),
             ),
           ),
           Text(
@@ -317,7 +331,7 @@ class _QtyControl extends ConsumerWidget {
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
-              color: AppColors.secondary,
+              color: AppColors.primary,
             ),
           ),
           GestureDetector(
@@ -330,7 +344,7 @@ class _QtyControl extends ConsumerWidget {
             child: const SizedBox(
               width: 32,
               height: 32,
-              child: Icon(Icons.add, size: 16, color: AppColors.secondary),
+              child: Icon(Icons.add, size: 16, color: AppColors.primary),
             ),
           ),
         ],

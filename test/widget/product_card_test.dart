@@ -41,8 +41,8 @@ Widget _wrapCard(ProductModel product, {bool showAddButton = true}) {
       theme: AppTheme.lightTheme,
       home: Scaffold(
         body: SizedBox(
-          width: 200,
-          height: 280,
+          width: 240,
+          height: 300,
           child: ProductCard(
             product: product,
             showAddButton: showAddButton,

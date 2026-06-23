@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nisa_ticaret/core/constants/category_icons.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/products/data/models/category_model.dart';
 
@@ -17,105 +16,77 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CategoryIconWidget(
-      categoryIcon: _resolveIcon(category),
+    final icon = _resolveIconData(category);
+
+    return GestureDetector(
       onTap: onTap,
-      isSelected: isSelected,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.pinkLight : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              category.name,
+              style: TextStyle(
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  /// Önce Firestore'daki iconName+color'ı dene; yoksa slug'a göre statik fallback.
-  static CategoryIcon _resolveIcon(CategoryModel category) {
-    // Firestore'da iconName varsa dinamik ikon kullan
+  /// Kategori için ikon belirler — Firestore iconName → Material icon map,
+  /// yoksa slug bazlı fallback. SVG ikonlar chip içinde desteklenmiyor;
+  /// bu durumda null döner ve ikon alanı gösterilmez.
+  static IconData? _resolveIconData(CategoryModel category) {
     if (category.iconName.isNotEmpty) {
       final iconData = _materialIconFromName(category.iconName);
-      if (iconData != null) {
-        final fg = _parseColor(category.color) ?? AppColors.primary;
-        final bg = fg.withValues(alpha: 0.12);
-        return CategoryIcon(
-          icon: iconData,
-          backgroundColor: bg,
-          foregroundColor: fg,
-          label: category.name,
-        );
-      }
-      // iconName var ama map'te yok → renk bazlı fallback
-      final fg = _parseColor(category.color) ?? AppColors.textSecondary;
-      final bg = fg.withValues(alpha: 0.12);
-      return CategoryIcon(
-        icon: Icons.category_outlined,
-        backgroundColor: bg,
-        foregroundColor: fg,
-        label: category.name,
-      );
+      if (iconData != null) return iconData;
     }
-
-    // iconName boş veya null → önce slug, sonra color fallback
-    if (category.color.isNotEmpty) {
-      final fg = _parseColor(category.color);
-      if (fg != null) {
-        return CategoryIcon(
-          icon: Icons.category_outlined,
-          backgroundColor: fg.withValues(alpha: 0.12),
-          foregroundColor: fg,
-          label: category.name,
-        );
-      }
-    }
-
-    // slug bazlı statik fallback
-    return _slugFallback(category.slug, category.name);
+    return _slugFallbackIcon(category.slug);
   }
 
-  static CategoryIcon _slugFallback(String slug, String label) {
+  static IconData? _slugFallbackIcon(String slug) {
     switch (slug) {
       case 'su':
-        return CategoryIcon(
-          svgPath: CategoryIcons.water.svgPath,
-          backgroundColor: CategoryIcons.water.backgroundColor,
-          foregroundColor: CategoryIcons.water.foregroundColor,
-          label: label,
-        );
+        return Icons.water_drop_outlined;
       case 'gazli-icecek':
-        return CategoryIcon(
-          svgPath: CategoryIcons.carbonated.svgPath,
-          backgroundColor: CategoryIcons.carbonated.backgroundColor,
-          foregroundColor: CategoryIcons.carbonated.foregroundColor,
-          label: label,
-        );
+        return Icons.bubble_chart_outlined;
       case 'meyve-suyu':
-        return CategoryIcon(
-          icon: CategoryIcons.juice.icon,
-          backgroundColor: CategoryIcons.juice.backgroundColor,
-          foregroundColor: CategoryIcons.juice.foregroundColor,
-          label: label,
-        );
+        return Icons.emoji_food_beverage_outlined;
       case 'soda':
-        return CategoryIcon(
-          icon: CategoryIcons.soda.icon,
-          backgroundColor: CategoryIcons.soda.backgroundColor,
-          foregroundColor: CategoryIcons.soda.foregroundColor,
-          label: label,
-        );
+        return Icons.local_bar_outlined;
       case 'kampanya':
-        return CategoryIcon(
-          svgPath: CategoryIcons.promo.svgPath,
-          backgroundColor: CategoryIcons.promo.backgroundColor,
-          foregroundColor: CategoryIcons.promo.foregroundColor,
-          label: label,
-        );
+        return Icons.local_offer_outlined;
       default:
-        return CategoryIcon(
-          icon: Icons.category_outlined,
-          backgroundColor: AppColors.border,
-          foregroundColor: AppColors.textSecondary,
-          label: label,
-        );
+        return Icons.category_outlined;
     }
   }
 
   /// Material icon adından IconData döndürür.
-  /// Firestore'da "water_drop", "local_drink" gibi snake_case isimler beklenir.
   static IconData? _materialIconFromName(String name) {
     if (name.isEmpty) return null;
     const map = <String, IconData>{
@@ -150,19 +121,5 @@ class CategoryCard extends StatelessWidget {
       'more_horiz': Icons.more_horiz,
     };
     return map[name];
-  }
-
-  /// "#RRGGBB" veya "RRGGBB" hex string'i Color'a çevirir.
-  static Color? _parseColor(String hex) {
-    try {
-      final clean = hex.replaceFirst('#', '');
-      if (clean.length == 6) {
-        return Color(int.parse('FF$clean', radix: 16));
-      }
-      if (clean.length == 8) {
-        return Color(int.parse(clean, radix: 16));
-      }
-    } catch (_) {}
-    return null;
   }
 }

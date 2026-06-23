@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 import 'package:nisa_ticaret/features/auth/presentation/bloc/auth_provider.dart';
@@ -56,9 +57,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(
+          style: GoogleFonts.plusJakartaSans(
             color: AppColors.textWhite,
-            fontFamily: 'Poppins',
             fontSize: 14,
           ),
         ),
@@ -74,7 +74,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // State listener
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next.step == AuthStep.done) {
         context.go(AppRoutes.home);
@@ -88,33 +87,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final isLoading = _isSaving;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.secondary, size: 20),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Hesabi Tamamla',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 48),
-              _ProfileIcon(),
+              const SizedBox(height: 16),
+              _BackButton(),
+              const SizedBox(height: 32),
+              _ProfileIconSection(),
               const SizedBox(height: 32),
               _TitleSection(),
               const SizedBox(height: 32),
@@ -141,9 +124,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Profil ikonu
+// Geri butonu
 // ---------------------------------------------------------------------------
-class _ProfileIcon extends StatelessWidget {
+class _BackButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => context.pop(),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.navBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Profil ikonu bölümü
+// ---------------------------------------------------------------------------
+class _ProfileIconSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -151,13 +162,14 @@ class _ProfileIcon extends StatelessWidget {
         width: 96,
         height: 96,
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
+          gradient: AppGradients.primary,
           shape: BoxShape.circle,
+          boxShadow: const [AppShadows.primary],
         ),
         child: const Icon(
           Icons.person_rounded,
-          size: 52,
-          color: AppColors.primary,
+          size: 48,
+          color: AppColors.textWhite,
         ),
       ),
     );
@@ -171,23 +183,23 @@ class _TitleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Merhaba!',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.secondary,
-              ),
-          textAlign: TextAlign.center,
+          'Neredeyse tamam! 🎉',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Sizi tanimak istiyoruz',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-          textAlign: TextAlign.center,
+          'Seni tanımak için adını öğrenebilir miyiz?',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: const Color(0xFF7E879A),
+          ),
         ),
       ],
     );
@@ -215,9 +227,11 @@ class _NameInputField extends StatelessWidget {
       children: [
         Text(
           'Ad Soyad',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -225,10 +239,22 @@ class _NameInputField extends StatelessWidget {
           maxLength: 50,
           textCapitalization: TextCapitalization.words,
           onChanged: onChanged,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textPrimary,
+          ),
           decoration: InputDecoration(
-            hintText: 'Ad Soyad',
+            fillColor: AppColors.inputBg,
+            filled: true,
+            hintText: 'Adınızı girin',
+            hintStyle: GoogleFonts.plusJakartaSans(
+              color: AppColors.textHint,
+              fontSize: 15,
+            ),
             counterText: '',
             errorText: nameError,
+            errorStyle: GoogleFonts.plusJakartaSans(fontSize: 12),
             prefixIcon: const Icon(
               Icons.person_outline_rounded,
               color: AppColors.textSecondary,
@@ -258,7 +284,7 @@ class _NameInputField extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Devam Et butonu
+// Devam Et butonu — gradient + shadow
 // ---------------------------------------------------------------------------
 class _SubmitButton extends StatelessWidget {
   final bool isLoading;
@@ -273,34 +299,45 @@ class _SubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: isEnabled ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return AnimatedOpacity(
+      opacity: isEnabled ? 1.0 : 0.55,
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: AppGradients.primary,
+          borderRadius: BorderRadius.circular(46),
+          boxShadow: isEnabled ? const [AppShadows.primary] : null,
+        ),
+        child: ElevatedButton(
+          onPressed: isEnabled ? onPressed : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            disabledBackgroundColor: Colors.transparent,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(46),
+            ),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: AppColors.textWhite,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : Text(
+                  'Hesabı Tamamla',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textWhite,
+                  ),
+                ),
         ),
       ),
-      child: isLoading
-          ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                color: AppColors.textWhite,
-                strokeWidth: 2.5,
-              ),
-            )
-          : const Text(
-              'Devam Et',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textWhite,
-              ),
-            ),
     );
   }
 }
