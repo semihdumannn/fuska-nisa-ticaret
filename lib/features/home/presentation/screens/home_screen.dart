@@ -62,6 +62,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _searchActive = false);
   }
 
+  Future<void> _onRefresh() async {
+    ref.invalidate(rootCategoriesProvider);
+    ref.invalidate(featuredProductsProvider);
+    ref.invalidate(productsPageProvider);
+    ref.invalidate(activeCampaignsProvider);
+    ref.invalidate(apiProductsByCategoryProvider);
+    // Adres de yenilensin
+    ref.invalidate(addressesProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartItemCount =
@@ -78,7 +88,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.primary,
+        child: CustomScrollView(
         controller: _scrollController,
         slivers: [
           // App Bar
@@ -248,6 +261,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
