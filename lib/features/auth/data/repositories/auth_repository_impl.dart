@@ -66,15 +66,16 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<Either<Failure, void>> logout() async {
+    // Local data önce silinir — network hatası logout'u engellemez.
+    await _localDatasource.clearToken();
+    await _localDatasource.clearUser();
+    await _localDatasource.clearTotpCredentials();
     try {
       await _remoteDatasource.logout();
-      await _localDatasource.clearToken();
-      await _localDatasource.clearUser();
-      await _localDatasource.clearTotpCredentials();
-      return const Right(null);
-    } catch (e) {
-      return Left(ExceptionHandler.handleException(e));
+    } catch (_) {
+      // Best-effort: token zaten geçersiz olabilir, UI zaten logout oldu.
     }
+    return const Right(null);
   }
 
   @override
