@@ -75,4 +75,12 @@ class ApiEndpoints {
   static const adminAnalyticsTopCustomers =
       '$_v1/admin/analytics/top-customers';
   static const adminAnalyticsTopProducts = '$_v1/admin/analytics/top-products';
+
+  // Subscriptions (backend hazırlandığında aktif)
+  static const subscriptions = '$_v1/subscriptions';
+  static String subscriptionDetail(int id) => '$subscriptions/$id';
+
+  // Favorites (backend hazırlandığında aktif)
+  static const favorites = '$_v1/favorites';
+  static String favoriteDetail(String id) => '$favorites/$id';
 }

@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/navigation_guard.dart';
 import '../../cart/presentation/bloc/cart_provider.dart';
 import '../../products/data/models/product_model.dart';
+import '../../products/data/providers/favorites_provider.dart';
 
 class ProductCard extends ConsumerWidget {
   final ProductModel product;
@@ -140,18 +141,25 @@ class ProductCard extends ConsumerWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: AppColors.surface,
-                        shape: BoxShape.circle,
-                        boxShadow: [AppShadows.sm],
-                      ),
-                      child: const Icon(
-                        Icons.favorite_border,
-                        size: 16,
-                        color: AppColors.textHint,
+                    child: GestureDetector(
+                      onTap: () => ref.read(favoritesProvider.notifier).toggle(product.id),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: AppColors.surface,
+                          shape: BoxShape.circle,
+                          boxShadow: [AppShadows.sm],
+                        ),
+                        child: ref.watch(favoritesProvider).when(
+                          data: (ids) => Icon(
+                            ids.contains(product.id) ? Icons.favorite : Icons.favorite_border,
+                            size: 16,
+                            color: ids.contains(product.id) ? AppColors.primary : AppColors.textHint,
+                          ),
+                          loading: () => const Icon(Icons.favorite_border, size: 16, color: AppColors.textHint),
+                          error: (_, __) => const Icon(Icons.favorite_border, size: 16, color: AppColors.textHint),
+                        ),
                       ),
                     ),
                   ),

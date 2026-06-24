@@ -65,6 +65,7 @@ class OrderDetailScreen extends ConsumerWidget {
   Widget _buildContent(BuildContext context, OrderEntity order) {
     final canCancel = order.canBeCancelled;
     final canReorder = order.status.isFinal;
+    final canReview = order.status == OrderStatus.delivered;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 32),
@@ -78,6 +79,7 @@ class OrderDetailScreen extends ConsumerWidget {
           _AddressSection(order: order),
           _PaymentSection(order: order),
           if (canReorder) _ReorderButton(order: order),
+          if (canReview) _ReviewButton(orderId: order.id.toString()),
           if (canCancel) _CancelOrderButton(order: order),
           _WhatsAppSupportButton(orderNo: order.orderNumber),
         ],
@@ -965,6 +967,38 @@ class _ReorderButton extends ConsumerWidget {
           foregroundColor: AppColors.textWhite,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Değerlendir
+// ---------------------------------------------------------------------------
+
+class _ReviewButton extends StatelessWidget {
+  final String orderId;
+  const _ReviewButton({required this.orderId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: ElevatedButton(
+        onPressed: () => context.push('${AppRoutes.review}/$orderId'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(46),
+          ),
+        ),
+        child: const Text(
+          '⭐ Bu Siparişi Değerlendir',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
     );
