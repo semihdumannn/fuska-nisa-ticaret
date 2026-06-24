@@ -30,15 +30,15 @@ class FavoritesScreen extends ConsumerWidget {
       body: favAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (_, __) => _EmptyFavorites(onTap: () => context.go(AppRoutes.home)),
-        data: (favIds) {
-          if (favIds.isEmpty) {
+        data: (favMap) {
+          if (favMap.isEmpty) {
             return _EmptyFavorites(onTap: () => context.go(AppRoutes.home));
           }
           return allAsync.when(
             loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
             error: (_, __) => _EmptyFavorites(onTap: () => context.go(AppRoutes.home)),
             data: (products) {
-              final favProducts = products.where((p) => favIds.contains(p.id)).toList();
+              final favProducts = products.where((p) => favMap.containsKey(p.id)).toList();
               if (favProducts.isEmpty) {
                 return _EmptyFavorites(onTap: () => context.go(AppRoutes.home));
               }

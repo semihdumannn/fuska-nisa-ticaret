@@ -152,10 +152,10 @@ class ProductCard extends ConsumerWidget {
                           boxShadow: [AppShadows.sm],
                         ),
                         child: ref.watch(favoritesProvider).when(
-                          data: (ids) => Icon(
-                            ids.contains(product.id) ? Icons.favorite : Icons.favorite_border,
+                          data: (favMap) => Icon(
+                            favMap.containsKey(product.id) ? Icons.favorite : Icons.favorite_border,
                             size: 16,
-                            color: ids.contains(product.id) ? AppColors.primary : AppColors.textHint,
+                            color: favMap.containsKey(product.id) ? AppColors.primary : AppColors.textHint,
                           ),
                           loading: () => const Icon(Icons.favorite_border, size: 16, color: AppColors.textHint),
                           error: (_, __) => const Icon(Icons.favorite_border, size: 16, color: AppColors.textHint),
