@@ -388,31 +388,24 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: (isProductInStock && (_selectedVariant != null || !hasVariants))
-                    ? Container(
-                        decoration: BoxDecoration(
-                          gradient: AppGradients.primary,
-                          borderRadius: BorderRadius.circular(46),
-                          boxShadow: const [AppShadows.primary],
-                        ),
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(double.infinity, 56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(46),
-                            ),
-                            textStyle: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    ? ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                          elevation: 6,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(46),
                           ),
-                          onPressed: () => _addToCart(product),
-                          icon: const Icon(Icons.shopping_cart_outlined, size: 20),
-                          label: const Text('Sepete Ekle'),
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                        onPressed: () => _addToCart(product),
+                        icon: const Icon(Icons.shopping_cart_outlined, size: 20),
+                        label: const Text('Sepete Ekle'),
                       )
                     : ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(

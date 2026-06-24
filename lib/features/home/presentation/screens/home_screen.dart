@@ -759,7 +759,7 @@ class _FeaturedProductsGrid extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// _AllProductsGrid — kategori seçiliyken server-side, seçilmezken allProducts
+// _AllProductsGrid — arama varsa tüm ürünlerde ara, yoksa kategori filtrele
 // ---------------------------------------------------------------------------
 class _AllProductsGrid extends ConsumerWidget {
   const _AllProductsGrid();
@@ -768,11 +768,26 @@ class _AllProductsGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filterState = ref.watch(productListProvider);
     final selectedCategoryId = filterState.selectedCategoryId;
+    final hasSearch = filterState.searchQuery.isNotEmpty;
 
-    // Kategori seçiliyken server-side filtrele — tüm ürünleri çekip
-    // client-side filtrelemek yerine API'ye category_id gönder.
-    // (allProductsProvider 168 ürünü çekmek için birden fazla sayfa yapar
-    // ve cache kirlenince yanlış sayfalanmış sonuç dönebilir.)
+    // Arama aktifse kategori seçili olsa bile tüm ürünlerde ara.
+    if (hasSearch) {
+      final allAsync = ref.watch(allProductsProvider);
+      return allAsync.when(
+        loading: () => _buildShimmer(context),
+        error: (_, __) => _ErrorRow(
+          message: 'Ürünler yüklenemedi',
+          onRetry: () => ref.invalidate(allProductsProvider),
+        ),
+        data: (products) {
+          final filtered = filterState.sortedAndSearchFiltered(products);
+          if (filtered.isEmpty) return _buildEmpty(filterState);
+          return _buildGrid(context, filtered);
+        },
+      );
+    }
+
+    // Kategori seçiliyken server-side filtrele.
     if (selectedCategoryId != null) {
       final categoryAsync =
           ref.watch(apiProductsByCategoryProvider(selectedCategoryId));
@@ -785,7 +800,6 @@ class _AllProductsGrid extends ConsumerWidget {
         ),
         data: (entities) {
           final products = entities.map((e) => e.toProductModel()).toList();
-          // Sıralama + arama uygula, kategori filtresi server'da yapıldı
           final sorted = filterState.sortedAndSearchFiltered(products);
           if (sorted.isEmpty) return _buildEmpty(filterState);
           return _buildGrid(context, sorted);
@@ -793,9 +807,7 @@ class _AllProductsGrid extends ConsumerWidget {
       );
     }
 
-    // Kategori seçili değil — sayfalanmış ilk 50 ürünü göster.
-    // allProductsProvider yerine productsPageProvider kullanılır:
-    // tüm 168 ürünü sıralı çekmek (2×API = ~10s) yerine ilk sayfa anında.
+    // Kategori seçili değil — sayfalanmış ilk ürünleri göster.
     final pageAsync = ref.watch(productsPageProvider);
     return pageAsync.when(
       loading: () => _buildShimmer(context),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import '../constants/asset_paths.dart';
+import '../theme/app_theme.dart';
 
 // Screens - Splash
 import '../../features/splash/presentation/screens/splash_screen.dart';
@@ -63,7 +62,6 @@ import '../../features/orders/data/models/address_model.dart';
 // Providers
 import '../../features/auth/presentation/bloc/auth_provider.dart';
 import '../../features/auth/data/models/user_model.dart';
-import '../theme/app_theme.dart';
 
 class AppRoutes {
   // Splash
@@ -454,23 +452,13 @@ class _BottomNavWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.navBg,
-        boxShadow: [
-          BoxShadow(
-            offset: Offset(0, -4),
-            blurRadius: 20,
-            color: Color(0x0F141E3C),
-          ),
-        ],
-      ),
-      child: _BottomNav(),
-    );
+    return const _BottomNav();
   }
 }
 
 class _BottomNav extends ConsumerWidget {
+  const _BottomNav();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -480,58 +468,108 @@ class _BottomNav extends ConsumerWidget {
     if (location.startsWith(AppRoutes.orders)) currentIndex = 2;
     if (location.startsWith(AppRoutes.profile)) currentIndex = 3;
 
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      backgroundColor: AppColors.navBg,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.textHint,
-      elevation: 0,
-      onTap: (index) {
-        switch (index) {
-          case 0: context.go(AppRoutes.home); break;
-          case 1: context.go(AppRoutes.cart); break;
-          case 2: context.go(AppRoutes.orders); break;
-          case 3: context.go(AppRoutes.profile); break;
-        }
-      },
-      items: [
-        BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavHome, isActive: currentIndex == 0),
-          label: 'Ana Sayfa',
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.navBg,
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(0, -2),
+            blurRadius: 16,
+            color: Color(0x0F141E3C),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 62,
+          child: Row(
+            children: [
+              _NavTab(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home_rounded,
+                label: 'Ana Sayfa',
+                isActive: currentIndex == 0,
+                onTap: () => context.go(AppRoutes.home),
+              ),
+              _NavTab(
+                icon: Icons.shopping_cart_outlined,
+                activeIcon: Icons.shopping_cart_rounded,
+                label: 'Sepet',
+                isActive: currentIndex == 1,
+                onTap: () => context.go(AppRoutes.cart),
+              ),
+              _NavTab(
+                icon: Icons.receipt_long_outlined,
+                activeIcon: Icons.receipt_long_rounded,
+                label: 'Siparişler',
+                isActive: currentIndex == 2,
+                onTap: () => context.go(AppRoutes.orders),
+              ),
+              _NavTab(
+                icon: Icons.person_outline_rounded,
+                activeIcon: Icons.person_rounded,
+                label: 'Profil',
+                isActive: currentIndex == 3,
+                onTap: () => context.go(AppRoutes.profile),
+              ),
+            ],
+          ),
         ),
-        BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavCart, isActive: currentIndex == 1),
-          label: 'Sepet',
-        ),
-        BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavOrders, isActive: currentIndex == 2),
-          label: 'Siparişler',
-        ),
-        BottomNavigationBarItem(
-          icon: _NavIcon(path: AssetPaths.icNavProfile, isActive: currentIndex == 3),
-          label: 'Profil',
-        ),
-      ],
+      ),
     );
   }
 }
 
-/// SVG navigation ikonu — active=primary pembe, inactive=textHint gri
-class _NavIcon extends StatelessWidget {
-  final String path;
+class _NavTab extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
   final bool isActive;
+  final VoidCallback onTap;
 
-  const _NavIcon({required this.path, required this.isActive});
+  const _NavTab({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.asset(
-      path,
-      width: 24,
-      height: 24,
-      colorFilter: ColorFilter.mode(
-        isActive ? AppColors.primary : AppColors.textSecondary,
-        BlendMode.srcIn,
+    final color = isActive ? AppColors.primary : AppColors.textHint;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 6),
+            Icon(isActive ? activeIcon : icon, size: 24, color: color),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              width: isActive ? 20 : 0,
+              height: 3,
+              decoration: BoxDecoration(
+                color: AppColors.secondary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

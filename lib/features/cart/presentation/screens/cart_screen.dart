@@ -88,56 +88,59 @@ class CartScreen extends ConsumerWidget {
 
   Widget _buildDiscountCodeField(BuildContext context) {
     final controller = TextEditingController();
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
           color: AppColors.border,
-          width: 1.5,
+          borderRadius: 28,
+          dashWidth: 6,
+          dashGap: 4,
+          strokeWidth: 1.5,
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.discount_outlined, color: AppColors.primary, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'İndirim kodu ekle',
-                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                filled: false,
-              ),
-              style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Kupon özelliği yakında!'),
-                  behavior: SnackBarBehavior.floating,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              const Icon(Icons.discount_outlined, color: AppColors.primary, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: 'İndirim kodu ekle',
+                    hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    filled: false,
+                  ),
+                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
                 ),
-              );
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text(
-              'Uygula',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-            ),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Kupon özelliği yakında!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.waterBlue,
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Uygula',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -732,3 +735,50 @@ class _SummaryRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 String _formatPrice(double price) => '${price.toStringAsFixed(2)} TL';
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double borderRadius;
+  final double dashWidth;
+  final double dashGap;
+  final double strokeWidth;
+
+  const _DashedBorderPainter({
+    required this.color,
+    required this.borderRadius,
+    this.dashWidth = 6,
+    this.dashGap = 4,
+    this.strokeWidth = 1.5,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth),
+      Radius.circular(borderRadius),
+    );
+    final path = Path()..addRRect(rrect);
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      bool draw = true;
+      while (distance < metric.length) {
+        final end = (distance + (draw ? dashWidth : dashGap)).clamp(0.0, metric.length);
+        if (draw) canvas.drawPath(metric.extractPath(distance, end), paint);
+        distance = end;
+        draw = !draw;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) =>
+      old.color != color || old.borderRadius != borderRadius ||
+      old.dashWidth != dashWidth || old.dashGap != dashGap;
+}
