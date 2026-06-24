@@ -210,17 +210,17 @@ class _ProfileContent extends ConsumerWidget {
       _MenuItem(
         icon: Icons.favorite_border,
         title: 'Favorilerim',
-        onTap: () {},
+        onTap: () => context.push(AppRoutes.favorites),
       ),
       _MenuItem(
         icon: Icons.autorenew,
         title: 'Aboneliğim',
-        onTap: () {},
+        onTap: () => context.push(AppRoutes.subscription),
       ),
       _MenuItem(
         icon: Icons.local_offer_outlined,
         title: 'Kampanyalar',
-        onTap: () {},
+        onTap: () => context.push(AppRoutes.campaigns),
       ),
       _MenuItem(
         icon: Icons.notifications_outlined,
