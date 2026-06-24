@@ -162,7 +162,7 @@ class _ProfileIconSection extends StatelessWidget {
         width: 96,
         height: 96,
         decoration: BoxDecoration(
-          gradient: AppGradients.primary,
+          color: AppColors.primary,
           shape: BoxShape.circle,
           boxShadow: const [AppShadows.primary],
         ),
@@ -284,7 +284,7 @@ class _NameInputField extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Devam Et butonu — gradient + shadow
+// Devam Et butonu — solid primary
 // ---------------------------------------------------------------------------
 class _SubmitButton extends StatelessWidget {
   final bool isLoading;
@@ -302,41 +302,35 @@ class _SubmitButton extends StatelessWidget {
     return AnimatedOpacity(
       opacity: isEnabled ? 1.0 : 0.55,
       duration: const Duration(milliseconds: 200),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: AppGradients.primary,
-          borderRadius: BorderRadius.circular(46),
-          boxShadow: isEnabled ? const [AppShadows.primary] : null,
-        ),
-        child: ElevatedButton(
-          onPressed: isEnabled ? onPressed : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            disabledBackgroundColor: Colors.transparent,
-            minimumSize: const Size(double.infinity, 56),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(46),
-            ),
+      child: ElevatedButton(
+        onPressed: isEnabled ? onPressed : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.textWhite,
+          disabledBackgroundColor: AppColors.primary,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(46),
           ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    color: AppColors.textWhite,
-                    strokeWidth: 2.5,
-                  ),
-                )
-              : Text(
-                  'Hesabı Tamamla',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textWhite,
-                  ),
-                ),
         ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: AppColors.textWhite,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(
+                'Hesabı Tamamla',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textWhite,
+                ),
+              ),
       ),
     );
   }

@@ -53,31 +53,12 @@ class HelpScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          'Yardim & Iletisim',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
+        titleSpacing: 8,
         leading: IconButton(
-          icon: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.navBg,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 16,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          icon: const Icon(Icons.arrow_back_rounded, size: 24),
           onPressed: () => context.pop(),
         ),
+        title: const Text('Yardım & İletişim'),
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),

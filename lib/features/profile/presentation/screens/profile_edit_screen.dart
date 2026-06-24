@@ -81,12 +81,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          'Bilgilerimi Düzenle',
-          style: Theme.of(context).textTheme.headlineSmall,
+        titleSpacing: 8,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, size: 24),
+          onPressed: () => context.canPop() ? context.pop() : null,
         ),
-        scrolledUnderElevation: 1,
+        title: const Text('Bilgilerimi Düzenle'),
       ),
       body: profileState.isLoading && profile == null
           ? const Center(

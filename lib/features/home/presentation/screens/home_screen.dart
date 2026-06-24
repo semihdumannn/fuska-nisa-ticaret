@@ -97,8 +97,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // App Bar
           SliverAppBar(
             floating: true,
-            backgroundColor: AppColors.background,
+            backgroundColor: AppColors.surface,
             elevation: 0,
+            scrolledUnderElevation: 0,
             title: _searchActive
                 ? TextField(
                     controller: _searchController,

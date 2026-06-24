@@ -207,10 +207,10 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: AppColors.background,
+          titleSpacing: 8,
           title: Text(_isEditing ? 'Adresi Düzenle' : 'Yeni Adres'),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_rounded, size: 24),
             onPressed: () async {
               final canPop = await _onWillPop();
               if (canPop && context.mounted) context.pop();

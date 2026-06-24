@@ -163,12 +163,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: _isLastPage
-                    ? _GradientButton(
+                    ? _PrimaryButton(
                         key: const ValueKey('login_btn'),
                         label: 'Giriş Yap / Kaydol',
                         onPressed: () => _markSeenAndNavigate(goToAuth: true),
                       )
-                    : _GradientButton(
+                    : _PrimaryButton(
                         key: const ValueKey('next_btn'),
                         label: 'Devam Et',
                         trailingIcon: Icons.arrow_forward_rounded,
@@ -185,14 +185,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 }
 
 // ---------------------------------------------------------------------------
-// Gradient pill butonu
+// Solid primary butonu
 // ---------------------------------------------------------------------------
-class _GradientButton extends StatelessWidget {
+class _PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? trailingIcon;
   final VoidCallback onPressed;
 
-  const _GradientButton({
+  const _PrimaryButton({
     super.key,
     required this.label,
     this.trailingIcon,
@@ -201,39 +201,33 @@ class _GradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppGradients.primary,
-        borderRadius: BorderRadius.circular(46),
-        boxShadow: const [AppShadows.primary],
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textWhite,
+        elevation: 0,
+        minimumSize: const Size(double.infinity, 56),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(46),
+        ),
       ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(46),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-                color: AppColors.textWhite,
-              ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: AppColors.textWhite,
             ),
-            if (trailingIcon != null) ...[
-              const SizedBox(width: 6),
-              Icon(trailingIcon, size: 20, color: AppColors.textWhite),
-            ],
+          ),
+          if (trailingIcon != null) ...[
+            const SizedBox(width: 6),
+            Icon(trailingIcon, size: 20, color: AppColors.textWhite),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -415,8 +409,7 @@ class _DotIndicator extends StatelessWidget {
           width: isActive ? 28 : 8,
           height: 8,
           decoration: BoxDecoration(
-            gradient: isActive ? AppGradients.primary : null,
-            color: isActive ? null : activeColor.withValues(alpha: 0.25),
+            color: isActive ? AppColors.primary : activeColor.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(4),
           ),
         );

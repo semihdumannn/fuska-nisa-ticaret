@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_provider.dart';
 import '../../data/models/notification_model.dart';
@@ -93,23 +94,25 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        titleSpacing: 8,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, size: 24),
+          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.home),
+        ),
         title: const Text('Bildirimler'),
         actions: [
           if (unreadCount > 0)
-            TextButton(
-              onPressed: () => _markAllAsRead(userId),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                textStyle: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: () => _markAllAsRead(userId),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
+                child: const Text('Tümünü Oku'),
               ),
-              child: const Text('Tümünü Oku'),
             ),
-          const SizedBox(width: 4),
         ],
       ),
       body: Column(
