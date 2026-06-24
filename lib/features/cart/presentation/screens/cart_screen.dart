@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,68 +86,8 @@ class CartScreen extends ConsumerWidget {
             },
           ),
         ),
-        _buildDiscountCodeField(context),
         _CartSummary(cart: cart),
       ],
-    );
-  }
-
-  Widget _buildDiscountCodeField(BuildContext context) {
-    final controller = TextEditingController();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: CustomPaint(
-        painter: _DashedBorderPainter(
-          color: AppColors.border,
-          borderRadius: 28,
-          dashWidth: 6,
-          dashGap: 4,
-          strokeWidth: 1.5,
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              const Icon(Icons.discount_outlined, color: AppColors.primary, size: 22),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    hintText: 'İndirim kodu ekle',
-                    hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    filled: false,
-                  ),
-                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Kupon özelliği yakında!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.waterBlue,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Uygula',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -606,6 +548,10 @@ class _CartSummary extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // İndirim kodu alanı — checkout butonuna yakın
+              const _DiscountCodeField(),
+              const SizedBox(height: 12),
+
               // Ara toplam
               _SummaryRow(
                 label: 'Ara Toplam',
@@ -732,6 +678,133 @@ class _SummaryRow extends StatelessWidget {
       ],
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// _DiscountCodeField — dashed border pill, hexagon icon, "Uygula" waterBlue
+// ---------------------------------------------------------------------------
+
+class _DiscountCodeField extends StatefulWidget {
+  const _DiscountCodeField();
+
+  @override
+  State<_DiscountCodeField> createState() => _DiscountCodeFieldState();
+}
+
+class _DiscountCodeFieldState extends State<_DiscountCodeField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedBorderPainter(
+        color: AppColors.border,
+        borderRadius: 28,
+        dashWidth: 6,
+        dashGap: 4,
+        strokeWidth: 1.5,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            const _HexagonIcon(color: AppColors.primary, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  hintText: 'İndirim kodu ekle',
+                  hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  filled: false,
+                ),
+                style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+              ),
+            ),
+            TextButton(
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Kupon özelliği yakında!'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.waterBlue,
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Uygula',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _HexagonIcon — CustomPaint ile 6-köşeli hexagon çizer
+// ---------------------------------------------------------------------------
+
+class _HexagonIcon extends StatelessWidget {
+  final Color color;
+  final double size;
+
+  const _HexagonIcon({required this.color, this.size = 22});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _HexagonPainter(color: color),
+    );
+  }
+}
+
+class _HexagonPainter extends CustomPainter {
+  final Color color;
+
+  const _HexagonPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = size.width / 2 - 1;
+
+    final path = Path();
+    for (int i = 0; i < 6; i++) {
+      final angle = (pi / 3) * i - pi / 6;
+      final x = cx + r * cos(angle);
+      final y = cy + r * sin(angle);
+      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_HexagonPainter old) => old.color != color;
 }
 
 // ---------------------------------------------------------------------------
