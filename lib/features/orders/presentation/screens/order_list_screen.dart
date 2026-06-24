@@ -37,11 +37,15 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: AppColors.background,
-          title: const Text('Siparişlerim',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
-          iconTheme: const IconThemeData(color: AppColors.secondary),
+          backgroundColor: AppColors.surface,
           elevation: 0,
+          scrolledUnderElevation: 0,
+          automaticallyImplyLeading: false,
+          titleSpacing: 20,
+          title: const Text(
+            'Siparişlerim',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.secondary),
+          ),
         ),
         body: Center(
           child: Padding(
@@ -70,17 +74,15 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 20,
         title: const Text(
           'Siparişlerim',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.secondary),
         ),
-        iconTheme: const IconThemeData(color: AppColors.secondary),
-        elevation: 0,
       ),
       body: Column(
         children: [

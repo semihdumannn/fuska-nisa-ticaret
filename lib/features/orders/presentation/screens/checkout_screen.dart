@@ -301,9 +301,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Siparişi Onayla'),
         backgroundColor: AppColors.surface,
-        iconTheme: const IconThemeData(color: AppColors.secondary),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 8,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.secondary, size: 24),
+          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.cart),
+        ),
+        title: const Text(
+          'Ödeme',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.secondary),
+        ),
       ),
       body: Column(
         children: [

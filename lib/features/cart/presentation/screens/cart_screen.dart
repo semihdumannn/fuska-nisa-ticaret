@@ -26,30 +26,31 @@ class CartScreen extends ConsumerWidget {
 
   AppBar _buildAppBar(BuildContext context, WidgetRef ref, CartModel cart) {
     return AppBar(
-      backgroundColor: AppColors.background,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-        onPressed: () =>
-            context.canPop() ? context.pop() : context.go(AppRoutes.home),
-      ),
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      titleSpacing: 20,
       title: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
-          const Text('Sepetim'),
+          const Text(
+            'Sepetim',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.secondary,
+            ),
+          ),
           if (!cart.isEmpty) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${cart.totalItems}',
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+            const SizedBox(width: 6),
+            Text(
+              '· ${cart.totalItems} ürün',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textHint,
               ),
             ),
           ],
@@ -57,11 +58,14 @@ class CartScreen extends ConsumerWidget {
       ),
       actions: [
         if (!cart.isEmpty)
-          TextButton(
-            onPressed: () => _showClearConfirmDialog(context, ref),
-            child: const Text(
-              'Temizle',
-              style: TextStyle(color: AppColors.error),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: () => _showClearConfirmDialog(context, ref),
+              child: const Text(
+                'Temizle',
+                style: TextStyle(color: AppColors.error, fontSize: 14),
+              ),
             ),
           ),
       ],

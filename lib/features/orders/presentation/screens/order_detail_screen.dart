@@ -25,16 +25,17 @@ class OrderDetailScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 8,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.secondary, size: 24),
+          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.orders),
+        ),
         title: const Text(
           'Sipariş Detayı',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.secondary),
         ),
-        iconTheme: const IconThemeData(color: AppColors.secondary),
-        elevation: 0,
         actions: [
           orderAsync.when(
             loading: () => const SizedBox.shrink(),

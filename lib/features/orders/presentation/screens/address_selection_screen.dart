@@ -26,15 +26,28 @@ class AddressSelectionScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        title: const Text('Adreslerim'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 8,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.secondary, size: 24),
+          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.home),
+        ),
+        title: Text(
+          isSelectionMode ? 'Teslimat Adresi' : 'Adreslerim',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.secondary),
+        ),
         actions: [
           if (!isSelectionMode)
-            TextButton.icon(
-              onPressed: () => context.push(AppRoutes.addressForm),
-              icon: const Icon(Icons.add, size: 20),
-              label: const Text('Ekle'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
+                onPressed: () => context.push(AppRoutes.addressForm),
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Ekle'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              ),
             ),
         ],
       ),
