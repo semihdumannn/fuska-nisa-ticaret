@@ -616,25 +616,38 @@ class _NoAddressWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(
-          Icons.location_off_outlined,
-          size: 40,
-          color: AppColors.textHint,
-        ),
-        const SizedBox(height: 8),
         const Text(
-          'Teslimat adresi secilmedi',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
+          'Teslimat adresi seçilmedi',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: onAdd,
-          icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-          label: const Text('Adres Ekle'),
+        GestureDetector(
+          onTap: onAdd,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.primary, width: 1.5),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add, color: AppColors.primary, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Yeni adres ekle',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -804,62 +817,39 @@ class _BottomBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          (isLoading || !isAddressSelected)
-              ? ElevatedButton(
-                  onPressed: null,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.4),
-                    foregroundColor: AppColors.textWhite,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(46),
-                    ),
-                    disabledBackgroundColor:
-                        AppColors.primary.withValues(alpha: 0.4),
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: AppColors.textWhite,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Onayla ve Tamamla',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                )
-              : Container(
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.primary,
-                    borderRadius: BorderRadius.circular(46),
-                    boxShadow: const [AppShadows.primary],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: onConfirm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      foregroundColor: AppColors.textWhite,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(46),
+          AnimatedOpacity(
+            opacity: (isLoading || !isAddressSelected) ? 0.55 : 1.0,
+            duration: const Duration(milliseconds: 200),
+            child: ElevatedButton(
+              onPressed: (isLoading || !isAddressSelected) ? null : onConfirm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textWhite,
+                disabledBackgroundColor: AppColors.primary,
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(46),
+                ),
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: AppColors.textWhite,
+                        strokeWidth: 2.5,
                       ),
-                    ),
-                    child: const Text(
+                    )
+                  : const Text(
                       'Onayla ve Tamamla',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
-                ),
+            ),
+          ),
           if (!isAddressSelected) ...[
             const SizedBox(height: 8),
             const Text(

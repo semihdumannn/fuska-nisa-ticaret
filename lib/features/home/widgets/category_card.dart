@@ -20,47 +20,62 @@ class CategoryCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.pinkLight : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              category.name,
-              style: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.w500,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: isSelected ? AppGradients.teal : null,
+              color: isSelected ? null : AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [AppShadows.sm],
+            ),
+            child: Center(
+              child: Icon(
+                icon ?? Icons.category_outlined,
+                size: 28,
+                color: isSelected
+                    ? Colors.white
+                    : _resolveIconColor(category),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            category.name,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 
-  /// Kategori için ikon belirler — Firestore iconName → Material icon map,
-  /// yoksa slug bazlı fallback. SVG ikonlar chip içinde desteklenmiyor;
-  /// bu durumda null döner ve ikon alanı gösterilmez.
+  static Color _resolveIconColor(CategoryModel category) {
+    switch (category.slug) {
+      case 'su':
+        return AppColors.waterBlue;
+      case 'gazli-icecek':
+        return AppColors.accent;
+      case 'meyve-suyu':
+        return AppColors.primary;
+      case 'soda':
+        return AppColors.accent;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
   static IconData? _resolveIconData(CategoryModel category) {
     if (category.iconName.isNotEmpty) {
       final iconData = _materialIconFromName(category.iconName);
@@ -86,7 +101,6 @@ class CategoryCard extends StatelessWidget {
     }
   }
 
-  /// Material icon adından IconData döndürür.
   static IconData? _materialIconFromName(String name) {
     if (name.isEmpty) return null;
     const map = <String, IconData>{

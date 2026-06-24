@@ -80,8 +80,65 @@ class CartScreen extends ConsumerWidget {
             },
           ),
         ),
+        _buildDiscountCodeField(context),
         _CartSummary(cart: cart),
       ],
+    );
+  }
+
+  Widget _buildDiscountCodeField(BuildContext context) {
+    final controller = TextEditingController();
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.border,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.discount_outlined, color: AppColors.primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'İndirim kodu ekle',
+                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                filled: false,
+              ),
+              style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Kupon özelliği yakında!'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              'Uygula',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -586,27 +643,20 @@ class _CartSummary extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Siparis tamamla butonu
-              Container(
-                decoration: BoxDecoration(
-                  gradient: AppGradients.primary,
-                  borderRadius: BorderRadius.circular(46),
-                  boxShadow: const [AppShadows.primary],
+              ElevatedButton(
+                onPressed: () => _onCheckout(ref, context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textWhite,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(46),
+                  ),
+                  elevation: 0,
                 ),
-                child: ElevatedButton(
-                  onPressed: () => _onCheckout(ref, context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    foregroundColor: AppColors.textWhite,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(46),
-                    ),
-                  ),
-                  child: const Text(
-                    'Siparişi Tamamla',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+                child: const Text(
+                  'Siparişi Tamamla →',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
             ],

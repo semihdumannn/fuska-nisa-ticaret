@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nisa_ticaret/core/router/app_router.dart';
 import 'package:nisa_ticaret/core/theme/app_theme.dart';
 
@@ -16,129 +17,157 @@ class OrderSuccessScreen extends StatelessWidget {
         if (!didPop) context.go(AppRoutes.home);
       },
       child: Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+        backgroundColor: AppColors.background,
+        body: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Animasyonlu checkmark
-              const Center(child: _AnimatedCheckmark()),
-
-              const SizedBox(height: 24),
-
-              // 2. Baslik
-              const Text(
-                'Siparisıniz Alındı!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.secondary,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // 3. Siparis no
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '#$orderNo',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 48),
+                        const Center(child: _AnimatedCheckmark()),
+                        const SizedBox(height: 28),
+                        Text(
+                          'Siparişin alındı! 🎉',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Siparişin hazırlanıyor. Teslimat durumunu\nSiparişlerim\'den takip edebilirsin.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [AppShadows.sm],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Sipariş No',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '#$orderNo',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Tahmini',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE8F5E9),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '30-45 dk',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.success,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+                      ],
                     ),
                   ),
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // 4. Tahmini teslimat
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.access_time_outlined,
-                    color: AppColors.accent,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Tahmini teslimat: 30-60 dakika',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => context.go(AppRoutes.orders),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(46),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Siparişi Takip Et',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 48),
-
-              // 5. Siparislerimi Gor butonu
-              ElevatedButton(
-                onPressed: () => context.go(AppRoutes.orders),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textWhite,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Siparislerimi Gor',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // 6. Ana Sayfaya Don butonu
-              OutlinedButton(
-                onPressed: () => context.go(AppRoutes.home),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(
-                      color: AppColors.primary, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Ana Sayfaya Don',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => context.go(AppRoutes.home),
+                      child: Text(
+                        'Ana sayfaya dön',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
       ),
-      ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// _AnimatedCheckmark — ScaleTransition ile buyuyen basari ikonu
+// _AnimatedCheckmark — ScaleTransition ile büyüyen başarı ikonu
 // ---------------------------------------------------------------------------
 class _AnimatedCheckmark extends StatefulWidget {
   const _AnimatedCheckmark();
@@ -177,16 +206,16 @@ class _AnimatedCheckmarkState extends State<_AnimatedCheckmark>
     return ScaleTransition(
       scale: _scale,
       child: Container(
-        width: 120,
-        height: 120,
+        width: 100,
+        height: 100,
         decoration: const BoxDecoration(
           color: AppColors.success,
           shape: BoxShape.circle,
         ),
         child: const Icon(
           Icons.check_rounded,
-          color: AppColors.textWhite,
-          size: 64,
+          color: Colors.white,
+          size: 56,
         ),
       ),
     );

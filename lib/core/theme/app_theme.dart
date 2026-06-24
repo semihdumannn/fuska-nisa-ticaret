@@ -147,7 +147,7 @@ class AppTheme {
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 1,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 18,
           fontWeight: FontWeight.w600,

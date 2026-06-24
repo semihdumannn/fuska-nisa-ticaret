@@ -614,7 +614,7 @@ class _CategoriesRow extends ConsumerWidget {
     final selectedId = filterState.selectedCategoryId;
 
     return SizedBox(
-      height: 44,
+      height: 100,
       child: categoriesAsync.when(
         loading: () => _buildShimmer(),
         error: (error, _) => _ErrorRow(
@@ -630,7 +630,7 @@ class _CategoriesRow extends ConsumerWidget {
             final category = categories[index];
             final isSelected = category.id == selectedId;
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 12),
               child: CategoryCard(
                 category: category,
                 isSelected: isSelected,
@@ -664,13 +664,29 @@ class _CategoriesRow extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: 5,
-        itemBuilder: (_, __) => Container(
-          width: 88,
-          height: 36,
-          margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+        itemBuilder: (_, __) => Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: 48,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+            ],
           ),
         ),
       ),

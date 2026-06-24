@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/navigation_guard.dart';
@@ -113,11 +112,11 @@ class ProductCard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  // Discount badge — sağ üst
+                  // Discount badge — sol üst (featured badge'in altına)
                   if (showDiscount)
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: product.isFeatured ? 36 : 8,
+                      left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -137,6 +136,25 @@ class ProductCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  // Favori butonu — sağ üst (her zaman görünür)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [AppShadows.sm],
+                      ),
+                      child: const Icon(
+                        Icons.favorite_border,
+                        size: 16,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                  ),
                   // Out of stock overlay
                   if (!isInStock)
                     Positioned.fill(
@@ -172,8 +190,8 @@ class ProductCard extends ConsumerWidget {
                   Text(
                     product.name,
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -239,57 +257,34 @@ class _AddButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppGradients.primary,
-        borderRadius: BorderRadius.circular(46),
-        boxShadow: const [AppShadows.primary],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(46),
-          onTap: () {
-            final koliVariant = product.koliVariant;
-            if (koliVariant != null) {
-              ref
-                  .read(cartProvider.notifier)
-                  .addItem(product, variant: koliVariant);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${product.name} sepete eklendi'),
-                  duration: const Duration(seconds: 1),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            } else {
-              // Koli varyantı yok → detay sayfasına git
-              context.push(
-                  AppRoutes.productDetail.replaceFirst(':id', product.id));
-            }
-          },
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add, color: Colors.white, size: 16),
-                SizedBox(width: 4),
-                Text(
-                  'Ekle',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+    return GestureDetector(
+      onTap: () {
+        final koliVariant = product.koliVariant;
+        if (koliVariant != null) {
+          ref.read(cartProvider.notifier).addItem(product, variant: koliVariant);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${product.name} sepete eklendi'),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              backgroundColor: AppColors.success,
             ),
-          ),
+          );
+        } else {
+          context.safePush(
+              AppRoutes.productDetail.replaceFirst(':id', product.id));
+        }
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: const Icon(Icons.add, color: Colors.white, size: 20),
       ),
     );
   }
