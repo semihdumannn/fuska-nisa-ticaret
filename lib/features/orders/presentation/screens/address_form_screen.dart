@@ -75,26 +75,8 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
     if (!_hasChanges) return true;
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Degisiklikler Kaybolacak'),
-        content: const Text(
-          'Degisiklikleri kaybetmek istiyor musunuz?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => ctx.pop(false),
-            child: const Text('Hayir'),
-          ),
-          TextButton(
-            onPressed: () => ctx.pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Evet, Cik'),
-          ),
-        ],
-      ),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) => const _DiscardDialog(),
     );
     return confirm ?? false;
   }
@@ -776,6 +758,112 @@ class _SearchPickerSheetState extends State<_SearchPickerSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Modern discard-changes dialog
+// ---------------------------------------------------------------------------
+class _DiscardDialog extends StatelessWidget {
+  const _DiscardDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [AppShadows.md],
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // İkon
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.error,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Başlık
+            const Text(
+              'Değişiklikler Kaybolacak',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.secondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // İçerik
+            const Text(
+              'Yaptığınız değişiklikler kaydedilmeyecek.\nDevam etmek istiyor musunuz?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Butonlar
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.secondary,
+                      side: const BorderSide(color: AppColors.border, width: 1.5),
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(46),
+                      ),
+                    ),
+                    child: const Text(
+                      'Hayır',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(46),
+                      ),
+                    ),
+                    child: const Text(
+                      'Evet, Çık',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
