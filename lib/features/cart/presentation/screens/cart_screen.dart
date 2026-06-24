@@ -234,7 +234,6 @@ class _CartItemCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(cartProvider.notifier);
     final product = item.product;
 
     return Container(
@@ -314,17 +313,6 @@ class _CartItemCard extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(width: 8),
-
-          // Sil butonu
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.error),
-            onPressed: () =>
-                notifier.removeItem(product.id, variantId: item.variant?.id),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            iconSize: 22,
-          ),
         ],
       ),
     );
@@ -415,29 +403,8 @@ class _QtyControl extends ConsumerWidget {
               if (qty == 1) {
                 final confirmed = await showDialog<bool>(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    title: const Text('Ürünü Kaldır',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700)),
-                    content: Text(
-                      '${product.name} sepetten kaldırılsın mı?',
-                      style: const TextStyle(
-                          fontSize: 14, color: AppColors.textSecondary),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('İptal'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text('Kaldır',
-                            style: TextStyle(color: AppColors.error)),
-                      ),
-                    ],
-                  ),
+                  barrierColor: Colors.black.withValues(alpha: 0.4),
+                  builder: (_) => _RemoveItemDialog(productName: product.name),
                 );
                 if (confirmed == true) {
                   notifier.decreaseItem(product.id, variantId: variantId);
@@ -558,11 +525,19 @@ class _CartSummary extends ConsumerWidget {
                 value: _formatPrice(cart.subtotal),
               ),
 
+              const SizedBox(height: 8),
+              // Teslimat
+              _SummaryRow(
+                label: 'Teslimat',
+                value: 'Ücretsiz',
+                valueColor: AppColors.success,
+              ),
+
               // Indirim (varsa)
               if (hasDiscount) ...[
                 const SizedBox(height: 8),
                 _SummaryRow(
-                  label: 'Indirim',
+                  label: 'İndirim',
                   value: '-${_formatPrice(discount)}',
                   valueColor: AppColors.success,
                 ),
@@ -676,6 +651,111 @@ class _SummaryRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _RemoveItemDialog — modern ürün kaldırma onayı
+// ---------------------------------------------------------------------------
+
+class _RemoveItemDialog extends StatelessWidget {
+  final String productName;
+
+  const _RemoveItemDialog({required this.productName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [AppShadows.md],
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.error,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Ürünü Kaldır',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.secondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '$productName sepetten kaldırılsın mı?',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.secondary,
+                      side: const BorderSide(color: AppColors.border, width: 1.5),
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(46),
+                      ),
+                    ),
+                    child: const Text(
+                      'İptal',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(46),
+                      ),
+                    ),
+                    child: const Text(
+                      'Kaldır',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
