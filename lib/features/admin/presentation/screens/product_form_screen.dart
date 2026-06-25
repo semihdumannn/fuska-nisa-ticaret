@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/image_picker_widget.dart';
 import '../../../../features/products/data/repositories/category_repository.dart';
@@ -314,7 +315,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        context.pop();
+        if (context.mounted) context.canPop() ? context.pop() : context.go(AppRoutes.productManagement);
       }
     } catch (e) {
       if (mounted) {
@@ -380,7 +381,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 onActiveChanged: (v) => setState(() => _isActive = v),
                 onImageUploaded: (url) => setState(() => _imageUrl = url),
                 onSave: _save,
-                onCancel: () => context.pop(),
+                onCancel: () => context.canPop() ? context.pop() : context.go(AppRoutes.productManagement),
                 onAddVariant: _addVariant,
                 onRemoveVariant: _removeVariant,
                 onVariantChanged: () => setState(() {}),
@@ -420,7 +421,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         onActiveChanged: (v) => setState(() => _isActive = v),
         onImageUploaded: (url) => setState(() => _imageUrl = url),
         onSave: _save,
-        onCancel: () => context.pop(),
+        onCancel: () => context.canPop() ? context.pop() : context.go(AppRoutes.productManagement),
         onAddVariant: _addVariant,
         onRemoveVariant: _removeVariant,
         onVariantChanged: () => setState(() {}),

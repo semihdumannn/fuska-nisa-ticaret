@@ -66,7 +66,7 @@ class UserDetailScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_outlined),
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.adminUsers),
         ),
       ),
       body: _DetailContent(
@@ -162,7 +162,7 @@ class _DetailHeader extends StatelessWidget {
       children: [
         IconButton(
           icon: const Icon(Icons.arrow_back_outlined, size: 20),
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.adminUsers),
           style: IconButton.styleFrom(
             backgroundColor: AppColors.surface,
             shape: RoundedRectangleBorder(
@@ -1091,7 +1091,7 @@ class _DetailError extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
-              onPressed: () => context.pop(),
+              onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.adminUsers),
               icon: const Icon(Icons.arrow_back_outlined, size: 16),
               label: const Text('Geri Don'),
             ),
