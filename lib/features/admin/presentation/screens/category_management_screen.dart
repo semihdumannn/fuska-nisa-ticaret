@@ -78,7 +78,7 @@ class CategoryManagementScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: AppColors.adminBackground,
+        backgroundColor: AppColors.background,
         body: Row(
           children: [
             const AdminSidebar(),
@@ -89,21 +89,18 @@ class CategoryManagementScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: const Text(
           'Kategori Yonetimi',
           style: TextStyle(
-            color: AppColors.textWhite,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.textWhite),
@@ -133,7 +130,6 @@ class _CategoryPageContent extends StatelessWidget {
               const Text(
                 'Kategori Yonetimi',
                 style: TextStyle(
-                  fontFamily: 'Poppins',
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -228,7 +224,6 @@ class _CategoryList extends ConsumerWidget {
           const Text(
             'Kategoriler yüklenemedi',
             style: TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -238,7 +233,6 @@ class _CategoryList extends ConsumerWidget {
           Text(
             message,
             style: const TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
@@ -260,7 +254,6 @@ class _CategoryList extends ConsumerWidget {
           const Text(
             'Henuz kategori yok',
             style: TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -270,7 +263,6 @@ class _CategoryList extends ConsumerWidget {
           const Text(
             'Ilk kategoriyi eklemek icin + butonuna basin.',
             style: TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
@@ -345,7 +337,6 @@ class _CategoryListItem extends StatelessWidget {
                   Text(
                     category.name,
                     style: const TextStyle(
-                      fontFamily: 'Poppins',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -357,7 +348,6 @@ class _CategoryListItem extends StatelessWidget {
                         ? 'ikon yok'
                         : category.iconName,
                     style: const TextStyle(
-                      fontFamily: 'Poppins',
                       fontSize: 11,
                       color: AppColors.textSecondary,
                     ),
@@ -377,7 +367,6 @@ class _CategoryListItem extends StatelessWidget {
               child: Text(
                 '#${category.sortOrder}',
                 style: const TextStyle(
-                  fontFamily: 'Poppins',
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.secondary,
@@ -489,7 +478,6 @@ Future<void> _confirmDelete(
       title: const Text(
         'Kategoriyi Sil',
         style: TextStyle(
-          fontFamily: 'Poppins',
           fontWeight: FontWeight.w600,
           fontSize: 17,
           color: AppColors.textPrimary,
@@ -498,7 +486,6 @@ Future<void> _confirmDelete(
       content: Text(
         '"${category.name}" kategorisini silmek istediğinizden emin misiniz? Bu işlemi geri alamazsınız.',
         style: const TextStyle(
-          fontFamily: 'Poppins',
           fontSize: 14,
           color: AppColors.textSecondary,
         ),
@@ -705,7 +692,6 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
               Text(
                 _isEdit ? 'Kategoriyi Düzenle' : 'Yeni Kategori',
                 style: const TextStyle(
-                  fontFamily: 'Poppins',
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -785,7 +771,6 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                         Text(
                           'Aktif',
                           style: TextStyle(
-                            fontFamily: 'Poppins',
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: AppColors.textPrimary,
@@ -794,7 +779,6 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                         Text(
                           'Pasif kategoriler uygulamada gorünmez',
                           style: TextStyle(
-                            fontFamily: 'Poppins',
                             fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
@@ -904,7 +888,6 @@ class _FormLabel extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontFamily: 'Poppins',
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: AppColors.textSecondary,

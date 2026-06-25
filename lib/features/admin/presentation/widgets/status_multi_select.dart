@@ -128,7 +128,6 @@ class _StatusMultiSelectDropdownState
                     : '${selected.length} durum',
                 style: TextStyle(
                   fontSize: 13,
-                  fontFamily: 'Poppins',
                   fontWeight: FontWeight.w500,
                   color: selected.isNotEmpty
                       ? AppColors.primary
@@ -151,7 +150,6 @@ class _StatusMultiSelectDropdownState
                         fontSize: 10,
                         color: AppColors.textWhite,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ),
@@ -194,7 +192,6 @@ class _StatusCheckboxList extends ConsumerWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const Spacer(),
@@ -208,7 +205,6 @@ class _StatusCheckboxList extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 11,
                       color: AppColors.primary,
-                      fontFamily: 'Poppins',
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -270,7 +266,6 @@ class _StatusCheckboxList extends ConsumerWidget {
                         status.displayName,
                         style: const TextStyle(
                           fontSize: 13,
-                          fontFamily: 'Poppins',
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -302,7 +297,6 @@ class _StatusCheckboxList extends ConsumerWidget {
                 'Uygula',
                 style: TextStyle(
                   fontSize: 12,
-                  fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
                 ),
               ),

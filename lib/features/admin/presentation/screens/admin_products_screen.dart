@@ -25,7 +25,7 @@ class AdminProductsScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return const Scaffold(
-        backgroundColor: AppColors.adminBackground,
+        backgroundColor: AppColors.background,
         body: Row(
           children: [
             AdminSidebar(),
@@ -36,21 +36,18 @@ class AdminProductsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: const Text(
           'Urun Yonetimi',
           style: TextStyle(
-            color: AppColors.textWhite,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
       ),
       body: const _ProductsContent(),
     );
@@ -164,7 +161,6 @@ class _TitleBlock extends StatelessWidget {
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
-            fontFamily: 'Poppins',
           ),
         ),
         SizedBox(height: 2),
@@ -173,7 +169,6 @@ class _TitleBlock extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             color: AppColors.textSecondary,
-            fontFamily: 'Poppins',
           ),
         ),
       ],
@@ -221,14 +216,12 @@ class _SearchFieldState extends ConsumerState<_SearchField> {
         controller: _ctrl,
         style: const TextStyle(
           fontSize: 14,
-          fontFamily: 'Poppins',
           color: AppColors.textPrimary,
         ),
         decoration: InputDecoration(
           hintText: 'Urun ara...',
           hintStyle: const TextStyle(
             fontSize: 14,
-            fontFamily: 'Poppins',
             color: AppColors.textHint,
           ),
           prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textSecondary),
@@ -272,13 +265,11 @@ class _CategoryDropdown extends ConsumerWidget {
             'Tumunu Goster',
             style: TextStyle(
               fontSize: 13,
-              fontFamily: 'Poppins',
               color: AppColors.textSecondary,
             ),
           ),
           style: const TextStyle(
             fontSize: 13,
-            fontFamily: 'Poppins',
             color: AppColors.textPrimary,
           ),
           icon: const Icon(Icons.keyboard_arrow_down_rounded,
@@ -320,7 +311,6 @@ class _AddProductButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         textStyle: const TextStyle(
           fontSize: 14,
-          fontFamily: 'Poppins',
           fontWeight: FontWeight.w600,
         ),
         shape: RoundedRectangleBorder(
@@ -434,7 +424,6 @@ class _StatCard extends StatelessWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: color,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
@@ -443,7 +432,6 @@ class _StatCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
-                    fontFamily: 'Poppins',
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -490,12 +478,10 @@ class _ProductsTable extends ConsumerWidget {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
             dataTextStyle: const TextStyle(
               fontSize: 13,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
             dividerThickness: 1,
             dataRowMinHeight: 64,
@@ -540,7 +526,6 @@ class _ProductsTable extends ConsumerWidget {
                   p.name,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -550,7 +535,6 @@ class _ProductsTable extends ConsumerWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -571,7 +555,6 @@ class _ProductsTable extends ConsumerWidget {
                 fontSize: 12,
                 color: AppColors.accent,
                 fontWeight: FontWeight.w500,
-                fontFamily: 'Poppins',
               ),
             ),
           ),
@@ -628,13 +611,12 @@ class _ProductsTable extends ConsumerWidget {
         title: const Text(
           'Ürünü Sil',
           style: TextStyle(
-            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
         content: Text(
           '"${p.name}" urununu silmek istediğinizden emin misiniz? Bu islem geri alınamaz.',
-          style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
+          style: const TextStyle( fontSize: 14),
         ),
         actions: [
           TextButton(
@@ -642,7 +624,6 @@ class _ProductsTable extends ConsumerWidget {
             child: const Text(
               'İptal',
               style: TextStyle(
-                fontFamily: 'Poppins',
                 color: AppColors.textSecondary,
               ),
             ),
@@ -731,7 +712,6 @@ class _PriceCell extends StatelessWidget {
         '—',
         style: TextStyle(
           color: AppColors.textHint,
-          fontFamily: 'Poppins',
           fontSize: 13,
         ),
       );
@@ -750,7 +730,6 @@ class _PriceCell extends StatelessWidget {
           Text(
             '₺${effectiveSale.toStringAsFixed(2)}',
             style: const TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
@@ -759,7 +738,6 @@ class _PriceCell extends StatelessWidget {
           Text(
             '₺${price.toStringAsFixed(2)}',
             style: const TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 11,
               color: AppColors.textHint,
               decoration: TextDecoration.lineThrough,
@@ -772,7 +750,6 @@ class _PriceCell extends StatelessWidget {
     return Text(
       '₺${price.toStringAsFixed(2)}',
       style: const TextStyle(
-        fontFamily: 'Poppins',
         fontSize: 13,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
@@ -807,7 +784,6 @@ class _DiscountCell extends StatelessWidget {
       style: const TextStyle(
         color: AppColors.primary,
         fontWeight: FontWeight.w600,
-        fontFamily: 'Poppins',
       ),
     );
   }
@@ -834,7 +810,6 @@ class _StockCell extends StatelessWidget {
       child: Text(
         isInStock ? '$stock adet' : 'Tukendi',
         style: TextStyle(
-          fontFamily: 'Poppins',
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: isInStock ? AppColors.success : AppColors.error,
@@ -897,7 +872,6 @@ class _PaginationRow extends ConsumerWidget {
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.textSecondary,
-            fontFamily: 'Poppins',
           ),
         ),
         const Spacer(),
@@ -916,7 +890,6 @@ class _PaginationRow extends ConsumerWidget {
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.textPrimary,
-            fontFamily: 'Poppins',
           ),
         ),
         IconButton(
@@ -958,7 +931,6 @@ class _EmptyState extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
           SizedBox(height: 6),
@@ -967,7 +939,6 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textHint,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -1090,7 +1061,6 @@ class _ProductsError extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 8),
@@ -1099,7 +1069,6 @@ class _ProductsError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
             ),

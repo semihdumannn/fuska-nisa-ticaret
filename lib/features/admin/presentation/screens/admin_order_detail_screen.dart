@@ -27,7 +27,7 @@ class AdminOrderDetailScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: AppColors.adminBackground,
+        backgroundColor: AppColors.background,
         body: Row(
           children: [
             const AdminSidebar(),
@@ -44,23 +44,20 @@ class AdminOrderDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: const Text(
           'Sipariş Detayı',
           style: TextStyle(
-            color: AppColors.textWhite,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textWhite),
+          icon: const Icon(Icons.arrow_back_rounded, size: 24),
           onPressed: () => context.canPop() ? context.pop() : context.go('/admin/orders'),
         ),
       ),
@@ -133,7 +130,6 @@ class _DesktopDetailLayout extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -223,7 +219,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -233,7 +228,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ],
@@ -250,7 +244,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 6),
@@ -270,7 +263,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 10),
@@ -289,7 +281,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 8),
@@ -352,7 +343,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.error,
-                            fontFamily: 'Poppins',
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -361,7 +351,6 @@ class _SummaryColumnState extends ConsumerState<_SummaryColumn> {
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.textPrimary,
-                            fontFamily: 'Poppins',
                           ),
                         ),
                       ],
@@ -464,7 +453,6 @@ class _StatusChangeDropdown extends ConsumerWidget {
           },
           style: const TextStyle(
             fontSize: 13,
-            fontFamily: 'Poppins',
             color: AppColors.textPrimary,
           ),
         ),
@@ -496,7 +484,6 @@ class _ItemsColumn extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 14),
@@ -524,7 +511,6 @@ class _ItemsColumn extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
-                              fontFamily: 'Poppins',
                             ),
                           )),
                       SizedBox(
@@ -535,7 +521,6 @@ class _ItemsColumn extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
-                              fontFamily: 'Poppins',
                             ),
                             textAlign: TextAlign.center,
                           )),
@@ -547,7 +532,6 @@ class _ItemsColumn extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
-                              fontFamily: 'Poppins',
                             ),
                             textAlign: TextAlign.right,
                           )),
@@ -559,7 +543,6 @@ class _ItemsColumn extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
-                              fontFamily: 'Poppins',
                             ),
                             textAlign: TextAlign.right,
                           )),
@@ -583,7 +566,6 @@ class _ItemsColumn extends StatelessWidget {
                                 item.productName,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  fontFamily: 'Poppins',
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -594,7 +576,6 @@ class _ItemsColumn extends StatelessWidget {
                                 '${item.quantity}',
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  fontFamily: 'Poppins',
                                   color: AppColors.textSecondary,
                                 ),
                                 textAlign: TextAlign.center,
@@ -606,7 +587,6 @@ class _ItemsColumn extends StatelessWidget {
                                 currencyFmt.format(item.unitPrice),
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  fontFamily: 'Poppins',
                                   color: AppColors.textSecondary,
                                 ),
                                 textAlign: TextAlign.right,
@@ -619,7 +599,6 @@ class _ItemsColumn extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  fontFamily: 'Poppins',
                                   color: AppColors.textPrimary,
                                 ),
                                 textAlign: TextAlign.right,
@@ -661,7 +640,6 @@ class _ItemsColumn extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               Text(
@@ -670,7 +648,6 @@ class _ItemsColumn extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -685,7 +662,6 @@ class _ItemsColumn extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const SizedBox(width: 8),
@@ -710,7 +686,6 @@ class _ItemsColumn extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.accent,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ],
@@ -750,14 +725,12 @@ class _PriceSummaryRow extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.textSecondary,
-            fontFamily: 'Poppins',
           ),
         ),
         Text(
           '$prefix$display',
           style: TextStyle(
             fontSize: 13,
-            fontFamily: 'Poppins',
             color: color ?? AppColors.textSecondary,
             fontWeight: color != null ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -901,7 +874,6 @@ class _AssignmentNotesColumnState
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 10),
@@ -914,7 +886,6 @@ class _AssignmentNotesColumnState
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textHint,
-                  fontFamily: 'Poppins',
                 ),
               ),
             )
@@ -988,7 +959,6 @@ class _AssignmentNotesColumnState
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 10),
@@ -1026,7 +996,6 @@ class _AssignmentNotesColumnState
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textHint,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -1049,7 +1018,6 @@ class _AssignmentNotesColumnState
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
         content: Column(
@@ -1123,7 +1091,6 @@ class _AssignmentNotesColumnState
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
         content: Text(
@@ -1199,7 +1166,6 @@ class _AssignmentSection extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
             ),
             if (assignedName != null) ...[
@@ -1216,7 +1182,6 @@ class _AssignmentSection extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.success,
-                    fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1261,7 +1226,6 @@ class _AssignmentSection extends StatelessWidget {
                         'Secin...',
                         style: TextStyle(
                             fontSize: 13,
-                            fontFamily: 'Poppins',
                             color: AppColors.textHint),
                       ),
                       icon: const Icon(Icons.keyboard_arrow_down,
@@ -1286,7 +1250,6 @@ class _AssignmentSection extends StatelessWidget {
                       },
                       style: const TextStyle(
                         fontSize: 13,
-                        fontFamily: 'Poppins',
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -1306,7 +1269,6 @@ class _AssignmentSection extends StatelessWidget {
                 'Ata',
                 style: TextStyle(
                     fontSize: 13,
-                    fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600),
               ),
             ),
@@ -1349,7 +1311,6 @@ class _NoteCard extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const Spacer(),
@@ -1358,7 +1319,6 @@ class _NoteCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.textHint,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -1369,7 +1329,6 @@ class _NoteCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -1405,7 +1364,7 @@ class _DangerButton extends StatelessWidget {
         label: Text(
           label,
           style: TextStyle(
-              fontSize: 13, fontFamily: 'Poppins', color: color),
+              fontSize: 13, color: color),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
@@ -1457,7 +1416,6 @@ class _InfoRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.textHint,
-                  fontFamily: 'Poppins',
                 ),
               ),
               isLink
@@ -1468,7 +1426,6 @@ class _InfoRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.secondary,
-                          fontFamily: 'Poppins',
                           fontWeight: FontWeight.w500,
                           decoration: TextDecoration.underline,
                         ),
@@ -1479,7 +1436,6 @@ class _InfoRow extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textPrimary,
-                        fontFamily: 'Poppins',
                       ),
                     ),
             ],
@@ -1527,7 +1483,6 @@ class _StatusBadge extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: status.color,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -1690,7 +1645,6 @@ class _DetailError extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 8),
@@ -1699,7 +1653,6 @@ class _DetailError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
             ),
@@ -1762,7 +1715,6 @@ class _StatusChangeSheet extends StatelessWidget {
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           if (orderNumber != null) ...[
@@ -1772,7 +1724,6 @@ class _StatusChangeSheet extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
             ),
           ],
@@ -1801,14 +1752,12 @@ class _StatusChangeSheet extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
                 textStyle: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
                 ),
               ),
               child: const Text('Güncelle'),
@@ -1868,7 +1817,6 @@ class _StatusChip extends StatelessWidget {
               fontSize: 13,
               fontWeight: isNew ? FontWeight.w700 : FontWeight.w500,
               color: status.color,
-              fontFamily: 'Poppins',
             ),
           ),
         ],

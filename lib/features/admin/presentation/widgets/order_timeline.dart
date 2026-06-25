@@ -107,7 +107,6 @@ class _CancelledBadge extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: status.color,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -224,7 +223,6 @@ class _HorizontalStepNode extends StatelessWidget {
                 ? FontWeight.w600
                 : FontWeight.w400,
             color: textColor,
-            fontFamily: 'Poppins',
           ),
           textAlign: TextAlign.center,
         ),
@@ -235,7 +233,6 @@ class _HorizontalStepNode extends StatelessWidget {
             style: const TextStyle(
               fontSize: 9,
               color: AppColors.textHint,
-              fontFamily: 'Poppins',
             ),
             textAlign: TextAlign.center,
           ),
@@ -369,7 +366,6 @@ class _VerticalStepRow extends StatelessWidget {
                           ? FontWeight.w600
                           : FontWeight.w400,
                       color: textColor,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                   if (date != null)
@@ -378,7 +374,6 @@ class _VerticalStepRow extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textHint,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                 ],

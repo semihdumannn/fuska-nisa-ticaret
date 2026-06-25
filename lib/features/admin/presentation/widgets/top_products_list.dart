@@ -38,7 +38,6 @@ class TopProductsList extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -49,7 +48,6 @@ class TopProductsList extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textHint,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(height: 16),
@@ -83,7 +81,6 @@ class _ProductRow extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
-                    fontFamily: 'Poppins',
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -94,7 +91,6 @@ class _ProductRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -114,7 +110,6 @@ class _ProductRow extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const Text(
@@ -122,7 +117,6 @@ class _ProductRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   color: AppColors.textHint,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -180,7 +174,6 @@ class _RankBadge extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: _textColor,
-            fontFamily: 'Poppins',
           ),
         ),
       ),

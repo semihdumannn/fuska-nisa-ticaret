@@ -359,7 +359,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: AppColors.adminBackground,
+        backgroundColor: AppColors.background,
         body: Row(
           children: [
             const AdminSidebar(),
@@ -392,20 +392,17 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: Text(
           title,
           style: const TextStyle(
-            color: AppColors.textWhite,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
       ),
       body: _FormContent(
         formKey: _formKey,
@@ -492,7 +489,6 @@ class _FormContent extends StatelessWidget {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const SizedBox(height: 24),
@@ -626,7 +622,6 @@ class _ActiveToggle extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
                 SizedBox(height: 2),
@@ -635,7 +630,6 @@ class _ActiveToggle extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -749,7 +743,6 @@ class _RightColumn extends ConsumerWidget {
                               cat?.name ?? id,
                               style: const TextStyle(
                                 fontSize: 12,
-                                fontFamily: 'Poppins',
                                 color: AppColors.textWhite,
                               ),
                             ),
@@ -782,7 +775,6 @@ class _RightColumn extends ConsumerWidget {
                                 cat.name,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  fontFamily: 'Poppins',
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -816,7 +808,6 @@ class _RightColumn extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.error,
-                            fontFamily: 'Poppins',
                           ),
                         ),
                       ),
@@ -841,7 +832,6 @@ class _RightColumn extends ConsumerWidget {
 
   static const TextStyle _inputStyle = TextStyle(
     fontSize: 14,
-    fontFamily: 'Poppins',
     color: AppColors.textPrimary,
   );
 
@@ -850,7 +840,6 @@ class _RightColumn extends ConsumerWidget {
       hintText: hint,
       hintStyle: const TextStyle(
         fontSize: 14,
-        fontFamily: 'Poppins',
         color: AppColors.textHint,
       ),
       contentPadding:
@@ -895,7 +884,6 @@ class _VariantsSection extends StatelessWidget {
 
   static const TextStyle _inputStyle = TextStyle(
     fontSize: 14,
-    fontFamily: 'Poppins',
     color: AppColors.textPrimary,
   );
 
@@ -909,15 +897,14 @@ class _VariantsSection extends StatelessWidget {
       hintText: hint,
       hintStyle: const TextStyle(
         fontSize: 13,
-        fontFamily: 'Poppins',
         color: AppColors.textHint,
       ),
       prefixText: prefix,
       prefixStyle: const TextStyle(
-          color: AppColors.textPrimary, fontFamily: 'Poppins', fontSize: 13),
+          color: AppColors.textPrimary, fontSize: 13),
       suffixText: suffix,
       suffixStyle: const TextStyle(
-          color: AppColors.textSecondary, fontFamily: 'Poppins', fontSize: 13),
+          color: AppColors.textSecondary, fontSize: 13),
       prefixIcon: prefixIcon,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -964,7 +951,6 @@ class _VariantsSection extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const Spacer(),
@@ -1212,7 +1198,6 @@ class _VariantCardState extends State<_VariantCard> {
                       const Text(
                         'Koli Varyanti',
                         style: TextStyle(
-                          fontFamily: 'Poppins',
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.textPrimary,
@@ -1224,7 +1209,6 @@ class _VariantCardState extends State<_VariantCard> {
                             ? 'Bu varyant koli birimi olarak isaretlendi'
                             : 'Koli biriminde paketlenmiş varyant',
                         style: const TextStyle(
-                          fontFamily: 'Poppins',
                           fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
@@ -1298,7 +1282,6 @@ class _FormSection extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           const Divider(height: 24),
@@ -1321,7 +1304,6 @@ class _FormLabel extends StatelessWidget {
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: AppColors.textSecondary,
-        fontFamily: 'Poppins',
       ),
     );
   }
@@ -1358,7 +1340,6 @@ class _FormActions extends StatelessWidget {
             ),
             textStyle: const TextStyle(
               fontSize: 14,
-              fontFamily: 'Poppins',
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1377,7 +1358,6 @@ class _FormActions extends StatelessWidget {
             ),
             textStyle: const TextStyle(
               fontSize: 14,
-              fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
             ),
           ),

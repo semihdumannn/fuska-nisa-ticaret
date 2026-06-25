@@ -44,7 +44,6 @@ class WeeklySalesChart extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const Spacer(),
@@ -71,7 +70,6 @@ class WeeklySalesChart extends StatelessWidget {
                           color: AppColors.textWhite,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
-                          fontFamily: 'Poppins',
                         ),
                         children: [
                           TextSpan(
@@ -81,7 +79,6 @@ class WeeklySalesChart extends StatelessWidget {
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
-                              fontFamily: 'Poppins',
                             ),
                           ),
                           TextSpan(
@@ -89,7 +86,6 @@ class WeeklySalesChart extends StatelessWidget {
                             style: const TextStyle(
                               color: Color(0xCCFFFFFF),
                               fontSize: 11,
-                              fontFamily: 'Poppins',
                             ),
                           ),
                         ],
@@ -116,7 +112,6 @@ class WeeklySalesChart extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.textSecondary,
-                              fontFamily: 'Poppins',
                             ),
                           ),
                         );
@@ -135,7 +130,6 @@ class WeeklySalesChart extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,
-                            fontFamily: 'Poppins',
                           ),
                         );
                       },
@@ -224,7 +218,6 @@ class _ChartLegendDot extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             color: AppColors.textSecondary,
-            fontFamily: 'Poppins',
           ),
         ),
       ],

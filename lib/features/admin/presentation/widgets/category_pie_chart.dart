@@ -70,7 +70,6 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -118,7 +117,6 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textWhite,
-                            fontFamily: 'Poppins',
                           ),
                         );
                       }).toList(),
@@ -159,7 +157,6 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               Text(
@@ -170,7 +167,6 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -221,7 +217,6 @@ class _LegendItem extends StatelessWidget {
                 color: isActive
                     ? AppColors.textPrimary
                     : AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -232,7 +227,6 @@ class _LegendItem extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: isActive ? color : AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
         ],

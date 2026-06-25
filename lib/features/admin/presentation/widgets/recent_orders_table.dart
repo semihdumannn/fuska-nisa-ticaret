@@ -87,7 +87,6 @@ class _TableHeader extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           const Spacer(),
@@ -127,14 +126,12 @@ class _StatusFilterDropdown extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
           isDense: true,
           style: const TextStyle(
             fontSize: 12,
             color: AppColors.textPrimary,
-            fontFamily: 'Poppins',
           ),
           items: [
             const DropdownMenuItem<String?>(
@@ -214,7 +211,6 @@ class _HeaderCell extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,
-          fontFamily: 'Poppins',
           letterSpacing: 0.5,
         ),
       ),
@@ -247,7 +243,6 @@ class _OrderRow extends ConsumerWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppColors.secondary,
-                fontFamily: 'Poppins',
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -259,7 +254,6 @@ class _OrderRow extends ConsumerWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -277,7 +271,6 @@ class _OrderRow extends ConsumerWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -293,7 +286,6 @@ class _OrderRow extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -393,7 +385,6 @@ class _EmptyTablePlaceholder extends StatelessWidget {
           style: TextStyle(
             color: AppColors.textHint,
             fontSize: 14,
-            fontFamily: 'Poppins',
           ),
         ),
       ),
@@ -424,7 +415,6 @@ class _TablePagination extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
           const SizedBox(width: 16),
@@ -539,7 +529,6 @@ class _PageNumberButton extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: isActive ? AppColors.textWhite : AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
         ),
@@ -594,7 +583,6 @@ class OrderStatusBadge extends StatelessWidget {
           fontSize: compact ? 10 : 11,
           fontWeight: FontWeight.w600,
           color: _color,
-          fontFamily: 'Poppins',
         ),
       ),
     );

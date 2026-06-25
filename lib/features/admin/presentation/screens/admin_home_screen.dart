@@ -39,7 +39,7 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       body: Row(
         children: [
           AdminSidebar(),
@@ -61,21 +61,18 @@ class _MobileTabletLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: const Text(
           'Yönetim Paneli',
           style: TextStyle(
-            color: AppColors.textWhite,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.storefront_outlined,
@@ -167,7 +164,6 @@ class _DashboardHeader extends ConsumerWidget {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const SizedBox(height: 2),
@@ -176,7 +172,6 @@ class _DashboardHeader extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -249,7 +244,6 @@ class _DateRangeButton extends StatelessWidget {
         side: const BorderSide(color: AppColors.border),
         textStyle: const TextStyle(
           fontSize: 12,
-          fontFamily: 'Poppins',
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -278,7 +272,6 @@ class _ExportButton extends StatelessWidget {
         ),
         textStyle: const TextStyle(
           fontSize: 13,
-          fontFamily: 'Poppins',
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -580,7 +573,6 @@ class _DashboardError extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 8),
@@ -589,7 +581,6 @@ class _DashboardError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
             ),

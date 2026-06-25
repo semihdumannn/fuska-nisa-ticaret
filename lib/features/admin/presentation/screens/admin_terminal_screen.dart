@@ -13,7 +13,7 @@ class AdminTerminalScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         leading: IconButton(
@@ -26,10 +26,8 @@ class AdminTerminalScreen extends ConsumerWidget {
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: AppColors.border),
@@ -103,7 +101,6 @@ class _DateBanner extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.primary,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -184,7 +181,6 @@ class _StatCard extends StatelessWidget {
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: color,
-              fontFamily: 'Poppins',
             ),
           ),
           Text(
@@ -192,7 +188,6 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -255,7 +250,6 @@ class _ActionCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -264,7 +258,6 @@ class _ActionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ],
@@ -303,7 +296,6 @@ class _RecentOrdersSection extends ConsumerWidget {
             fontSize: 15,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
-            fontFamily: 'Poppins',
           ),
         ),
         const SizedBox(height: 12),
@@ -333,7 +325,6 @@ class _RecentOrdersSection extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -373,7 +364,6 @@ class _RecentOrdersSection extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'Poppins',
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -382,7 +372,6 @@ class _RecentOrdersSection extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                   trailing: Container(
@@ -398,7 +387,6 @@ class _RecentOrdersSection extends ConsumerWidget {
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: o.status.color,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ),

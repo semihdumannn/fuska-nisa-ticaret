@@ -33,7 +33,7 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       body: Row(
         children: [
           AdminSidebar(),
@@ -50,21 +50,18 @@ class _MobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       drawer: const AdminDrawerWrapper(),
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: const Text(
           'Kullanici Yonetimi',
           style: TextStyle(
-            color: AppColors.textWhite,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
-        elevation: 0,
       ),
       body: const _UsersContent(),
     );
@@ -150,7 +147,6 @@ class _UsersHeader extends StatelessWidget {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               SizedBox(height: 2),
@@ -159,7 +155,6 @@ class _UsersHeader extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -249,7 +244,6 @@ class _StatCard extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: item.color,
-                fontFamily: 'Poppins',
               ),
             ),
             Text(
@@ -257,7 +251,6 @@ class _StatCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 10,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -350,7 +343,6 @@ class _RoleFilterChips extends StatelessWidget {
                 labels[i],
                 style: TextStyle(
                   fontSize: 12,
-                  fontFamily: 'Poppins',
                   color: isSelected ? Colors.white : AppColors.textPrimary,
                   fontWeight:
                       isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -401,13 +393,11 @@ class _UsersDataTable extends ConsumerWidget {
               AppColors.adminBackground,
             ),
             headingTextStyle: const TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
             ),
             dataTextStyle: const TextStyle(
-              fontFamily: 'Poppins',
               fontSize: 13,
               color: AppColors.textPrimary,
             ),
@@ -478,7 +468,6 @@ class _UserAvatarCell extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: user.role.roleColor,
-              fontFamily: 'Poppins',
             ),
           ),
         ),
@@ -492,7 +481,6 @@ class _UserAvatarCell extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
               ),
             ),
             if (user.email != null)
@@ -501,7 +489,6 @@ class _UserAvatarCell extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
           ],
@@ -530,7 +517,6 @@ class _RoleChip extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: role.roleColor,
-          fontFamily: 'Poppins',
         ),
       ),
     );
@@ -549,7 +535,6 @@ class _LastLoginCell extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           color: AppColors.textHint,
-          fontFamily: 'Poppins',
         ),
       );
     }
@@ -567,7 +552,6 @@ class _LastLoginCell extends StatelessWidget {
       style: const TextStyle(
         fontSize: 12,
         color: AppColors.textSecondary,
-        fontFamily: 'Poppins',
       ),
     );
   }
@@ -593,7 +577,6 @@ class _StatusChip extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: isBlocked ? AppColors.error : AppColors.success,
-          fontFamily: 'Poppins',
         ),
       ),
     );
@@ -652,7 +635,6 @@ class _ActionButtons extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
         content: Text(
@@ -736,7 +718,6 @@ class _UserMobileCard extends ConsumerWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: user.role.roleColor,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -750,7 +731,6 @@ class _UserMobileCard extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                   Text(
@@ -758,7 +738,6 @@ class _UserMobileCard extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -781,7 +760,6 @@ class _UserMobileCard extends ConsumerWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
                 const Icon(
@@ -822,7 +800,6 @@ class _PaginationRow extends ConsumerWidget {
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.textSecondary,
-            fontFamily: 'Poppins',
           ),
         ),
         Row(
@@ -848,7 +825,6 @@ class _PaginationRow extends ConsumerWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textWhite,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -893,7 +869,6 @@ class _EmptyState extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 4),
@@ -902,7 +877,6 @@ class _EmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textHint,
-                fontFamily: 'Poppins',
               ),
             ),
           ],
@@ -1043,7 +1017,6 @@ class _UsersError extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 8),
@@ -1052,7 +1025,6 @@ class _UsersError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
             ),

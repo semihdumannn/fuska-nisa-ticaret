@@ -143,7 +143,6 @@ class _SidebarHeader extends StatelessWidget {
                   color: AppColors.textWhite,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -159,7 +158,6 @@ class _SidebarHeader extends StatelessWidget {
                     color: AppColors.textWhite,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -168,7 +166,6 @@ class _SidebarHeader extends StatelessWidget {
                   style: TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 11,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -205,23 +202,15 @@ class _SidebarNavItem extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isActive
-                  ? AppColors.primary.withValues(alpha: 0.2)
-                  : Colors.transparent,
+              color: isActive ? AppColors.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: isActive
-                  ? Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                      width: 1,
-                    )
-                  : null,
             ),
             child: Row(
               children: [
                 Icon(
                   isActive ? item.iconFilled : item.icon,
                   color: isActive
-                      ? AppColors.primary
+                      ? AppColors.textWhite
                       : const Color(0xAAFFFFFF),
                   size: 20,
                 ),
@@ -234,21 +223,9 @@ class _SidebarNavItem extends StatelessWidget {
                         : const Color(0xAAFFFFFF),
                     fontSize: 14,
                     fontWeight:
-                        isActive ? FontWeight.w600 : FontWeight.w400,
-                    fontFamily: 'Poppins',
+                        isActive ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
-                if (isActive) ...[
-                  const Spacer(),
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -294,7 +271,6 @@ class _SidebarFooter extends ConsumerWidget {
                     color: AppColors.textWhite,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
                   ),
                 ),
                 Text(
@@ -302,7 +278,6 @@ class _SidebarFooter extends ConsumerWidget {
                   style: TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 11,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],

@@ -44,7 +44,6 @@ class AdminDashboardScreen extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 8),

@@ -34,14 +34,7 @@ class MetricCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: const [AppShadows.sm],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,20 +67,18 @@ class MetricCard extends StatelessWidget {
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.secondary,
                 ),
               ),
               if (subtitle != null) ...[
@@ -97,7 +88,6 @@ class MetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textHint,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -153,7 +143,6 @@ class _TrendBadge extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: badgeColor,
-              fontFamily: 'Poppins',
             ),
           ),
         ],
@@ -211,7 +200,6 @@ class FirebaseUsageCard extends StatelessWidget {
               fontSize: 11,
               color: progressColor,
               fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
             ),
           ),
         ],

@@ -24,7 +24,7 @@ class UserDetailScreen extends ConsumerWidget {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: AppColors.adminBackground,
+        backgroundColor: AppColors.background,
         body: Row(
           children: [
             const AdminSidebar(),
@@ -41,26 +41,22 @@ class UserDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.adminBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: AppColors.textWhite),
+        backgroundColor: AppColors.surface,
+        scrolledUnderElevation: 0,
         title: userAsync.when(
           data: (user) => Text(
             user.name,
             style: const TextStyle(
-              color: AppColors.textWhite,
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
             ),
           ),
           loading: () => const Text(
             'Kullanici Detayi',
             style: TextStyle(
-              color: AppColors.textWhite,
               fontSize: 16,
-              fontFamily: 'Poppins',
             ),
           ),
           error: (_, __) => const Text(
@@ -68,7 +64,6 @@ class UserDetailScreen extends ConsumerWidget {
             style: TextStyle(color: AppColors.textWhite),
           ),
         ),
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_outlined),
           onPressed: () => context.pop(),
@@ -187,7 +182,6 @@ class _DetailHeader extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  fontFamily: 'Poppins',
                 ),
               ),
               Text(
@@ -195,7 +189,6 @@ class _DetailHeader extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -296,7 +289,6 @@ class _BlockedBanner extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.error,
-                fontFamily: 'Poppins',
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -325,7 +317,6 @@ class _AvatarSection extends StatelessWidget {
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: user.role.roleColor,
-                fontFamily: 'Poppins',
               ),
             ),
           ),
@@ -338,7 +329,6 @@ class _AvatarSection extends StatelessWidget {
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
             textAlign: TextAlign.center,
           ),
@@ -350,7 +340,6 @@ class _AvatarSection extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
-              fontFamily: 'Poppins',
             ),
           ),
         ),
@@ -362,7 +351,6 @@ class _AvatarSection extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
             ),
           ),
@@ -421,7 +409,6 @@ class _InfoRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
                 Text(
@@ -430,7 +417,6 @@ class _InfoRow extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
-                    fontFamily: 'Poppins',
                   ),
                 ),
               ],
@@ -462,7 +448,6 @@ class _BlockToggleSection extends ConsumerWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: user.isBlocked ? AppColors.error : AppColors.success,
-                  fontFamily: 'Poppins',
                 ),
               ),
               const SizedBox(height: 2),
@@ -473,7 +458,6 @@ class _BlockToggleSection extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -504,7 +488,6 @@ class _BlockToggleSection extends ConsumerWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
         content: Text(
@@ -559,7 +542,6 @@ class _RoleChangeSection extends ConsumerWidget {
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
-            fontFamily: 'Poppins',
           ),
         ),
         const SizedBox(height: 10),
@@ -572,7 +554,6 @@ class _RoleChangeSection extends ConsumerWidget {
           ),
           style: const TextStyle(
             fontSize: 14,
-            fontFamily: 'Poppins',
             color: AppColors.textPrimary,
           ),
           items: UserRole.values.map((role) {
@@ -586,7 +567,6 @@ class _RoleChangeSection extends ConsumerWidget {
                     role.displayName,
                     style: TextStyle(
                       fontSize: 14,
-                      fontFamily: 'Poppins',
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -613,7 +593,6 @@ class _RoleChangeSection extends ConsumerWidget {
               minimumSize: const Size(double.infinity, 44),
               textStyle: const TextStyle(
                 fontSize: 14,
-                fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -633,14 +612,12 @@ class _RoleChangeSection extends ConsumerWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
           ),
         ),
         content: RichText(
           text: TextSpan(
             style: const TextStyle(
               fontSize: 14,
-              fontFamily: 'Poppins',
               color: AppColors.textPrimary,
             ),
             children: [
@@ -750,7 +727,6 @@ class _OrdersCardHeader extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
-              fontFamily: 'Poppins',
             ),
           ),
           ordersAsync.when(
@@ -764,7 +740,6 @@ class _OrdersCardHeader extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -785,7 +760,6 @@ class _OrdersCardHeader extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.success,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ),
@@ -860,7 +834,6 @@ class _OrderSummaryTile extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -869,7 +842,6 @@ class _OrderSummaryTile extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                 ],
@@ -881,7 +853,6 @@ class _OrderSummaryTile extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(width: 12),
@@ -894,7 +865,6 @@ class _OrderSummaryTile extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(width: 10),
@@ -912,7 +882,6 @@ class _OrderSummaryTile extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: _statusColor,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
@@ -946,7 +915,6 @@ class _OrdersEmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
             ),
           ],
@@ -987,7 +955,6 @@ class _OrdersErrorState extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.error,
-            fontFamily: 'Poppins',
           ),
           textAlign: TextAlign.center,
         ),
@@ -1111,7 +1078,6 @@ class _DetailError extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontFamily: 'Poppins',
               ),
             ),
             const SizedBox(height: 8),
@@ -1120,7 +1086,6 @@ class _DetailError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
             ),
