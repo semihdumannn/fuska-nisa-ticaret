@@ -126,27 +126,27 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
 
   @override
   Future<List<CustomerGrowthData>> getCustomerGrowth({int months = 6}) async {
-    // top-customers endpoint müşteri büyümesi vermez; basit tahmin üret
     try {
       final response = await _dio.get(
-        ApiEndpoints.adminAnalyticsTopCustomers,
-        queryParameters: {'limit': 50},
+        ApiEndpoints.adminAnalyticsCustomerGrowth,
+        queryParameters: {'months': months},
       );
       final rawList = _extractList(response.data);
-      final now = DateTime.now();
-      final totalCustomers = rawList.length;
-      return List.generate(months, (i) {
-        final monthOffset = months - 1 - i;
-        final date = DateTime(now.year, now.month - monthOffset, 1);
-        final estimatedNew =
-            totalCustomers > 0 ? (totalCustomers / months).round() : 0;
+      return rawList.map((raw) {
+        final j = raw as Map<String, dynamic>;
+        DateTime date;
+        try {
+          date = DateTime.parse(j['month']?.toString() ?? '');
+        } catch (_) {
+          date = DateTime.now();
+        }
         return CustomerGrowthData(
           date: date,
-          newCustomers: estimatedNew,
-          totalCustomers: estimatedNew * (i + 1),
-          activeCustomers: (estimatedNew * 0.7).round(),
+          newCustomers: (j['new_customers'] as num?)?.toInt() ?? 0,
+          totalCustomers: (j['total_customers'] as num?)?.toInt() ?? 0,
+          activeCustomers: (j['active_customers'] as num?)?.toInt() ?? 0,
         );
-      });
+      }).toList();
     } on DioException {
       final now = DateTime.now();
       return List.generate(months, (i) {

@@ -75,6 +75,8 @@ class ApiEndpoints {
   static const adminAnalyticsTopCustomers =
       '$_v1/admin/analytics/top-customers';
   static const adminAnalyticsTopProducts = '$_v1/admin/analytics/top-products';
+  static const adminAnalyticsCustomerGrowth =
+      '$_v1/admin/analytics/customer-growth';
 
   // Subscriptions (backend hazırlandığında aktif)
   static const subscriptions = '$_v1/subscriptions';
