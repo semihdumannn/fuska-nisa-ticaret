@@ -49,15 +49,28 @@ class WhatsappService {
 
   Future<void> _launch(String normalizedPhone, {String? message}) async {
     final encoded = message != null ? Uri.encodeComponent(message) : null;
-    final uriStr = encoded != null
-        ? 'https://wa.me/$normalizedPhone?text=$encoded'
-        : 'https://wa.me/$normalizedPhone';
 
-    final uri = Uri.parse(uriStr);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    // Önce native WhatsApp deep link — daha hızlı ve güvenilir
+    final nativeUri = Uri.parse(encoded != null
+        ? 'whatsapp://send?phone=$normalizedPhone&text=$encoded'
+        : 'whatsapp://send?phone=$normalizedPhone');
+
+    if (await canLaunchUrl(nativeUri)) {
+      await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    // Fallback: wa.me — WhatsApp yüklü değilse browser'da açılır
+    final webUri = Uri.parse(encoded != null
+        ? 'https://wa.me/$normalizedPhone?text=$encoded'
+        : 'https://wa.me/$normalizedPhone');
+
+    if (await canLaunchUrl(webUri)) {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
-      if (kDebugMode) debugPrint('[WhatsApp] Açılamadı: $uriStr');
+      if (kDebugMode) {
+        debugPrint('[WhatsApp] Açılamadı: ${webUri.toString()}');
+      }
     }
   }
 }
